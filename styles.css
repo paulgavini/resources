@@ -33,9 +33,12 @@ h1 {
 
 nav {
   margin-top: 1rem;
-  display: flex;
-  justify-content: center;
-  gap: 1.25rem;
+  text-align: center;
+}
+
+nav a {
+  display: block;
+  margin: 0.5rem 0;
 }
 
 a {
