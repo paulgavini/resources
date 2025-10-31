@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Spectrum Analyser</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>Audio Spectrum Analyser</h1>
+      <div class="controls">
+        <label>
+          Input
+          <select id="input-device"></select>
+        </label>
+        <button id="btn-refresh" title="Refresh devices">↻</button>
+        <button id="btn-toggle">Start Microphone</button>
+        <label>
+          FFT Size
+          <select id="fft-size">
+            <option value="2048">2048</option>
+            <option value="4096" selected>4096</option>
+            <option value="8192">8192</option>
+            <option value="16384">16384</option>
+          </select>
+        </label>
+        <label>
+          Smoothing
+          <input id="smoothing" type="range" min="0" max="0.95" step="0.01" value="0.7" />
+        </label>
+        <label class="checkbox">
+          <input id="log-scale" type="checkbox" /> Log frequency scale
+        </label>
+        
+      </div>
+    </header>
+
+    <main class="app-main">
+      <div class="canvas-wrap">
+        <canvas id="spectrum" aria-label="Spectrum display" role="img"></canvas>
+        <div id="hover-readout" class="readout" hidden></div>
+      </div>
+      <div class="status">
+        <div>Sample rate: <span id="sample-rate">–</span></div>
+        <div>Nyquist: <span id="nyquist">–</span></div>
+        <div>Cursor: <span id="cursor-info">Move over chart</span></div>
+        <div>Bandwidth: <span id="bandwidth">–</span></div>
+        <div>Peaks: <span id="peaks-list">–</span></div>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <small>
+        Uses your microphone locally via the Web Audio API. No audio leaves your device.
+      </small>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+  </html>
