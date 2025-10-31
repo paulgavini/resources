@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evolution Sandbox - Research Ideas</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="bar">
+    <div class="title">Evolution Sandbox</div>
+    <div class="subtitle">Investigations and Lab Ideas</div>
+  </header>
+
+  <main class="layout" style="grid-template-columns: 1fr; max-width: 1000px; margin: 0 auto;">
+    <section class="panel" style="line-height:1.5">
+      <h1 style="margin:0 0 8px; font-size:20px">Core Investigations</h1>
+
+      <h3 style="margin:12px 0 6px; font-size:15px">Resource Influx vs Population Size</h3>
+      <ul>
+        <li><strong>Manipulate</strong>: Food/Second (low to high).</li>
+        <li><strong>Hold constant</strong>: Food Energy, Base Metabolism, Reproduction Threshold, Mutation.</li>
+        <li><strong>Expectation</strong>: Higher influx raises carrying capacity; watch for overshoot/oscillations at mid values.</li>
+        <li><strong>Measure</strong>: Mean population over last 2-3 minutes, peak population, extinction risk.</li>
+      </ul>
+
+      <h3 style="margin:12px 0 6px; font-size:15px">Food Energy vs Life-History Strategy</h3>
+      <ul>
+        <li><strong>Manipulate</strong>: Food Energy (low to high).</li>
+        <li><strong>Expectation</strong>: Higher energy per item favors fast reproduction; low energy favors Size (storage/reach).</li>
+        <li><strong>Measure</strong>: Mean genes (Speed/Size/Sense), births per minute, age-at-first-reproduction proxy (energy build-up rate).</li>
+      </ul>
+
+      <h3 style="margin:12px 0 6px; font-size:15px">Metabolic Cost vs Trait Feasibility</h3>
+      <ul>
+        <li><strong>Manipulate</strong>: Base Metabolism.</li>
+        <li><strong>Expectation</strong>: Higher cost penalizes Speed/Sense-heavy mixes; Size may increase for storage benefit.</li>
+        <li><strong>Measure</strong>: Mean genes, time to stabilization, extinction probability.</li>
+      </ul>
+
+      <h3 style="margin:12px 0 6px; font-size:15px">Reproduction Threshold vs r/K Analogy</h3>
+      <ul>
+        <li><strong>Manipulate</strong>: Reproduction Threshold.</li>
+        <li><strong>Expectation</strong>: Low threshold → more, smaller-energy parents; high threshold → fewer, investment-heavy parents.</li>
+        <li><strong>Measure</strong>: Births/minute, population variance, mean age, mean energy.</li>
+      </ul>
+
+      <h3 style="margin:12px 0 6px; font-size:15px">Mutation Rate vs Adaptation and Stability</h3>
+      <ul>
+        <li><strong>Manipulate</strong>: Mutation (std).</li>
+        <li><strong>Expectation</strong>: Low → slow adaptation, risk of local optima; high → faster exploration but noisy trait means.</li>
+        <li><strong>Measure</strong>: Rate of change of mean genes, diversity (spread of genes), extinction risk under changing resources.</li>
+      </ul>
+
+      <h3 style="margin:12px 0 6px; font-size:15px">Search Strategy Trade-off (Speed vs Sense)</h3>
+      <ul>
+        <li><strong>Manipulate</strong>: initial gene allocation; <strong>Environment</strong>: scarce vs abundant Food/Second.</li>
+        <li><strong>Expectation</strong>: Scarce food favors Sense (range); abundant favors Speed (competition to reach).</li>
+        <li><strong>Measure</strong>: Which gene increases over generations; time to dominance; population resilience.</li>
+      </ul>
+
+      <h3 style="margin:12px 0 6px; font-size:15px">Size Advantage Under Scarcity</h3>
+      <ul>
+        <li><strong>Manipulate</strong>: low Food/Second, moderate Food Energy.</li>
+        <li><strong>Expectation</strong>: Size (reach/storage) rises; very high Size costs may backfire if metabolism is high.</li>
+        <li><strong>Measure</strong>: Mean Size trend, survival through bottlenecks.</li>
+      </ul>
+
+      <h3 style="margin:12px 0 6px; font-size:15px">Bottlenecks and Founder Effects</h3>
+      <ul>
+        <li><strong>Protocol</strong>: Run, then abruptly reduce Food/Second for 1-2 minutes, restore afterward.</li>
+        <li><strong>Expectation</strong>: Gene means drift; post-bottleneck population reflects survivors' traits.</li>
+        <li><strong>Measure</strong>: Pre/post means, variance, recovery time.</li>
+      </ul>
+
+      <h2 style="font-size:16px; margin-top:14px;">How To Run Each</h2>
+      <ul>
+        <li>Set a baseline, change exactly one parameter, run for a fixed time window (e.g., 5-8 minutes at 1x or 2-3 minutes at 4x).</li>
+        <li>Do 2-3 replicates per setting.</li>
+        <li>Record: mean population (last 1-2 minutes), peak population, births/minute, deaths/minute, mean genes.</li>
+        <li>Use Pause + click inspector to sample individuals (energy, age, gene mix).</li>
+      </ul>
+
+      <h2 style="font-size:16px">Suggested Data Sheets</h2>
+      <p>Include: Trial ID, Food/sec, Food Energy, Metabolism, Repro Threshold, Mutation, Mean Pop (last N s), Peak Pop, Births/min, Deaths/min, Mean Speed, Mean Size, Mean Sense, Notes.</p>
+      <pre style="white-space:pre-wrap; background:#0f141a; border:1px solid #202631; padding:8px; border-radius:8px;">
+Trial | Food/s | Food E | Metab | Repro Th | Mut | Mean Pop | Peak Pop | Births/min | Deaths/min | Mean Sp | Mean Sz | Mean Se | Notes
+----- | ------ | ------ | ----- | -------- | --- | -------- | -------- | ---------- | ---------- | ------- | ------- | ------- | -----
+      |        |        |       |          |     |          |          |            |            |         |         |         | 
+      |        |        |       |          |     |          |          |            |            |         |         |         | 
+      </pre>
+
+      <h2 style="font-size:16px">Controls And Confounders</h2>
+      <ul>
+        <li>Keep initial gene mix constant across trials (sliders).</li>
+        <li>Use the Speed toggle consistently (1x vs 4x) within a set of trials.</li>
+        <li>Small populations show stronger drift — run repeats or increase initial population for selection-focused labs.</li>
+      </ul>
+
+      <h2 style="font-size:16px">Tips for Faster Results</h2>
+      <ul>
+        <li>Increase speed to 4x-8x for quicker convergence.</li>
+        <li>Raise Mutation (std) modestly (e.g., 0.05) to explore more variation, then reduce for stabilization.</li>
+        <li>Ensure viability: if crashes occur, raise Food/Second or lower Base Metabolism/Threshold.</li>
+      </ul>
+
+      <p style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+        <a href="index.html"><button>Back to Simulation</button></a>
+        <a href="info.html"><button>Open User Guide</button></a>
+      </p>
+    </section>
+  </main>
+
+  <footer class="foot">Use these prompts as lab scaffolds. Feel free to adapt for your lesson.</footer>
+</body>
+</html>
+

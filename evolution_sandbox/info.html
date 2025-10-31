@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evolution Sandbox - Guide</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="bar">
+    <div class="title">Evolution Sandbox</div>
+    <div class="subtitle">User Guide and Teacher Notes</div>
+  </header>
+
+  <main class="layout" style="grid-template-columns: 1fr; max-width: 1000px; margin: 0 auto;">
+    <section class="panel" style="line-height:1.5">
+      <h1 style="margin:0 0 8px; font-size:20px">Overview</h1>
+      <p>This interactive simulation explores how traits change over generations through selection, mutation, and recombination. Students allocate three genes (Speed, Size, Sense), then observe how environments favor different strategies.</p>
+
+      <h2 style="font-size:16px">Controls</h2>
+      <ul>
+        <li><code>Start</code>: initializes with current gene sliders and environment settings.</li>
+        <li><code>Pause/Resume</code>: pause to inspect individuals; resume continues evolution.</li>
+        <li><code>Reset</code>: stop and reinitialize the world and stats.</li>
+        <li><code>Speed: 1x/2x/4x/8x</code>: accelerates time by running multiple steps per frame.</li>
+        <li><code>Inspector</code>: while paused, click an organism to view its genes, energy, age, and food eaten.</li>
+      </ul>
+
+      <h2 style="font-size:16px">Genes and Traits</h2>
+      <p>Three genes are independent controls (each 0-1, no normalization):</p>
+      <ul>
+        <li><strong>Speed</strong>: faster movement to reach food, but higher energy cost.</li>
+        <li><strong>Size</strong>: larger radius for grabbing food + better energy storage/utilization, but higher metabolism cost.</li>
+        <li><strong>Sense</strong>: detects food farther away, but higher energy cost.</li>
+      </ul>
+
+      <h2 style="font-size:16px">Energy Economy</h2>
+      <ul>
+        <li><strong>Food</strong>: gives energy when within grab radius (slightly boosted by Size).</li>
+        <li><strong>Metabolism</strong>: base cost scaled by the gene mix (Speed &gt; Sense &gt; Size).</li>
+        <li><strong>Movement</strong>: cost increases with velocity.</li>
+        <li><strong>Death</strong>: occurs at zero energy.</li>
+      </ul>
+
+      <h2 style="font-size:16px">Reproduction</h2>
+      <ul>
+        <li><strong>Sexual pairing</strong>: two nearby organisms, each above the reproduction threshold, can mate.</li>
+        <li><strong>Gene mixing</strong>: offspring genes are a weighted average of the parents (weighted by each parent's foraging success) plus small mutation; genes are clamped to [0,1] but not re-normalized.</li>
+        <li><strong>Energy transfer</strong>: each parent donates 40% of its energy to the child; parents keep 60% each.</li>
+        <li><strong>Cooldown</strong>: short cooldown prevents instant repeated mating.</li>
+      </ul>
+
+      <h2 style="font-size:16px">Parameters</h2>
+      <ul>
+        <li><strong>Initial Population</strong>: number of organisms at start.</li>
+        <li><strong>Food/Second</strong>: average food spawn rate.</li>
+        <li><strong>Mutation (std)</strong>: mutation strength per gene during offspring creation.</li>
+        <li><strong>Food Energy</strong>: energy gained per food item.</li>
+        <li><strong>Base Metabolism</strong>: baseline energy drain scaled by gene costs.</li>
+        <li><strong>Reproduction Threshold</strong>: energy required for eligibility to mate.</li>
+      </ul>
+
+      <h2 style="font-size:16px">Colors and Charts</h2>
+      <ul>
+        <li><strong>Color mapping</strong>: hue depends on Speed and Sense (HSL). Size does not affect hue directly.</li>
+        <li><strong>Chart</strong>: top line shows population; three lines below show average Speed, Size, Sense.</li>
+      </ul>
+
+      <h2 style="font-size:16px">Suggested Experiments</h2>
+      <ul>
+        <li>High Speed vs. High Sense in scarce vs. abundant food environments.</li>
+        <li>High Size strategies with low metabolism vs. high reproduction thresholds.</li>
+        <li>Mutation sweeps: increase mutation to accelerate exploration, then reduce to see stabilization.</li>
+        <li>Bottlenecks: drop food drastically for a while, then restore and observe founder effects.</li>
+      </ul>
+
+      <h2 style="font-size:16px">Classroom Notes</h2>
+      <ul>
+        <li>Sliders set independent values (0-1 each); no normalization at start or during reproduction.</li>
+        <li>Selection pressure emerges from costs/benefits; drift can dominate in small populations.</li>
+        <li>Sexual reproduction mixes successful genes; mutation introduces new variation.</li>
+      </ul>
+
+      <p style="margin-top:12px">
+        <a href="index.html"><button>Back to Simulation</button></a>
+      </p>
+    </section>
+  </main>
+
+  <footer class="foot">This guide explains model assumptions for classroom exploration.</footer>
+</body>
+</html>
+

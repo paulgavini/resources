@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evolution Sandbox (3 Genes)</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <meta name="description" content="Interactive evolution simulation with 3 student-allocated genes: Speed, Size, Sense." />
+</head>
+<body>
+  <header class="bar">
+    <div class="brand">
+      <div class="title">Evolution Sandbox</div>
+      <div class="subtitle">Allocate 3 genes, observe selection, drift, mutation</div>
+    </div>
+    <div class="top-right">
+      <div class="byline">By Paul Gavini using CODEX</div>
+      <a href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener">YouTube</a>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel controls">
+      <h2>Setup: 3 Genes</h2>
+      <div class="control-group">
+        <label for="geneSpeed">Speed</label>
+        <input type="range" id="geneSpeed" min="0" max="1" step="0.01" value="0.34" />
+        <span id="speedVal" class="val">0.34</span>
+      </div>
+      <div class="control-group">
+        <label for="geneSize">Size</label>
+        <input type="range" id="geneSize" min="0" max="1" step="0.01" value="0.33" />
+        <span id="sizeVal" class="val">0.33</span>
+      </div>
+      <div class="control-group">
+        <label for="geneSense">Sense</label>
+        <input type="range" id="geneSense" min="0" max="1" step="0.01" value="0.33" />
+        <span id="senseVal" class="val">0.33</span>
+      </div>
+      <div class="sum">Sum: <span id="sumVal">1.00</span></div>
+
+      <h2>Environment</h2>
+      <div class="grid-2">
+        <label>Initial Population
+          <input type="number" id="initPop" min="1" max="1000" step="1" value="80" />
+        </label>
+        <label>Food/Second
+          <input type="number" id="foodRate" min="0" max="200" step="1" value="40" />
+        </label>
+        <label>Mutation (std)
+          <input type="number" id="mutation" min="0" max="0.5" step="0.005" value="0.04" />
+        </label>
+        <label>Food Energy
+          <input type="number" id="foodEnergy" min="1" max="200" step="1" value="30" />
+        </label>
+        <label>Base Metabolism
+          <input type="number" id="metabolism" min="0" max="1" step="0.01" value="0.12" />
+        </label>
+        <label>Reproduction Threshold
+          <input type="number" id="reproThresh" min="10" max="400" step="5" value="120" />
+        </label>
+      </div>
+
+      <div class="buttons">
+        <div class="button-row">
+          <button id="startBtn">Start</button>
+          <button id="pauseBtn" disabled>Pause</button>
+          <button id="resetBtn">Reset</button>
+        </div>
+        <div class="button-row">
+          <button id="speedBtn" title="Toggle simulation speed">Speed: 1x</button>
+          <button id="infoBtn" title="Open user guide">Info</button>
+          <button id="researchBtn" title="Open investigations and labs">Research</button>
+        </div>
+      </div>
+
+      <div class="notes">
+        Tips:
+        <ul>
+          <li>Speed finds food faster but costs energy.</li>
+          <li>Size increases reach/storage but costs energy.</li>
+          <li>Sense detects food further away but costs energy.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel sim">
+      <canvas id="world" width="900" height="600"></canvas>
+      <div class="stats">
+        <div><strong>Population:</strong> <span id="popVal">0</span></div>
+        <div><strong>Avg Speed:</strong> <span id="avgSpeed">0</span> | <strong>Avg Size:</strong> <span id="avgSize">0</span> | <strong>Avg Sense:</strong> <span id="avgSense">0</span></div>
+        <div><strong>Births:</strong> <span id="births">0</span> | <strong>Deaths:</strong> <span id="deaths">0</span></div>
+        <div><strong>Tick:</strong> <span id="tickVal">0</span></div>
+      </div>
+      <div id="inspector" class="inspector">Pause, then click an organism to inspect genes.</div>
+      <canvas id="chart" width="900" height="150"></canvas>
+    </section>
+  </main>
+
+  <footer class="foot">
+    Built for classroom exploration. No libraries required.
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
