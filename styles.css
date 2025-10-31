@@ -1,0 +1,44 @@
+/* Basic dark-first theme with light mode support */
+:root {
+  color-scheme: dark light;
+  --bg: #0f172a; /* slate-900 */
+  --fg: #e5e7eb; /* gray-200 */
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #ffffff;
+    --fg: #111827; /* gray-900 */
+  }
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--fg);
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 3rem);
+  text-align: center;
+  padding-top: 2rem;
+}
+
+nav {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+a {
+  color: inherit;
+  text-decoration: underline;
+}

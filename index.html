@@ -1,70 +1,17 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Outline Noter</title>
-    <link rel="stylesheet" href="styles.css" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Landing Page</title>
+    <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <header class="app-header">
-      <div class="brand">Outline Noter</div>
-      <div class="header-actions">
-        <button id="newRoot" title="New Database">New</button>
-        <button id="importJson" title="Import JSON">Import</button>
-        <button id="exportJson" title="Export JSON">Export</button>
-        <button id="exportHtml" title="Export Static HTML">Export HTML</button>
-        <a class="credits" href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener">By Paul Gavini using CODEX</a>
-      </div>
-    </header>
-
-    <main class="app-main">
-      <aside class="sidebar">
-        <div class="sidebar-top">
-          <input id="search" type="search" placeholder="Search..." />
-          <div class="tree-actions">
-            <button id="addChild" title="Add Child (Ctrl+Enter)">+ Child</button>
-            <button id="addSibling" title="Add Sibling (Enter)">+ Sibling</button>
-            <button id="renameNode" title="Rename (F2)">Rename</button>
-            <button id="deleteNode" title="Delete (Del)">Delete</button>
-          </div>
-          <div class="tree-move">
-            <button id="moveUp" title="Move Up (Alt+ArrowUp)">↑</button>
-            <button id="moveDown" title="Move Down (Alt+ArrowDown)">↓</button>
-            <button id="indent" title="Indent (Tab)">▶︎</button>
-            <button id="outdent" title="Outdent (Shift+Tab)">◀︎</button>
-          </div>
-        </div>
-        <nav id="tree" class="tree" aria-label="Notes Tree"></nav>
-      </aside>
-
-      <section class="editor-pane">
-        <div class="editor-toolbar">
-          <button data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
-          <button data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
-          <button data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button>
-          <button data-cmd="insertUnorderedList" title="Bulleted List">• List</button>
-          <button data-cmd="insertOrderedList" title="Numbered List">1. List</button>
-          <button id="makeLink" title="Insert Link">Link</button>
-          <button id="attachImage" title="Insert Image (paste/upload)">Image</button>
-          <button id="insertFormula" title="Insert Formula (LaTeX subset)">Formula</button>
-          <button id="clearFormat" title="Clear Formatting">Clear</button>
-          <span class="title-edit">
-            Title:
-            <input id="titleInput" type="text" placeholder="Node title" />
-          </span>
-        </div>
-        <div id="editor" class="editor" contenteditable="true" spellcheck="true"></div>
-      </section>
-    </main>
-
-    <footer class="app-footer">
-      <span id="status">Ready</span>
-    </footer>
-
-    <input id="fileInput" type="file" accept="application/json" style="display:none" />
-    <input id="imageInput" type="file" accept="image/*" multiple style="display:none" />
-
-    <script src="app.js"></script>
+    <h1>Landing Page</h1>
+    <nav>
+      <a href="/TreePad/index.thml">outliner</a>
+      <a href="/Spectrum analyser/index.thml">spectrum analyser</a>
+    </nav>
   </body>
-  </html>
+  
+</html>
