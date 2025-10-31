@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Outline Noter — LaTeX Subset Reference</title>
+    <style>
+      :root { --text:#1e1e24; --muted:#666b7a; --accent:#3a72ff; --border:#e1e4ea; }
+      body{margin:0;font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);background:#fff}
+      header{padding:16px 20px;border-bottom:1px solid var(--border)}
+      main{max-width:920px;margin:0 auto;padding:20px}
+      h1{margin:0;font-size:20px}
+      h2{margin-top:28px;border-bottom:1px solid var(--border);padding-bottom:6px}
+      .example{border:1px solid var(--border);border-radius:8px;margin:12px 0}
+      .example .row{display:flex;gap:0;border-top:1px solid var(--border)}
+      .example .row:first-child{border-top:none}
+      .cell{flex:1;padding:10px 12px}
+      .label{font-weight:600;color:var(--muted);font-size:12px;margin-bottom:6px}
+      code, pre{background:#f6f8ff;border:1px solid #e5e9ff;border-radius:6px;padding:2px 6px}
+      pre{padding:10px;overflow:auto}
+      .result{min-height:28px;padding:10px 12px}
+      .note{color:var(--muted);font-size:13px}
+      .playground{border:1px dashed var(--border);border-radius:8px;padding:12px;margin-top:16px}
+      textarea{width:100%;min-height:80px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+      .preview{border:1px solid var(--border);border-radius:6px;padding:10px;margin-top:8px;min-height:38px}
+
+      /* Formula styles (match app) */
+      .formula{display:inline-block;vertical-align:middle;padding:1px 2px}
+      .formula.block{display:block;margin:8px 0}
+      .mfrac{display:inline-flex;flex-direction:column;align-items:center;line-height:1.1}
+      .mfrac .num{border-bottom:1px solid currentColor;padding:0 2px}
+      .mfrac .den{padding:0 2px}
+      .msqrt{display:inline-flex;align-items:flex-start;gap:2px}
+      .msqrt .radicand{border-top:1px solid currentColor;padding-top:1px}
+      .preview .formula{padding:2px}
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>LaTeX Subset Reference (Offline, used by Outline Noter)</h1>
+      <div class="note">This page documents the minimal LaTeX subset supported by the offline renderer in your TreePad Web editor.</div>
+    </header>
+    <main>
+      <h2>Delimiters</h2>
+      <div class="ref-table">
+        <div class="cell code"><div class="label">Syntax</div><pre>$a^2 + b^2 = c^2$</pre></div>
+        <div class="cell render" data-tex="$a^2 + b^2 = c^2$"><div class="label">Output</div></div>
+        <div class="cell code"><pre>$$\\frac{a}{b} = \\sqrt{c}$$</pre></div>
+        <div class="cell render" data-tex="$$\\frac{a}{b} = \\sqrt{c}$$"></div>
+      </div>
+
+      <h2>Superscripts and Subscripts</h2>
+      <div class="ref-table">
+        <div class="cell code"><pre>$x^2$</pre></div>
+        <div class="cell render" data-tex="$x^2$"></div>
+        <div class="cell code"><pre>$x^{10}$</pre></div>
+        <div class="cell render" data-tex="$x^{10}$"></div>
+        <div class="cell code"><pre>$x_i$</pre></div>
+        <div class="cell render" data-tex="$x_i$"></div>
+        <div class="cell code"><pre>$x_{long}$</pre></div>
+        <div class="cell render" data-tex="$x_{long}$"></div>
+        <div class="cell code"><pre>$x_i^{2}$</pre></div>
+        <div class="cell render" data-tex="$x_i^{2}$"></div>
+        <div class="cell code"><pre>$e^{i\\pi}+1=0$</pre></div>
+        <div class="cell render" data-tex="$e^{i\\pi}+1=0$"></div>
+      </div>
+
+      <h2>Fractions</h2>
+      <div class="ref-table">
+        <div class="cell code"><pre>$\\frac{1}{2}$</pre></div>
+        <div class="cell render" data-tex="$\\frac{1}{2}$"></div>
+        <div class="cell code"><pre>$\\frac{a+b}{c-d}$</pre></div>
+        <div class="cell render" data-tex="$\\frac{a+b}{c-d}$"></div>
+        <div class="cell code"><pre>$\\frac{1}{\\frac{a}{b}}$</pre></div>
+        <div class="cell render" data-tex="$\\frac{1}{\\frac{a}{b}}$"></div>
+      </div>
+
+      <h2>Square Root</h2>
+      <div class="ref-table">
+        <div class="cell code"><pre>$\\sqrt{2}$</pre></div>
+        <div class="cell render" data-tex="$\\sqrt{2}$"></div>
+        <div class="cell code"><pre>$\\sqrt{a+b}$</pre></div>
+        <div class="cell render" data-tex="$\\sqrt{a+b}$"></div>
+      </div>
+
+      <h2>Greek Letters</h2>
+      <div class="ref-table">
+        <div class="cell code"><pre>$\\alpha,\\beta,\\gamma,\\delta,\\epsilon,\\zeta,\\eta,\\theta,\\iota,\\kappa,\\lambda,\\mu,\\nu,\\xi,\\pi,\\rho,\\sigma,\\tau,\\upsilon,\\phi,\\chi,\\psi,\\omega$</pre></div>
+        <div class="cell render" data-tex="$\\alpha,\\beta,\\gamma,\\delta,\\epsilon,\\zeta,\\eta,\\theta,\\iota,\\kappa,\\lambda,\\mu,\\nu,\\xi,\\pi,\\rho,\\sigma,\\tau,\\upsilon,\\phi,\\chi,\\psi,\\omega$"></div>
+        <div class="cell code"><pre>$\\Gamma,\\Delta,\\Theta,\\Lambda,\\Xi,\\Pi,\\Sigma,\\Upsilon,\\Phi,\\Psi,\\Omega$</pre></div>
+        <div class="cell render" data-tex="$\\Gamma,\\Delta,\\Theta,\\Lambda,\\Xi,\\Pi,\\Sigma,\\Upsilon,\\Phi,\\Psi,\\Omega$"></div>
+      </div>
+
+      <h2>Arrows & Equilibrium</h2>
+      <div class="ref-table">
+        <div class="cell code"><pre>$A -&gt; B$</pre></div>
+        <div class="cell render" data-tex="$A -&gt; B$"></div>
+        <div class="cell code"><pre>$A \rightarrow B$</pre></div>
+        <div class="cell render" data-tex="$A \\rightarrow B$"></div>
+        <div class="cell code"><pre>$A &lt;- B$</pre></div>
+        <div class="cell render" data-tex="$A &lt;- B$"></div>
+        <div class="cell code"><pre>$A \leftarrow B$</pre></div>
+        <div class="cell render" data-tex="$A \\leftarrow B$"></div>
+        <div class="cell code"><pre>$A &lt;-&gt; B$</pre></div>
+        <div class="cell render" data-tex="$A &lt;-&gt; B$"></div>
+        <div class="cell code"><pre>$A \leftrightarrow B$</pre></div>
+        <div class="cell render" data-tex="$A \\leftrightarrow B$"></div>
+        <div class="cell code"><pre>$A &lt;=&gt; B$</pre></div>
+        <div class="cell render" data-tex="$A &lt;=&gt; B$"></div>
+        <div class="cell code"><pre>$A \rightleftharpoons B$</pre></div>
+        <div class="cell render" data-tex="$A \\rightleftharpoons B$"></div>
+      </div>
+
+      <h2>Chemistry: Ions, Charges, States</h2>
+      <div class="ref-table">
+        <div class="cell code"><pre>$Na^+$</pre></div>
+        <div class="cell render" data-tex="$Na^+$"></div>
+        <div class="cell code"><pre>$Cl^-$</pre></div>
+        <div class="cell render" data-tex="$Cl^-$"></div>
+        <div class="cell code"><pre>$SO_4^{2-}$</pre></div>
+        <div class="cell render" data-tex="$SO_4^{2-}$"></div>
+        <div class="cell code"><pre>$NH_4^+$</pre></div>
+        <div class="cell render" data-tex="$NH_4^+$"></div>
+        <div class="cell code"><pre>$SO_4^{2-}_{(aq)}$</pre></div>
+        <div class="cell render" data-tex="$SO_4^{2-}_{(aq)}$"></div>
+      </div>
+
+      <h2>Mixed Example</h2>
+      <div class="ref-table">
+        <div class="cell code"><pre>$$\\frac{\\alpha^2+\\beta}{\\sqrt{\\gamma}} + SO_4^{2-}$$</pre></div>
+        <div class="cell render" data-tex="$$\\frac{\\alpha^2+\\beta}{\\sqrt{\\gamma}} + SO_4^{2-}$$"></div>
+      </div>
+
+      <div class="playground">
+        <div class="label">Playground</div>
+        <div class="note">Type LaTeX (use $...$ for inline or $$...$$ for block) and see the rendered output below.</div>
+        <textarea id="src">$\frac{a^2+b^2}{\sqrt{c}}$</textarea>
+        <div id="out" class="preview"></div>
+      </div>
+
+      <h2>Limitations</h2>
+      <ul>
+        <li>Implemented: superscripts/subscripts (^, _ with optional braces), \frac{...}{...}, \sqrt{...}, and common Greek letters.</li>
+        <li>Shallow nesting only (a few levels). Deeply nested expressions may not fully render.</li>
+        <li>Not implemented: matrices, sums/integrals/limits, alignment, spacing commands, fonts, advanced macros.</li>
+        <li>Renderer is offline and self‑contained; no external libraries are used.</li>
+      </ul>
+    </main>
+
+    <script>
+      // Minimal offline LaTeX subset renderer (matches the app implementation)
+      function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]))}
+      function renderLatexSubset(src){
+        const s = String(src);
+        function greek(str){
+          const map={alpha:'α',beta:'β',gamma:'γ',delta:'δ',epsilon:'ε',zeta:'ζ',eta:'η',theta:'θ',iota:'ι',kappa:'κ',lambda:'λ',mu:'μ',nu:'ν',xi:'ξ',pi:'π',rho:'ρ',sigma:'σ',tau:'τ',upsilon:'υ',phi:'φ',chi:'χ',psi:'ψ',omega:'ω',Gamma:'Γ',Delta:'Δ',Theta:'Θ',Lambda:'Λ',Xi:'Ξ',Pi:'Π',Sigma:'Σ',Upsilon:'Υ',Phi:'Φ',Psi:'Ψ',Omega:'Ω'};
+          return str.replace(/\\([A-Za-z]+)/g,(m,n)=>map[n]||m);
+        }
+        function latexArrows(str){
+          return str
+            .replace(/\\(to|rightarrow)\b/g,'→')
+            .replace(/\\leftarrow\b/g,'←')
+            .replace(/\\leftrightarrow\b/g,'↔')
+            .replace(/\\Rightarrow\b/g,'⇒')
+            .replace(/\\Leftarrow\b/g,'⇐')
+            .replace(/\\Leftrightarrow\b/g,'⇔')
+            .replace(/\\longrightarrow\b/g,'→')
+            .replace(/\\Longrightarrow\b/g,'⇒')
+            .replace(/\\longleftarrow\b/g,'←')
+            .replace(/\\Longleftarrow\b/g,'⇐')
+            .replace(/\\(rightleftharpoons|leftrightharpoons)\b/g,'⇌');
+        }
+        function textArrows(str){
+          return str
+            .replace(/&lt;=&gt;/g,'⇌')
+            .replace(/&lt;-&gt;/g,'↔')
+            .replace(/-&gt;/g,'→')
+            .replace(/&lt;-/g,'←');
+        }
+        function fracOnce(str){return str.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g,(_,a,b)=>`<span class="mfrac"><span class="num">${renderLatexSubset(a)}</span><span class="den">${renderLatexSubset(b)}</span></span>`)}
+        function sqrtOnce(str){return str.replace(/\\sqrt\s*\{([^{}]+)\}/g,(_,a)=>`<span class="msqrt">√<span class="radicand">${renderLatexSubset(a)}</span></span>`)}
+        function superSub(str){
+          str=str.replace(/\^\{([^{}]+)\}/g,(_,a)=>`<sup>${renderLatexSubset(a)}</sup>`);
+          str=str.replace(/_\{([^{}]+)\}/g,(_,a)=>`<sub>${renderLatexSubset(a)}</sub>`);
+          str=str.replace(/\^([A-Za-z0-9])/g,(_,a)=>`<sup>${escapeHtml(a)}</sup>`);
+          str=str.replace(/_([A-Za-z0-9])/g,(_,a)=>`<sub>${escapeHtml(a)}</sub>`);
+          return str;
+        }
+        let out = escapeHtml(s);
+        out = greek(out);
+        out = latexArrows(out);
+        out = textArrows(out);
+        for(let i=0;i<3;i++){ out = fracOnce(out); out = sqrtOnce(out); }
+        out = superSub(out);
+        return out;
+      }
+
+      function renderCells(){
+        document.querySelectorAll('.cell.render[data-tex]').forEach(cell => {
+          const tex = cell.getAttribute('data-tex')||'';
+          const isBlock = tex.startsWith('$$') && tex.endsWith('$$');
+          const inner = isBlock ? tex.slice(2,-2) : (tex.startsWith('$') && tex.endsWith('$') ? tex.slice(1,-1) : tex);
+          const tag = isBlock ? 'div' : 'span';
+          const wrap = document.createElement(tag);
+          wrap.className = 'formula' + (isBlock ? ' block' : '');
+          wrap.innerHTML = renderLatexSubset(inner);
+          cell.innerHTML = '<div class="label">Output</div>';
+          cell.appendChild(wrap);
+        });
+      }
+      renderCells();
+
+      // Playground
+      const ta = document.getElementById('src');
+      const out = document.getElementById('out');
+      function update(){
+        const tex = ta.value || '';
+        const isBlock = tex.startsWith('$$') && tex.endsWith('$$');
+        const inner = isBlock ? tex.slice(2,-2) : (tex.startsWith('$') && tex.endsWith('$') ? tex.slice(1,-1) : tex);
+        const tag = isBlock ? 'div' : 'span';
+        const wrap = document.createElement(tag);
+        wrap.className = 'formula' + (isBlock ? ' block' : '');
+        wrap.innerHTML = renderLatexSubset(inner);
+        out.innerHTML = '';
+        out.appendChild(wrap);
+      }
+      ta.addEventListener('input', update);
+      update();
+    </script>
+  </body>
+  </html>
