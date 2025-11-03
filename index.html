@@ -3,17 +3,50 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Landing Page</title>
+    <title>Paul Gavini — Educational Web Apps</title>
+    <meta name="description" content="Hi, I’m Paul Gavini. I build HTML/JS web apps for education.">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <h1>Landing Page</h1>
-    <nav>
-      <a href="/resources/TreePad/index.html">Outliner</a>
-      <a href="/resources/Spectrum analyser/index.html">Spectrum analyser</a>
-      <a href="/resources/webcam/index.html">WebCam Visualiser</a>
-      <a href="/resources/evolution_sandbox/index.html">Evolution Sandbox</a>
-    </nav>
+    
+
+    <main>
+      <section class="hero" id="home">
+        <h1>Welcome</h1>
+        <p class="tagline">My web apps for education.</p>
+      </section>
+
+      <section id="projects" class="projects">
+        <h2>Projects</h2>
+        <div class="grid">
+          <a class="card" href="/resources/TreePad/index.html">
+            <h3>Outliner</h3>
+            <p>Structure ideas with a simple outliner.</p>
+          </a>
+          <a class="card" href="/resources/Spectrum analyser/index.html">
+            <h3>Spectrum analyser</h3>
+            <p>Visualise sound with live audio spectra.</p>
+          </a>
+          <a class="card" href="/resources/webcam/index.html">
+            <h3>WebCam Visualiser</h3>
+            <p>Turn your webcam into a classroom visualiser.</p>
+          </a>
+          <a class="card" href="/resources/evolution_sandbox/index.html">
+            <h3>Evolution Sandbox</h3>
+            <p>Explore emergent patterns and simple rules.</p>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <small>© <span id="year"></span> Paul Gavini</small>
+    </footer>
+
+    <script>
+      const y = document.getElementById('year');
+      if (y) y.textContent = new Date().getFullYear();
+    </script>
   </body>
   
 </html>
