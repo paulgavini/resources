@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mic Spectrum Analyser — Adjustable Range (Stable)</title>
+  <style>
+    :root { --bg:#0b1220; --panel:#111a2e; --accent:#6ee7ff; --muted:#8aa0c2; --grid:#21304d; }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial; background:radial-gradient(1200px 800px at 70% -10%, #16233b, var(--bg)); color:#e6eefc; line-height:1.4}
+    header{padding:18px 20px 10px} h1{margin:0 0 6px;font-size:1.25rem;font-weight:650;letter-spacing:.2px} .sub{color:var(--muted);font-size:.95rem}
+    .wrap{max-width:1100px;margin:0 auto;padding:0 16px 24px} .panel{background:var(--panel);border:1px solid #1f2b46;border-radius:14px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:center}
+    .controls .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    button,select,input[type="range"],input[type="number"]{background:#14223b;border:1px solid #28406d;color:#e6eefc;border-radius:10px;padding:10px 12px;font-size:.95rem}
+    input[type="number"]{width:110px}
+    button{cursor:pointer;font-weight:600} button.primary{background:linear-gradient(180deg,#1b2e52,#162744);border-color:#355c97} button:disabled{opacity:.6;cursor:not-allowed}
+    label{color:var(--muted);font-size:.9rem;display:flex;gap:6px;align-items:center}
+    .kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:8px}
+    .kv div{background:#0f1930;border:1px solid #20345b;border-radius:10px;padding:10px 12px}
+    .kv .k{color:var(--muted);font-size:.8rem} .kv .v{font-weight:700;font-size:1.05rem}
+    canvas{width:100%;height:400px;display:block;background:#0b1428;border-radius:12px;border:1px solid #1f2b46}
+    .foot{margin-top:10px;color:var(--muted);font-size:.9rem}
+    .note{color:#aac4ff}
+    .status {margin:12px 0; padding:10px 12px; border-radius:10px; border:1px solid #2b3a5c; background:#0f1930; color:#cfe2ff; display:none}
+    .status.err {border-color:#734343; background:#2a1620; color:#ffd2d2}
+    .status.ok {border-color:#2d5c40; background:#0f2a1f; color:#cafad7}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Microphone Spectrum (Adjustable Range)</h1>
+    <div class="sub">Live frequency view from your mic. Drag the cursor line to read any peak — even after you press Stop. Min/Max range adjustable (step 100 Hz).</div>
+  </header>
+
+  <div class="wrap">
+    <div class="panel">
+      <div id="status" class="status"></div>
+      <div class="controls">
+        <div class="row">
+          <button id="btnStart" class="primary">Start</button>
+          <button id="btnStop" disabled>Stop</button>
+          <label> FFT size
+            <select id="fftSelect" title="FFT size (higher = finer frequency resolution, more CPU)">
+              <option value="2048">2048</option>
+              <option value="4096" selected>4096</option>
+              <option value="8192">8192</option>
+              <option value="16384">16384</option>
+            </select>
+          </label>
+          <label> Smoothing <input id="smooth" type="range" min="0" max="0.95" step="0.05" value="0.5" /></label>
+        </div>
+        <div class="row">
+          <label> dB range <input id="dbRange" type="range" min="40" max="120" step="5" value="100" /></label>
+          <label> Peak hold <input id="peakHold" type="checkbox" checked /></label>
+          <label> A‑weight (approx) <input id="aWeight" type="checkbox" /></label>
+          <label>Min Hz <input id="minHz" type="number" min="10" max="19000" step="100" value="100" /></label>
+          <label>Max Hz <input id="maxHz" type="number" min="20" max="20000" step="100" value="2000" /></label>
+          <span class="sub">Tip: Hold <b>Shift</b> while dragging to snap to nearest peak.</span>
+        </div>
+      </div>
+
+      <div class="kv">
+        <div><div class="k">Sample rate</div><div class="v" id="sr">—</div></div>
+        <div><div class="k">Cursor frequency</div><div class="v" id="cursorHz">—</div></div>
+        <div><div class="k">Level @ cursor</div><div class="v" id="cursorDb">—</div></div>
+      </div>
+
+      <div style="margin-top:12px">
+        <canvas id="plot" title="Click or drag to move the cursor line. Hold Shift to snap to nearest local peak."></canvas>
+      </div>
+
+      <div class="foot">
+        Works best over <span class="note">https://</span> (or localhost). Click <b>Start</b> to grant mic access; press <b>Stop</b> to freeze the last spectrum and continue measuring with the cursor.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ES5-only script; no trailing commas, no optional chaining
+    var UI = {
+      start: document.getElementById('btnStart'),
+      stop: document.getElementById('btnStop'),
+      fft: document.getElementById('fftSelect'),
+      smooth: document.getElementById('smooth'),
+      dbr: document.getElementById('dbRange'),
+      peakHold: document.getElementById('peakHold'),
+      aWeight: document.getElementById('aWeight'),
+      sr: document.getElementById('sr'),
+      cursorHz: document.getElementById('cursorHz'),
+      cursorDb: document.getElementById('cursorDb'),
+      canvas: document.getElementById('plot'),
+      minHz: document.getElementById('minHz'),
+      maxHz: document.getElementById('maxHz'),
+      status: document.getElementById('status')
+    };
+
+    var audioCtx = null, analyser = null, micSource = null;
+    var rafId = null;
+    var liveData = null, holdData = null, frozenData = null;
+    var isRunning = false;
+    var srCache = 48000, binsCache = 2048;
+
+    var cursorHz = 440;
+    var dragging = false;
+
+    var HARD_MIN = 10;
+    var HARD_MAX = 20000;
+
+    function getMinHz(){
+      var v = parseFloat(UI.minHz.value);
+      if (!isFinite(v)) v = 100;
+      if (v < HARD_MIN) v = HARD_MIN;
+      if (v > HARD_MAX - 10) v = HARD_MAX - 10;
+      return v;
+    }
+    function getMaxHz(){
+      var v = parseFloat(UI.maxHz.value);
+      if (!isFinite(v)) v = 2000;
+      if (v > HARD_MAX) v = HARD_MAX;
+      var mn = getMinHz();
+      if (v < mn + 10) v = mn + 10;
+      return v;
+    }
+
+    function hzToIndex(hz, sampleRate, fftBins) {
+      var nyq = sampleRate / 2;
+      var idx = Math.round(hz / nyq * (fftBins - 1));
+      if (idx < 0) idx = 0; if (idx > fftBins - 1) idx = fftBins - 1;
+      return idx;
+    }
+    function indexToHz(i, sampleRate, fftBins) { return i * (sampleRate/2) / (fftBins - 1); }
+
+    function makeCanvasCrisp(canvas) {
+      var dpr = window.devicePixelRatio || 1;
+      var cw = canvas.clientWidth, ch = canvas.clientHeight;
+      canvas.width = Math.round(cw * dpr);
+      canvas.height = Math.round(ch * dpr);
+      var ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return ctx;
+    }
+
+    function aWeightingDb(f) {
+      var f2 = f*f;
+      var ra = (12200*12200 * f2*f2) / ((f2 + 20.6*20.6) * Math.sqrt((f2 + 107.7*107.7)*(f2 + 737.9*737.9)) * (f2 + 12200*12200));
+      return 20 * Math.log10(ra) + 2.0;
+    }
+
+    function hzToX(hz, padL, plotW, minHz, maxHz) { return padL + (Math.log10(hz) - Math.log10(minHz)) / (Math.log10(maxHz) - Math.log10(minHz)) * plotW; }
+    function xToHz(x, padL, plotW, minHz, maxHz) {
+      var frac = (x - padL) / plotW;
+      var hz = Math.pow(10, (Math.log10(minHz) + frac * (Math.log10(maxHz) - Math.log10(minHz))));
+      if (hz < minHz) hz = minHz; if (hz > maxHz) hz = maxHz; return hz;
+    }
+
+    function nearestPeakHz(targetHz, sr, bins, spectrum, searchBins) {
+      if (typeof searchBins === 'undefined') searchBins = 6;
+      var centre = hzToIndex(targetHz, sr, bins);
+      var bestI = centre, best = -Infinity;
+      var i;
+      for (i = Math.max(0, centre - searchBins); i <= Math.min(bins - 1, centre + searchBins); i++) {
+        var v = spectrum[i];
+        var f = indexToHz(i, sr, bins);
+        if (UI.aWeight.checked) v += aWeightingDb(f);
+        if (v > best) { best = v; bestI = i; }
+      }
+      return indexToHz(bestI, sr, bins);
+    }
+
+    function allocArray(n, fillVal){
+      var arr = new Float32Array(n);
+      var i; for(i=0;i<n;i++) arr[i] = fillVal;
+      return arr;
+    }
+
+    function currentSpectrum() {
+      if (isRunning && analyser) {
+        analyser.getFloatFrequencyData(liveData);
+        if (UI.peakHold.checked) {
+          var i; for (i=0;i<holdData.length;i++) holdData[i] = Math.max(holdData[i], liveData[i]);
+        } else {
+          var j; for (j=0;j<holdData.length;j++) holdData[j] = -Infinity;
+        }
+        frozenData = liveData.slice(0);
+        srCache = audioCtx.sampleRate; binsCache = analyser.frequencyBinCount;
+        return [UI.peakHold.checked ? maxArrays(liveData, holdData) : liveData, audioCtx.sampleRate, analyser.frequencyBinCount];
+      }
+      var spec = frozenData || allocArray(binsCache, -160);
+      return [spec, srCache, binsCache];
+    }
+
+    function maxArrays(a, b) { var out = new Float32Array(a.length); var i; for (i=0;i<a.length;i++) out[i] = Math.max(a[i], b[i]); return out; }
+
+    function decadeTicks(minHz, maxHz){
+      var ticks = [];
+      var m = [1,2,5];
+      var startPow = Math.floor(Math.log10(minHz));
+      var endPow = Math.ceil(Math.log10(maxHz));
+      var p, k;
+      for (p = startPow; p <= endPow; p++){
+        for (k = 0; k < m.length; k++){
+          var f = m[k] * Math.pow(10, p);
+          if (f >= minHz*0.99 && f <= maxHz*1.01) ticks.push(f);
+        }
+      }
+      if (!ticks.length || ticks[0] > minHz*1.1) ticks.unshift(minHz);
+      if (ticks[ticks.length-1] < maxHz*0.9) ticks.push(maxHz);
+      return ticks;
+    }
+
+    function draw() {
+      var ctx = UI.canvas.getContext('2d');
+      var width = UI.canvas.clientWidth, height = UI.canvas.clientHeight;
+      var padL = 46, padR = 10, padT = 12, padB = 28; var plotW = width - padL - padR; var plotH = height - padT - padB;
+
+      var minHz = getMinHz();
+      var maxHz = Math.max(getMaxHz(), minHz + 10);
+
+      if (cursorHz < minHz) cursorHz = minHz; if (cursorHz > maxHz) cursorHz = maxHz;
+
+      ctx.clearRect(0,0,width,height); ctx.fillStyle = '#0b1428'; ctx.fillRect(0,0,width,height);
+
+      var bundle = currentSpectrum(); var spec = bundle[0], sr = bundle[1], bins = bundle[2];
+      var iMin = hzToIndex(minHz, sr, bins), iMax = hzToIndex(maxHz, sr, bins);
+      var dBspan = parseFloat(UI.dbr.value), dBmin = -dBspan, dBmax = 0;
+
+      // Grid
+      ctx.strokeStyle = '#21304d'; ctx.lineWidth = 1; ctx.beginPath();
+      var yTicks = [0,-20,-40,-60,-80,-100];
+      var yi; for (yi = 0; yi < yTicks.length; yi++) { var dB = yTicks[yi]; var y = padT + (1 - (dB - dBmin)/(dBmax - dBmin)) * plotH; ctx.moveTo(padL,y); ctx.lineTo(width-padR,y); }
+      var xTicks = decadeTicks(minHz, maxHz);
+      var xi; for (xi = 0; xi < xTicks.length; xi++){ var fx = xTicks[xi]; var xx = hzToX(fx, padL, plotW, minHz, maxHz); ctx.moveTo(xx,padT); ctx.lineTo(xx,height-padB); }
+      ctx.stroke();
+      ctx.fillStyle = '#8aa0c2'; ctx.font = '12px system-ui,sans-serif';
+      for (yi = 0; yi < yTicks.length; yi++){ var dB2 = yTicks[yi]; var y2 = padT + (1 - (dB2 - dBmin)/(dBmax - dBmin)) * plotH; ctx.fillText(dB2 + ' dB', 6, y2+4); }
+      for (xi = 0; xi < xTicks.length; xi++){ var fxx = xTicks[xi]; var xlab = hzToX(fxx, padL, plotW, minHz, maxHz); var label = fxx>=1000 ? ( (fxx%1000===0) ? (fxx/1000)+' kHz' : (fxx/1000).toFixed(2)+' kHz') : Math.round(fxx)+' Hz'; ctx.fillText(label, xlab-14, height-8); }
+
+      // Spectrum line
+      ctx.beginPath(); var started=false; var i;
+      for (i=iMin;i<=iMax;i++){
+        var f = indexToHz(i, sr, bins);
+        var v = spec[i]; if (UI.aWeight.checked) v += aWeightingDb(f);
+        var x = hzToX(f, padL, plotW, minHz, maxHz);
+        var y = padT + (1 - (v - dBmin)/(dBmax - dBmin)) * plotH;
+        if (!started){ ctx.moveTo(x,y); started=true; } else ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle = '#6ee7ff'; ctx.lineWidth = 2; ctx.stroke();
+
+      // Cursor line & readout
+      var cx = hzToX(cursorHz, padL, plotW, minHz, maxHz);
+      var ci = hzToIndex(cursorHz, sr, bins);
+      var cVal = spec[ci]; if (UI.aWeight.checked) cVal += aWeightingDb(cursorHz);
+      var cy = padT + (1 - (cVal - dBmin)/(dBmax - dBmin)) * plotH;
+      ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cx, padT); ctx.lineTo(cx, height - padB); ctx.stroke();
+      ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI*2); ctx.fill();
+
+      UI.cursorHz.textContent = cursorHz.toFixed(1) + ' Hz';
+      UI.cursorDb.textContent = (isFinite(cVal) ? cVal.toFixed(1) + ' dB' : '—');
+      UI.sr.textContent = sr + ' Hz';
+
+      rafId = requestAnimationFrame(draw);
+    }
+
+    function start(){
+      try{
+        showStatus('Requesting microphone…');
+        if (!(window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+          throw new Error('Insecure context. Use http://localhost or https://');
+        }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('MediaDevices API not available');
+        }
+        UI.start.disabled = true; UI.stop.disabled = false;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        var resumePromise = (audioCtx.state === 'suspended') ? audioCtx.resume() : Promise.resolve();
+        resumePromise.then(function(){
+          analyser = audioCtx.createAnalyser();
+          analyser.fftSize = parseInt(UI.fft.value,10);
+          analyser.smoothingTimeConstant = parseFloat(UI.smooth.value);
+          analyser.minDecibels = -120; analyser.maxDecibels = -30;
+          return navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false }, video:false });
+        }).then(function(stream){
+          micSource = audioCtx.createMediaStreamSource(stream);
+          micSource.connect(analyser);
+          liveData = new Float32Array(analyser.frequencyBinCount);
+          holdData = allocArray(analyser.frequencyBinCount, -Infinity);
+          isRunning = true; makeCanvasCrisp(UI.canvas); if (!rafId) draw();
+          showStatus('Microphone active', true);
+        }).catch(function(err){
+          UI.start.disabled=false; UI.stop.disabled=true;
+          var msg = (err && err.name ? err.name+': ' : '') + (err && err.message ? err.message : err);
+          console.error(err);
+          showStatus('Failed to start mic — ' + msg, false);
+          alert('Microphone access failed.\n\n' + msg + '\n\nTips: use http://localhost or https://, allow mic for this site, and ensure no other app is locking the mic.');
+        });
+      }catch(err){
+        UI.start.disabled=false; UI.stop.disabled=true;
+        showStatus('Failed to start mic — ' + err, false);
+      }
+    }
+
+    function stop(){
+      var bundle = currentSpectrum(); var spec = bundle[0], sr = bundle[1], bins = bundle[2];
+      frozenData = spec.slice(0); srCache = sr; binsCache = bins;
+      if (micSource && micSource.mediaStream) { var tr = micSource.mediaStream.getTracks(); var t; for (t=0;t<tr.length;t++) tr[t].stop(); }
+      if (audioCtx) { audioCtx.close(); }
+      analyser = null; audioCtx = null; micSource = null; liveData = null; isRunning = false; UI.start.disabled=false; UI.stop.disabled=true;
+      showStatus('Capture stopped — cursor still active for measurement.', true);
+    }
+
+    // UI wiring
+    UI.start.addEventListener('click', start);
+    UI.stop.addEventListener('click', stop);
+    UI.fft.addEventListener('change', function(){ if (analyser){ analyser.fftSize = parseInt(UI.fft.value,10); liveData = new Float32Array(analyser.frequencyBinCount); holdData = allocArray(analyser.frequencyBinCount, -Infinity);} });
+    UI.smooth.addEventListener('input', function(){ if (analyser) analyser.smoothingTimeConstant = parseFloat(UI.smooth.value); });
+    UI.peakHold.addEventListener('change', function(){ if (!UI.peakHold.checked && holdData){ var i; for(i=0;i<holdData.length;i++) holdData[i] = -Infinity; } });
+
+    function normaliseRange(){
+      var min = getMinHz(); var max = getMaxHz();
+      if (max <= min + 1) max = min + 10;
+      UI.minHz.value = Math.round(min); UI.maxHz.value = Math.round(max);
+      if (cursorHz < min) cursorHz = min; if (cursorHz > max) cursorHz = max;
+    }
+    UI.minHz.addEventListener('change', normaliseRange);
+    UI.maxHz.addEventListener('change', normaliseRange);
+    UI.minHz.addEventListener('input', normaliseRange);
+    UI.maxHz.addEventListener('input', normaliseRange);
+
+    // Cursor control — works live and after Stop
+    UI.canvas.addEventListener('mousedown', function(e){ dragging = true; moveCursor(e); });
+    UI.canvas.addEventListener('mousemove', function(e){ if (dragging) moveCursor(e); });
+    UI.canvas.addEventListener('click', function(e){ moveCursor(e); });
+    window.addEventListener('mouseup', function(){ dragging = false; });
+
+    function moveCursor(e){
+      var rect = UI.canvas.getBoundingClientRect(); var x = e.clientX - rect.left;
+      var width = UI.canvas.clientWidth; var padL=46, padR=10; var plotW = width - padL - padR;
+      var minHz = getMinHz(), maxHz = getMaxHz();
+      var hz = xToHz(x, padL, plotW, minHz, maxHz);
+      var bundle = currentSpectrum(); var spec = bundle[0], sr = bundle[1], bins = bundle[2];
+      if (e.shiftKey) hz = nearestPeakHz(hz, sr, bins, spec, 6);
+      if (hz < minHz) hz = minHz; if (hz > maxHz) hz = maxHz; cursorHz = hz;
+    }
+
+    window.addEventListener('resize', function(){ if (UI.canvas) makeCanvasCrisp(UI.canvas); });
+
+    function showStatus(text, ok){
+      if (!UI.status) return;
+      UI.status.style.display = 'block';
+      UI.status.textContent = text;
+      UI.status.className = 'status ' + (ok===true ? 'ok' : ok===false ? 'err' : '');
+    }
+
+    // First paint so you can use the cursor before starting capture
+    makeCanvasCrisp(UI.canvas); normaliseRange(); draw();
+  </script>
+</body>
+</html>
