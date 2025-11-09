@@ -330,6 +330,25 @@ function save(opts = {}) {
   }
 
   // Import/Export JSON
+  function safeFilename(name, fallback = 'outline-noter') {
+    const raw = String(name || '').trim();
+    const cleaned = raw
+      .replace(/[\\\/:*?"<>|]+/g, '_') // remove illegal filename chars
+      .replace(/\s+/g, ' ')               // collapse whitespace
+      .trim();
+    const base = cleaned || fallback;
+    return base.slice(0, 120); // keep names reasonable
+  }
+  function getDefaultJsonFilename() {
+    const title = db?.root?.title || '';
+    const base = safeFilename(title, 'outline-noter').replace(/\.json$/i, '');
+    return base + '.json';
+  }
+  function getDefaultHtmlFilename() {
+    const title = db?.root?.title || '';
+    const base = safeFilename(title, 'outline-export').replace(/\.html?$/i, '');
+    return base + '.html';
+  }
   async function exportJson() {
     // Find referenced asset IDs in content
     const ids = new Set();
@@ -355,7 +374,7 @@ function save(opts = {}) {
       } catch {}
     }
     const payload = { db, selection, assetsInline };
-    downloadText('outline-noter.json', JSON.stringify(payload, null, 2));
+    downloadText(getDefaultJsonFilename(), JSON.stringify(payload, null, 2));
     try { refreshUsage(); } catch {}
   }
   function importJsonFile(file) {
@@ -421,7 +440,7 @@ function save(opts = {}) {
     (function annotate(n){ n._exportId = `n${idx++}`; n.children?.forEach(annotate); })(expRoot);
     walkContent(expRoot);
     parts.push('</main></body></html>');
-    downloadText('outline-export.html', parts.join(''));
+    downloadText(getDefaultHtmlFilename(), parts.join(''));
   }
 
   // Utils
