@@ -11,6 +11,54 @@
   const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
 
   const STORAGE_KEY = 'treepad-web-db-v1';
+  // IndexedDB configuration
+  const IDB_NAME = 'outline-noter';
+  const IDB_VERSION = 1;
+  let idbPromise = null;
+  function openIDB() {
+    if (idbPromise) return idbPromise;
+    idbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+      req.onupgradeneeded = () => {
+        const dbx = req.result;
+        if (!dbx.objectStoreNames.contains('meta')) dbx.createObjectStore('meta', { keyPath: 'key' });
+        if (!dbx.objectStoreNames.contains('assets')) dbx.createObjectStore('assets', { keyPath: 'id' });
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return idbPromise;
+  }
+  function idbGet(store, key) {
+    return openIDB().then(dbx => new Promise((resolve, reject) => {
+      const tx = dbx.transaction(store, 'readonly');
+      const os = tx.objectStore(store);
+      const g = os.get(key);
+      g.onsuccess = () => resolve(g.result);
+      g.onerror = () => reject(g.error);
+    }));
+  }
+  function idbPut(store, value) {
+    return openIDB().then(dbx => new Promise((resolve, reject) => {
+      const tx = dbx.transaction(store, 'readwrite');
+      const os = tx.objectStore(store);
+      const p = os.put(value);
+      p.onsuccess = () => resolve();
+      p.onerror = () => reject(p.error);
+    }));
+  }
+  function idbDel(store, key) {
+    return openIDB().then(dbx => new Promise((resolve, reject) => {
+      const tx = dbx.transaction(store, 'readwrite');
+      const os = tx.objectStore(store);
+      const d = os.delete(key);
+      d.onsuccess = () => resolve();
+      d.onerror = () => reject(d.error);
+    }));
+  }
+  async function requestPersistentStorage() {
+    try { if (navigator.storage?.persist) await navigator.storage.persist(); } catch {}
+  }
 
   // Data model
   function createNode(title = 'New node') {
@@ -43,6 +91,8 @@
       toggle.className = 'toggle';
       toggle.textContent = node.children.length ? (node.collapsed ? '▸' : '▾') : '·';
       toggle.disabled = node.children.length === 0;
+      // Override toggle text with ASCII to avoid glyph issues
+      toggle.textContent = node.children.length ? (node.collapsed ? '[+]' : '[-]') : '';
       toggle.addEventListener('click', () => { node.collapsed = !node.collapsed; save(); renderTree(); });
 
       const title = document.createElement('div');
@@ -79,17 +129,22 @@
     selection = id;
     renderTree();
     updateEditor();
-    status(`Selected: ${findNodeById(id)?.node.title || ''}`);
+    // No status text needed on selection
   }
 
-  function updateEditor() {
+  let currentImageBlobUrls = [];
+  async function updateEditor() {
     const { node } = findNodeById(selection) || {};
     if (!node) return;
     $('#titleInput').value = node.title;
     const editor = $('#editor');
     const overlay = editor.querySelector('.img-resizer');
+    // Revoke previously created blob URLs
+    currentImageBlobUrls.forEach(url => { try { URL.revokeObjectURL(url); } catch {} });
+    currentImageBlobUrls = [];
     editor.innerHTML = node.content || '';
     if (overlay) editor.appendChild(overlay);
+    await resolveImagesInEditor();
   }
 
   function addChild() {
@@ -216,7 +271,11 @@
     const overlay = editor.querySelector('.img-resizer');
     let removed = false;
     if (overlay && overlay.parentNode === editor) { editor.removeChild(overlay); removed = true; }
-    f.node.content = editor.innerHTML;
+    // Sanitize editor HTML: remove transient src on asset images
+    const tmp = document.createElement('div');
+    tmp.innerHTML = editor.innerHTML;
+    tmp.querySelectorAll('img[data-asset-id]').forEach(img => img.removeAttribute('src'));
+    f.node.content = tmp.innerHTML;
     if (removed) editor.appendChild(overlay);
     save({ silent: true });
   }
@@ -230,11 +289,30 @@
   }
 
   // Persistence
-  function save(opts = {}) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ db, selection }));
-    if (!opts.silent) status('Saved');
+function save(opts = {}) {
+    (async () => {
+      try {
+        await idbPut('meta', { key: 'state', db, selection });
+        if (!opts.silent) status('Saved');
+        try { refreshUsage(); } catch {}
+      } catch (e) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ db, selection })); } catch {}
+        if (!opts.silent) status('Saved (LS fallback)');
+        try { refreshUsage(); } catch {}
+      }
+    })();
   }
-  function load() {
+  async function load() {
+    try {
+      const state = await idbGet('meta', 'state');
+      if (state?.db?.root?.id) {
+        db = state.db;
+        selection = state.selection || state.db.root.id;
+        return;
+      }
+    } catch (e) {
+      console.warn('IDB load failed; trying localStorage');
+    }
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
@@ -242,28 +320,68 @@
       if (parsed?.db?.root?.id) {
         db = parsed.db;
         selection = parsed.selection || db.root.id;
+      } else if (parsed?.root?.id) {
+        db = parsed;
+        selection = db.root.id;
       }
     } catch (e) {
-      console.warn('Failed to load saved DB', e);
+      console.warn('Failed to load legacy localStorage DB', e);
     }
   }
 
   // Import/Export JSON
-  function exportJson() {
-    const data = JSON.stringify(db, null, 2);
-    downloadText('treepad-web.json', data);
+  async function exportJson() {
+    // Find referenced asset IDs in content
+    const ids = new Set();
+    (function walk(n) {
+      if (n?.content) {
+        const d = document.createElement('div');
+        d.innerHTML = n.content;
+        d.querySelectorAll('img[data-asset-id]').forEach(img => ids.add(img.getAttribute('data-asset-id')));
+      }
+      (n.children || []).forEach(walk);
+    })(db.root);
+    const assetsInline = {};
+    for (const id of ids) {
+      try {
+        const rec = await idbGet('assets', id);
+        if (rec?.blob) {
+          assetsInline[id] = {
+            type: rec.type || rec.blob.type || 'application/octet-stream',
+            name: rec.name || '',
+            base64: await blobToBase64(rec.blob)
+          };
+        }
+      } catch {}
+    }
+    const payload = { db, selection, assetsInline };
+    downloadText('outline-noter.json', JSON.stringify(payload, null, 2));
+    try { refreshUsage(); } catch {}
   }
   function importJsonFile(file) {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const obj = JSON.parse(String(reader.result));
-        if (!obj?.root?.id) throw new Error('Invalid DB');
-        db = obj;
-        selection = db.root.id;
-        save();
-        renderTree();
-        updateEditor();
+        const parsed = JSON.parse(String(reader.result));
+        let newDb = null; let newSel = null; let assetsInline = null;
+        if (parsed?.db?.root?.id) { newDb = parsed.db; newSel = parsed.selection || parsed.db.root.id; assetsInline = parsed.assetsInline || null; }
+        else if (parsed?.root?.id) { newDb = parsed; newSel = parsed.root.id; assetsInline = parsed.assetsInline || null; }
+        else throw new Error('Invalid DB');
+        (async () => {
+          if (assetsInline && typeof assetsInline === 'object') {
+            for (const [id, meta] of Object.entries(assetsInline)) {
+              try {
+                const blob = base64ToBlob(meta.base64, meta.type || 'application/octet-stream');
+                await idbPut('assets', { id, blob, type: meta.type || blob.type, name: meta.name || '', size: blob.size, createdAt: Date.now() });
+              } catch {}
+            }
+          }
+          db = newDb; selection = newSel || newDb.root.id;
+          save();
+          renderTree();
+          await updateEditor();
+          try { refreshUsage(); } catch {}
+        })();
       } catch (e) {
         alert('Invalid JSON file');
       }
@@ -308,17 +426,49 @@
 
   // Utils
   function status(msg) { $('#status').textContent = msg; }
+  async function refreshUsage() {
+    try {
+      if (!navigator.storage || !navigator.storage.estimate) return;
+      const est = await navigator.storage.estimate();
+      const usage = est.usage || 0;
+      const quota = est.quota || 0;
+      const pct = quota ? (usage / quota) * 100 : 0;
+      const usedMB = usage / 1e6;
+      const quotaGB = quota / 1e9;
+      const el = document.getElementById('usageMeter');
+      if (el) el.textContent = quota ? `${usedMB.toFixed(1)} MB of ${quotaGB.toFixed(1)} GB (${pct.toFixed(2)}%)` : `${usedMB.toFixed(1)} MB`;
+    } catch {}
+  }
   function downloadText(filename, text) {
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = filename; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+    try { refreshUsage(); } catch {}
   }
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => {
+        const s = String(r.result || '');
+        resolve(s.split(',')[1] || '');
+      };
+      r.onerror = () => reject(r.error);
+      r.readAsDataURL(blob);
+    });
+  }
+  function base64ToBlob(b64, type = 'application/octet-stream') {
+    const bin = atob(b64);
+    const len = bin.length;
+    const arr = new Uint8Array(len);
+    for (let i = 0; i < len; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type });
+  }
 
   // Drag and drop logic for tree
   let draggingId = null;
@@ -388,7 +538,7 @@
   function bindUI() {
     $('#addChild').addEventListener('click', addChild);
     $('#addSibling').addEventListener('click', addSibling);
-    $('#renameNode').addEventListener('click', renameNode);
+    const rn = $('#renameNode'); if (rn) rn.addEventListener('click', renameNode);
     $('#deleteNode').addEventListener('click', deleteNode);
     $('#moveUp').addEventListener('click', moveUp);
     $('#moveDown').addEventListener('click', moveDown);
@@ -461,6 +611,18 @@
     $('#fileInput').addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) importJsonFile(f); e.target.value=''; });
     $('#imageInput').addEventListener('change', async (e) => { const files = Array.from(e.target.files || []); for (const f of files) await insertImageFile(f); e.target.value=''; });
 
+    // Normalize any garbled labels to safe text at runtime
+    const upBtn = $('#moveUp'); if (upBtn) upBtn.textContent = 'Up';
+    const downBtn = $('#moveDown'); if (downBtn) downBtn.textContent = 'Down';
+    const indentBtn = $('#indent'); if (indentBtn) indentBtn.textContent = 'Indent';
+    const outdentBtn = $('#outdent'); if (outdentBtn) outdentBtn.textContent = 'Outdent';
+    const ulBtn = document.querySelector('button[data-cmd="insertUnorderedList"]'); if (ulBtn) ulBtn.textContent = '* List';
+
+    // Ensure placeholder renders with ASCII-only fallback
+    const style = document.createElement('style');
+    style.textContent = ".editor:empty:before { content: 'Start typing your note...'; color: var(--muted); }";
+    document.head.appendChild(style);
+
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
       const inEditor = document.activeElement === $('#editor') || $('#editor').contains(document.activeElement);
@@ -469,7 +631,7 @@
       if (!inEditor && !inTitle && !inSearch) {
         if (e.key === 'Enter' && !e.ctrlKey) { e.preventDefault(); addSibling(); }
         if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); addChild(); }
-        if (e.key === 'F2') { e.preventDefault(); renameNode(); }
+        if (e.key === 'F2') { e.preventDefault(); const t=$('#titleInput'); if (t) { t.focus(); try{ t.select(); }catch{} } }
         if (e.key === 'Delete') { e.preventDefault(); deleteNode(); }
         if (e.key === 'ArrowUp' && e.altKey) { e.preventDefault(); moveUp(); }
         if (e.key === 'ArrowDown' && e.altKey) { e.preventDefault(); moveDown(); }
@@ -499,8 +661,8 @@
     });
   }
 
-  function init() {
-    load();
+  async function init() {
+    await load();
     if (!selection) selection = db.root.id;
     renderTree();
     selectNode(selection);
@@ -508,23 +670,48 @@
     try { document.execCommand('enableObjectResizing', false, true); } catch (e) {}
     try { document.execCommand('enableInlineTableEditing', false, true); } catch (e) {}
     setupImageResizerFallback();
+    requestPersistentStorage();
     status('Loaded');
+    refreshUsage();
+    setInterval(refreshUsage, 60000);
   }
 
   document.addEventListener('DOMContentLoaded', init);
 
   // Insert image file at caret
   function insertImageFile(file) {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = String(reader.result);
-        document.execCommand('insertHTML', false, `<img src="${dataUrl}" alt="${escapeHtml(file.name)}">`);
-        onEditorInput();
-        resolve();
-      };
-      reader.readAsDataURL(file);
+    return new Promise((resolve, reject) => {
+      (async () => {
+        try {
+          const id = crypto.randomUUID();
+          await idbPut('assets', { id, blob: file, type: file.type, name: file.name, size: file.size, createdAt: Date.now() });
+          const url = URL.createObjectURL(file);
+          const img = document.createElement('img');
+          img.setAttribute('data-asset-id', id);
+          img.setAttribute('alt', escapeHtml(file.name));
+          img.src = url;
+          insertNodeAtCaret(img);
+          onEditorInput();
+          resolve();
+        } catch (e) { reject(e); }
+      })();
     });
+  }
+
+  async function resolveImagesInEditor() {
+    const editor = $('#editor');
+    const imgs = editor.querySelectorAll('img[data-asset-id]');
+    for (const img of imgs) {
+      const id = img.getAttribute('data-asset-id');
+      try {
+        const rec = await idbGet('assets', id);
+        if (rec?.blob) {
+          const url = URL.createObjectURL(rec.blob);
+          img.src = url;
+          currentImageBlobUrls.push(url);
+        }
+      } catch {}
+    }
   }
 
   // Insert LaTeX formula (subset) as non-editable element preserving source in data-tex
@@ -605,13 +792,46 @@
       str = str.replace(/_([A-Za-z0-9])/g, (_,a)=>`<sub>${esc(a)}</sub>`);
       return str;
     }
+    // Safer mappings using HTML entities via wrapper helpers below
     let out = esc(s);
-    out = greek(out);
-    out = latexArrows(out);
-    out = textArrows(out);
-    for (let i=0;i<3;i++){ out = fracOnce(out); out = sqrtOnce(out); }
+    out = greekSafe(out);
+    out = latexArrowsSafe(out);
+    out = textArrowsSafe(out);
+    for (let i=0;i<3;i++){ out = fracOnce(out); out = sqrtOnceSafe(out); }
     out = superSub(out);
     return out;
+  }
+
+  // Safe helpers (do not depend on platform encoding)
+  function greekSafe(str){
+    return str.replace(/\\([A-Za-z]+)/g, (m,n)=>({
+      alpha:'&alpha;', beta:'&beta;', gamma:'&gamma;', delta:'&delta;', epsilon:'&epsilon;', zeta:'&zeta;', eta:'&eta;', theta:'&theta;', iota:'&iota;', kappa:'&kappa;', lambda:'&lambda;', mu:'&mu;', nu:'&nu;', xi:'&xi;', pi:'&pi;', rho:'&rho;', sigma:'&sigma;', tau:'&tau;', upsilon:'&upsilon;', phi:'&phi;', chi:'&chi;', psi:'&psi;', omega:'&omega;',
+      Gamma:'&Gamma;', Delta:'&Delta;', Theta:'&Theta;', Lambda:'&Lambda;', Xi:'&Xi;', Pi:'&Pi;', Sigma:'&Sigma;', Upsilon:'&Upsilon;', Phi:'&Phi;', Psi:'&Psi;', Omega:'&Omega;'
+    }[n]||m));
+  }
+  function latexArrowsSafe(str){
+    return str
+      .replace(/\\(to|rightarrow)\b/g, '&rarr;')
+      .replace(/\\leftarrow\b/g, '&larr;')
+      .replace(/\\leftrightarrow\b/g, '&harr;')
+      .replace(/\\Rightarrow\b/g, '&rArr;')
+      .replace(/\\Leftarrow\b/g, '&lArr;')
+      .replace(/\\Leftrightarrow\b/g, '&hArr;')
+      .replace(/\\longrightarrow\b/g, '&rarr;')
+      .replace(/\\Longrightarrow\b/g, '&rArr;')
+      .replace(/\\longleftarrow\b/g, '&larr;')
+      .replace(/\\Longleftarrow\b/g, '&lArr;')
+      .replace(/\\(rightleftharpoons|leftrightharpoons)\b/g, '&#8652;');
+  }
+  function textArrowsSafe(str){
+    return str
+      .replace(/&lt;=&gt;/g, '&#8652;')
+      .replace(/&lt;-&gt;/g, '&harr;')
+      .replace(/-&gt;/g, '&rarr;')
+      .replace(/&lt;-/g, '&larr;');
+  }
+  function sqrtOnceSafe(str){
+    return str.replace(/\\sqrt\s*\{([^{}]+)\}/g, (_,a)=>`<span class="msqrt">&#8730;<span class="radicand">${renderLatexSubset(a)}</span></span>`);
   }
 
   // Fallback image resizer (for browsers without native handles in contenteditable)

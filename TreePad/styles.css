@@ -46,6 +46,9 @@ body {
 }
 .sidebar-top { padding: 8px; border-bottom: 1px solid var(--border); }
 #search { width: 100%; padding: 6px 8px; margin-bottom: 8px; }
+.title-box { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.title-box label { color: var(--muted); font-size: 12px; }
+.title-box input { flex: 1; padding: 6px 8px; }
 .tree-actions button, .tree-move button { margin: 2px 2px; }
 
 .tree {
@@ -119,6 +122,11 @@ body {
   border-top: 1px solid var(--border);
   color: var(--muted);
 }
+
+.usage { margin-left: 12px; font-size: 12px; }
+
+/* Override placeholder text with ASCII-safe content */
+.editor:empty:before { content: 'Start typing your note...'; color: var(--muted); }
 
 button {
   background: #f2f4ff;

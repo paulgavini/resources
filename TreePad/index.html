@@ -11,8 +11,8 @@
       <div class="brand">Outline Noter</div>
       <div class="header-actions">
         <button id="newRoot" title="New Database">New</button>
-        <button id="importJson" title="Import JSON">Import</button>
-        <button id="exportJson" title="Export JSON">Export</button>
+        <button id="importJson" title="Load JSON">Load</button>
+        <button id="exportJson" title="Save JSON">Save</button>
         <button id="exportHtml" title="Export Static HTML">Export HTML</button>
         <a class="credits" href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener">By Paul Gavini using CODEX</a>
       </div>
@@ -22,10 +22,13 @@
       <aside class="sidebar">
         <div class="sidebar-top">
           <input id="search" type="search" placeholder="Search..." />
+          <div class="title-box">
+            <label for="titleInput">Title:</label>
+            <input id="titleInput" type="text" placeholder="Node title" />
+          </div>
           <div class="tree-actions">
             <button id="addChild" title="Add Child (Ctrl+Enter)">+ Child</button>
             <button id="addSibling" title="Add Sibling (Enter)">+ Sibling</button>
-            <button id="renameNode" title="Rename (F2)">Rename</button>
             <button id="deleteNode" title="Delete (Del)">Delete</button>
           </div>
           <div class="tree-move">
@@ -49,10 +52,6 @@
           <button id="attachImage" title="Insert Image (paste/upload)">Image</button>
           <button id="insertFormula" title="Insert Formula (LaTeX subset)">Formula</button>
           <button id="clearFormat" title="Clear Formatting">Clear</button>
-          <span class="title-edit">
-            Title:
-            <input id="titleInput" type="text" placeholder="Node title" />
-          </span>
         </div>
         <div id="editor" class="editor" contenteditable="true" spellcheck="true"></div>
       </section>
@@ -60,6 +59,7 @@
 
     <footer class="app-footer">
       <span id="status">Ready</span>
+      <span id="usageMeter" class="usage"></span>
     </footer>
 
     <input id="fileInput" type="file" accept="application/json" style="display:none" />

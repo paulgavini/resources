@@ -187,10 +187,10 @@
           return str;
         }
         let out = escapeHtml(s);
-        out = greek(out);
-        out = latexArrows(out);
-        out = textArrows(out);
-        for(let i=0;i<3;i++){ out = fracOnce(out); out = sqrtOnce(out); }
+        out = greekSafe(out);
+        out = latexArrowsSafe(out);
+        out = textArrowsSafe(out);
+        for(let i=0;i<3;i++){ out = fracOnce(out); out = sqrtOnceSafe(out); }
         out = superSub(out);
         return out;
       }
@@ -213,6 +213,37 @@
       // Playground
       const ta = document.getElementById('src');
       const out = document.getElementById('out');
+      // Safe helpers mirroring app.js entity mappings
+      function greekSafe(str){
+        return str.replace(/\\([A-Za-z]+)/g,(m,n)=>({
+          alpha:'&alpha;',beta:'&beta;',gamma:'&gamma;',delta:'&delta;',epsilon:'&epsilon;',zeta:'&zeta;',eta:'&eta;',theta:'&theta;',iota:'&iota;',kappa:'&kappa;',lambda:'&lambda;',mu:'&mu;',nu:'&nu;',xi:'&xi;',pi:'&pi;',rho:'&rho;',sigma:'&sigma;',tau:'&tau;',upsilon:'&upsilon;',phi:'&phi;',chi:'&chi;',psi:'&psi;',omega:'&omega;',
+          Gamma:'&Gamma;',Delta:'&Delta;',Theta:'&Theta;',Lambda:'&Lambda;',Xi:'&Xi;',Pi:'&Pi;',Sigma:'&Sigma;',Upsilon:'&Upsilon;',Phi:'&Phi;',Psi:'&Psi;',Omega:'&Omega;'
+        }[n]||m));
+      }
+      function latexArrowsSafe(str){
+        return str
+          .replace(/\\(to|rightarrow)\b/g,'&rarr;')
+          .replace(/\\leftarrow\b/g,'&larr;')
+          .replace(/\\leftrightarrow\b/g,'&harr;')
+          .replace(/\\Rightarrow\b/g,'&rArr;')
+          .replace(/\\Leftarrow\b/g,'&lArr;')
+          .replace(/\\Leftrightarrow\b/g,'&hArr;')
+          .replace(/\\longrightarrow\b/g,'&rarr;')
+          .replace(/\\Longrightarrow\b/g,'&rArr;')
+          .replace(/\\longleftarrow\b/g,'&lArr;')
+          .replace(/\\Longleftarrow\b/g,'&lArr;')
+          .replace(/\\(rightleftharpoons|leftrightharpoons)\b/g,'&#8652;');
+      }
+      function textArrowsSafe(str){
+        return str
+          .replace(/&lt;=&gt;/g,'&#8652;')
+          .replace(/&lt;-&gt;/g,'&harr;')
+          .replace(/-&gt;/g,'&rarr;')
+          .replace(/&lt;-/g,'&larr;');
+      }
+      function sqrtOnceSafe(str){
+        return str.replace(/\\sqrt\s*\{([^{}]+)\}/g,(_,a)=>`<span class="msqrt">&#8730;<span class="radicand">${renderLatexSubset(a)}</span></span>`)
+      }
       function update(){
         const tex = ta.value || '';
         const isBlock = tex.startsWith('$$') && tex.endsWith('$$');
