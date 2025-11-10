@@ -409,7 +409,50 @@ function save(opts = {}) {
   }
 
   // Export static HTML with a sidebar TOC and content
-  function exportHtml() {
+  async function exportHtml() {
+    // Collect all image asset IDs referenced in content
+    const assetIds = new Set();
+    (function collectIds(n) {
+      if (n?.content) {
+        const d = document.createElement('div');
+        d.innerHTML = n.content;
+        d.querySelectorAll('img[data-asset-id]').forEach(img => {
+          const id = img.getAttribute('data-asset-id');
+          if (id) assetIds.add(id);
+        });
+      }
+      (n.children || []).forEach(collectIds);
+    })(db.root);
+
+    // Build a map id -> data URL for assets
+    const idToDataUrl = {};
+    for (const id of assetIds) {
+      try {
+        const rec = await idbGet('assets', id);
+        if (rec?.blob) {
+          const type = rec.type || rec.blob.type || 'application/octet-stream';
+          const b64 = await blobToBase64(rec.blob);
+          idToDataUrl[id] = `data:${type};base64,${b64}`;
+        }
+      } catch {}
+    }
+
+    // Helper to inline any referenced assets into provided HTML
+    function inlineAssets(html) {
+      if (!html) return '';
+      const d = document.createElement('div');
+      d.innerHTML = html;
+      d.querySelectorAll('img[data-asset-id]').forEach(img => {
+        const id = img.getAttribute('data-asset-id');
+        const dataUrl = idToDataUrl[id];
+        if (dataUrl) {
+          img.setAttribute('src', dataUrl);
+          img.removeAttribute('data-asset-id');
+        }
+      });
+      return d.innerHTML;
+    }
+
     const parts = [];
     parts.push('<!doctype html><html><head><meta charset="utf-8"><title>TreePad Export</title>');
     parts.push('<style>body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:0;display:flex;height:100vh}aside{width:300px;border-right:1px solid #ddd;overflow:auto;padding:10px}main{flex:1;overflow:auto;padding:16px}ul{list-style:none;padding-left:16px}a{text-decoration:none;color:#0b5fff}a:hover{text-decoration:underline}h1{font-size:18px}</style>');
@@ -431,7 +474,8 @@ function save(opts = {}) {
     parts.push('</ul></aside><main>');
     function walkContent(node) {
       parts.push(`<h2 id="${node._exportId}">${escapeHtml(node.title || '(untitled)')}</h2>`);
-      parts.push(`<div>${node.content || ''}</div>`);
+      const inlined = inlineAssets(node.content || '');
+      parts.push(`<div>${inlined}</div>`);
       node.children?.forEach(walkContent);
     }
     const expRoot = clone(db.root);
