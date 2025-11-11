@@ -9,6 +9,7 @@
 (function () {
   const $ = (sel, ctx = document) => ctx.querySelector(sel);
   const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
+  let sun = null; // SunEditor instance
 
   const STORAGE_KEY = 'treepad-web-db-v1';
   // IndexedDB configuration
@@ -137,13 +138,17 @@
     const { node } = findNodeById(selection) || {};
     if (!node) return;
     $('#titleInput').value = node.title;
-    const editor = $('#editor');
-    const overlay = editor.querySelector('.img-resizer');
     // Revoke previously created blob URLs
     currentImageBlobUrls.forEach(url => { try { URL.revokeObjectURL(url); } catch {} });
     currentImageBlobUrls = [];
-    editor.innerHTML = node.content || '';
-    if (overlay) editor.appendChild(overlay);
+    if (sun && sun.setContents) {
+      sun.setContents(node.content || '');
+      // After SunEditor renders, re-apply data-asset-id attributes if sanitizer stripped them
+      try { annotateImagesFromSource(node.content); } catch {}
+    } else {
+      const editor = $('#editor');
+      if (editor) editor.innerHTML = node.content || '';
+    }
     await resolveImagesInEditor();
   }
 
@@ -260,23 +265,25 @@
 
   // Editor commands
   function exec(cmd, value = null) {
-    document.execCommand(cmd, false, value);
+    try { document.execCommand(cmd, false, value); } catch {}
     onEditorInput();
   }
 
   function onEditorInput() {
     const f = findNodeById(selection);
     if (!f) return;
-    const editor = $('#editor');
-    const overlay = editor.querySelector('.img-resizer');
-    let removed = false;
-    if (overlay && overlay.parentNode === editor) { editor.removeChild(overlay); removed = true; }
     // Sanitize editor HTML: remove transient src on asset images
     const tmp = document.createElement('div');
-    tmp.innerHTML = editor.innerHTML;
+    let html = '';
+    if (sun && sun.getContents) {
+      html = sun.getContents();
+    } else {
+      const editor = $('#editor');
+      html = editor ? editor.innerHTML : '';
+    }
+    tmp.innerHTML = html;
     tmp.querySelectorAll('img[data-asset-id]').forEach(img => img.removeAttribute('src'));
     f.node.content = tmp.innerHTML;
-    if (removed) editor.appendChild(overlay);
     save({ silent: true });
   }
 
@@ -453,9 +460,17 @@ function save(opts = {}) {
       return d.innerHTML;
     }
 
+    // Try to load KaTeX CSS for offline export of math rendered by SunEditor
+    let katexCss = '';
+    try {
+      const res = await fetch('se/katex/katex.min.css');
+      katexCss = await res.text();
+    } catch {}
+
     const parts = [];
     parts.push('<!doctype html><html><head><meta charset="utf-8"><title>TreePad Export</title>');
     parts.push('<style>body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:0;display:flex;height:100vh}aside{width:300px;border-right:1px solid #ddd;overflow:auto;padding:10px}main{flex:1;overflow:auto;padding:16px}ul{list-style:none;padding-left:16px}a{text-decoration:none;color:#0b5fff}a:hover{text-decoration:underline}h1{font-size:18px}</style>');
+    if (katexCss) parts.push('<style>' + katexCss.replace(/<\//g,'<\/') + '</style>');
     parts.push('</head><body>');
     parts.push('<aside><h1>Contents</h1>');
     parts.push('<ul>');
@@ -609,50 +624,8 @@ function save(opts = {}) {
     $('#outdent').addEventListener('click', outdent);
 
     $('#titleInput').addEventListener('input', onTitleInput);
-    const editorEl = $('#editor');
-    $('#editor').addEventListener('input', onEditorInput);
-    // Paste images
-    editorEl.addEventListener('paste', async (e) => {
-      const items = e.clipboardData?.items || [];
-      const imgs = Array.from(items).filter(it => it.type && it.type.startsWith('image/'));
-      if (imgs.length) {
-        e.preventDefault();
-        for (const it of imgs) {
-          const f = it.getAsFile(); if (f) await insertImageFile(f);
-        }
-      }
-    });
-    // Drag/drop images
-    editorEl.addEventListener('dragover', (e) => {
-      const hasImage = Array.from(e.dataTransfer?.items || []).some(it => it.kind === 'file' && it.type.startsWith('image/'));
-      if (hasImage) { e.preventDefault(); editorEl.classList.add('dragover'); }
-    });
-    editorEl.addEventListener('dragleave', () => editorEl.classList.remove('dragover'));
-    editorEl.addEventListener('drop', async (e) => {
-      const files = Array.from(e.dataTransfer?.files || []).filter(f => f.type.startsWith('image/'));
-      if (files.length) {
-        e.preventDefault(); editorEl.classList.remove('dragover');
-        for (const f of files) await insertImageFile(f);
-      }
-    });
-    // Edit formula on double click
-    editorEl.addEventListener('dblclick', (e) => {
-      const formula = e.target.closest && e.target.closest('.formula');
-      if (formula) {
-        e.preventDefault();
-        const current = formula.getAttribute('data-tex') || '';
-        const next = prompt('Edit LaTeX (subset supported):', current);
-        if (next != null) replaceFormulaElement(formula, String(next));
-      }
-    });
-
-    $$('.editor-toolbar button[data-cmd]').forEach(btn => {
-      btn.addEventListener('click', () => exec(btn.dataset.cmd));
-    });
-    $('#makeLink').addEventListener('click', () => { const url = prompt('URL'); if (url) exec('createLink', url); });
-    $('#insertFormula').addEventListener('click', () => insertFormula());
-    $('#attachImage').addEventListener('click', () => $('#imageInput').click());
-    $('#clearFormat').addEventListener('click', () => exec('removeFormat'));
+    // Initialize SunEditor instance
+    createSunEditor();
 
     $('#search').addEventListener('input', (e) => {
       const val = e.target.value;
@@ -672,7 +645,6 @@ function save(opts = {}) {
     $('#exportHtml').addEventListener('click', exportHtml);
     $('#importJson').addEventListener('click', () => $('#fileInput').click());
     $('#fileInput').addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) importJsonFile(f); e.target.value=''; });
-    $('#imageInput').addEventListener('change', async (e) => { const files = Array.from(e.target.files || []); for (const f of files) await insertImageFile(f); e.target.value=''; });
 
     // Normalize any garbled labels to safe text at runtime
     const upBtn = $('#moveUp'); if (upBtn) upBtn.textContent = 'Up';
@@ -681,14 +653,11 @@ function save(opts = {}) {
     const outdentBtn = $('#outdent'); if (outdentBtn) outdentBtn.textContent = 'Outdent';
     const ulBtn = document.querySelector('button[data-cmd="insertUnorderedList"]'); if (ulBtn) ulBtn.textContent = '* List';
 
-    // Ensure placeholder renders with ASCII-only fallback
-    const style = document.createElement('style');
-    style.textContent = ".editor:empty:before { content: 'Start typing your note...'; color: var(--muted); }";
-    document.head.appendChild(style);
+    // Placeholder handled by SunEditor options
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-      const inEditor = document.activeElement === $('#editor') || $('#editor').contains(document.activeElement);
+      const inEditor = !!(document.activeElement && document.activeElement.closest && document.activeElement.closest('.sun-editor'));
       const inTitle = document.activeElement === $('#titleInput');
       const inSearch = document.activeElement === $('#search');
       if (!inEditor && !inTitle && !inSearch) {
@@ -728,11 +697,11 @@ function save(opts = {}) {
     await load();
     if (!selection) selection = db.root.id;
     renderTree();
-    selectNode(selection);
     bindUI();
+    selectNode(selection);
     try { document.execCommand('enableObjectResizing', false, true); } catch (e) {}
     try { document.execCommand('enableInlineTableEditing', false, true); } catch (e) {}
-    setupImageResizerFallback();
+    // setupImageResizerFallback(); // Not needed with SunEditor
     requestPersistentStorage();
     status('Loaded');
     refreshUsage();
@@ -762,8 +731,11 @@ function save(opts = {}) {
   }
 
   async function resolveImagesInEditor() {
-    const editor = $('#editor');
-    const imgs = editor.querySelectorAll('img[data-asset-id]');
+    const root = (sun && sun.context && sun.context.element && sun.context.element.wysiwyg)
+      || document.querySelector('.sun-editor .sun-editor-editable')
+      || $('#editor');
+    if (!root) return;
+    const imgs = root.querySelectorAll('img[data-asset-id]');
     for (const img of imgs) {
       const id = img.getAttribute('data-asset-id');
       try {
@@ -774,6 +746,61 @@ function save(opts = {}) {
           currentImageBlobUrls.push(url);
         }
       } catch {}
+    }
+  }
+
+  // If SunEditor sanitized away data-asset-id, reattach from the original saved HTML by order
+  function annotateImagesFromSource(savedHtml) {
+    const root = (sun && sun.context && sun.context.element && sun.context.element.wysiwyg)
+      || document.querySelector('.sun-editor .sun-editor-editable');
+    if (!root) return;
+    const srcDiv = document.createElement('div');
+    srcDiv.innerHTML = savedHtml || '';
+    const ids = Array.from(srcDiv.querySelectorAll('img[data-asset-id]')).map(img => img.getAttribute('data-asset-id')).filter(Boolean);
+    if (!ids.length) return;
+    const imgs = Array.from(root.querySelectorAll('img'));
+    let k = 0;
+    for (const img of imgs) {
+      if (img.hasAttribute('data-asset-id')) continue;
+      if (k < ids.length) {
+        img.setAttribute('data-asset-id', ids[k++]);
+      } else {
+        break;
+      }
+    }
+  }
+
+  function createSunEditor() {
+    const target = document.getElementById('editor');
+    if (!target || typeof window.SUNEDITOR === 'undefined') return;
+    sun = SUNEDITOR.create(target, {
+      height: '100%',
+      katex: window.katex,
+      placeholder: 'Start typing your note...',
+      defaultStyle: 'font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: var(--text);',
+      buttonList: [
+        ['undo', 'redo', 'print'],
+        ['bold', 'italic', 'underline', 'hiliteColor'],
+        ['align', 'list', 'formatBlock', 'horizontalRule'],
+        ['table', 'math'],
+        ['removeFormat', 'codeView']
+      ],
+      addTagsWhitelist: 'span|div|ul|ol|li|table|thead|tbody|tr|th|td|colgroup|col|caption|hr',
+      attributesWhitelist: {
+        img: 'data-asset-id|alt|src|style|width|height',
+        a: 'href|target|rel|title',
+        table: 'style|width|height|border|cellpadding|cellspacing|align',
+        td: 'style|rowspan|colspan|width|height|align',
+        th: 'style|rowspan|colspan|width|height|align',
+        span: 'style|class'
+      },
+      hooks: {
+        // Disable image insertion entirely (toolbar/paste/drag-drop)
+        imageUploadBefore: (files, info, core, uploadHandler) => false
+      }
+    });
+    if (sun) {
+      sun.onChange = () => onEditorInput();
     }
   }
 

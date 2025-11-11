@@ -139,3 +139,38 @@ A single‑page outliner with a tree on the left and a rich text editor on the r
 
 ## 2025-11-09 (Default HTML filename)
 - Export HTML now also defaults to the root outline title: the filename is derived from `db.root.title`, sanitized, with a `.html` extension. Fallback remains `outline-export.html` if the title is empty.
+
+## 2025-11-10 (HTML export inlines images)
+- Per user request, updated the static HTML exporter to embed images.
+  - `app.js`: `exportHtml()` is now async and inlines any `img[data-asset-id]` by fetching the corresponding blobs from IndexedDB, converting to base64, and setting `src="data:<mime>;base64,..."` while removing `data-asset-id`.
+  - Existing images already stored as `data:` URLs remain unchanged.
+  - JSON export/import behavior unchanged; HTML export is still standalone but now includes IDB-backed images.
+  - Change is surgical; no UI or styling changes.
+
+## 2025-11-11 (SunEditor + KaTeX)
+- Replaced the contenteditable editor with SunEditor and enabled KaTeX.
+  - index.html: included `se/suneditor.min.css`, `se/suneditor.min.js`, `se/katex/katex.min.css`, `se/katex/katex.min.js`.
+  - styles.css: made SunEditor fill the editor pane and use the app’s default font.
+  - app.js: created the SunEditor instance on `#editor` with `katex: window.katex`, wired `onChange` to persistence, preserved the data model.
+  - exportHtml(): now inlines KaTeX CSS so math renders offline in exports.
+  - Old toolbar left in markup but hidden via CSS to avoid mojibake edits.
+
+## 2025-11-11 (Image restoration in editor)
+- Fixed images not displaying in the editor when loading saved notes:
+  - Reattached missing `data-asset-id` by scanning saved HTML and annotating corresponding images in the editor when necessary.
+  - Resolved images from IDB using SunEditor’s editable root and applied object URLs for preview.
+
+## 2025-11-11 (Toolbar changes)
+- Removed Image and Link buttons (insertion disabled). Existing images/links still render.
+- Enabled lists and tables; expanded tag/attribute whitelists accordingly.
+- Added Highlight, Horizontal Rule, and Print toolbar actions.
+
+## 2025-11-11 (UX/Shortcuts)
+- Updated “in-editor” detection to SunEditor’s container so outline shortcuts remain functional.
+- Disabled legacy image resizer overlay (SunEditor handles resizing).
+
+## Current Status Snapshot (updated)
+- Editor: SunEditor with KaTeX; no link/image insertion.
+- Formatting: bold/italic/underline, align, lists, tables, highlight, horizontal rule, print, removeFormat, codeView.
+- Images: stored in IDB, previewed via blob URL in editor, inlined in export.
+- Export: KaTeX CSS is inlined for offline math rendering.

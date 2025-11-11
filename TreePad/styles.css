@@ -74,7 +74,7 @@ body {
   flex-direction: column;
 }
 .editor-toolbar {
-  display: flex;
+  display: none; /* hidden when using SunEditor */
   align-items: center;
   gap: 6px;
   padding: 8px;
@@ -90,6 +90,18 @@ body {
   overflow: auto;
   background: var(--panel);
   position: relative;
+}
+/* Make SunEditor fill the editor pane */
+#editor { height: 100%; }
+.sun-editor { height: 100%; display: flex; flex-direction: column; }
+.sun-editor .se-toolbar { flex: 0 0 auto; }
+.sun-editor .se-resizing-bar { flex: 0 0 auto; }
+.sun-editor .se-wrapper { flex: 1 1 auto; display: flex; }
+.sun-editor .se-wrapper .sun-editor-editable { flex: 1 1 auto; height: 100%; }
+/* Ensure the editing area uses the app's default font */
+.sun-editor .sun-editor-editable {
+  font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
 }
 .editor:empty:before { content: 'Start typing your note…'; color: var(--muted); }
 .editor a { color: var(--accent); }
