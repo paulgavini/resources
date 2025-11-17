@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mistral Canvas</title>
+    <link rel="stylesheet" href="canvas.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <h1>Mistral Canvas</h1>
+      </div>
+      <button id="theme-toggle" type="button" aria-pressed="false" class="ghost-button">
+        Toggle theme
+      </button>
+    </header>
+
+    <main class="app-main">
+      <section class="editor-card">
+        <textarea
+          id="canvas-editor"
+          spellcheck="false"
+          placeholder="Write freely, then highlight any passage to describe how Mistral should change it."
+        ></textarea>
+
+        <div id="selection-panel" aria-hidden="true">
+          <div class="panel-header">
+            <h2>Edit selected text</h2>
+            <button type="button" id="selection-cancel" class="ghost-button" aria-label="Dismiss prompt">
+              &times;
+            </button>
+          </div>
+          <textarea
+            id="selection-prompt"
+            rows="2"
+            spellcheck="false"
+            placeholder="Describe how to adjust the highlighted text, then press Enter."
+          ></textarea>
+          <p class="panel-hint">Press Enter to apply or Esc to dismiss.</p>
+        </div>
+      </section>
+
+      <aside class="status-card">
+        <p id="status-label">Waiting for input...</p>
+        <div class="toolbar">
+          <button id="undo-button" type="button">Undo</button>
+          <button id="copy-button" type="button">Select & Copy</button>
+          <button id="delete-button" type="button">Delete All</button>
+          <button id="save-button" type="button">Save .txt</button>
+          <button id="stop-button" type="button" disabled>Stop</button>
+          <button id="reload-button" type="button">Reset session</button>
+        </div>
+
+        <label class="system-label" for="system-prompt-input">System prompt</label>
+        <textarea id="system-prompt-input" rows="4" spellcheck="false"></textarea>
+      </aside>
+    </main>
+
+    <script src="canvas.js"></script>
+  </body>
+</html>
