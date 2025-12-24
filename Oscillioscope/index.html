@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mic Oscilloscope</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-title">Oscillioscope</div>
+        <div class="brand-sub">Microphone Input</div>
+      </div>
+      <div class="credit">
+        By Paul Gavini using CODEX,
+        <a href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener noreferrer">YouTube</a>
+      </div>
+      <div class="actions">
+        <button id="startBtn" class="btn">Start Audio</button>
+        <button id="pauseBtn" class="btn" disabled>Pause</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="scope">
+        <canvas id="scope" width="960" height="480"></canvas>
+        <div class="grid-labels">
+          <div id="vPerDivLabel">V/div: 1.00</div>
+          <div id="tPerDivLabel">ms/div: 5.00</div>
+          <div id="freqLabel">Freq: -- Hz</div>
+          <div id="ampLabel">Vpp: -- V</div>
+          <div id="periodLabel">Period: -- ms</div>
+          <div id="cursorLabel">Cursor: --</div>
+        </div>
+        <div id="status" class="status">Click Start Audio to begin.</div>
+      </section>
+
+      <section class="controls">
+        <div class="control">
+          <label for="vPerDiv">Amplitude (V/div)</label>
+          <input id="vPerDiv" type="range" min="0.005" max="1.5" step="0.005" value="0.5" />
+        </div>
+        <div class="control">
+          <label for="tPerDiv">Time (ms/div)</label>
+          <select id="tPerDiv">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="5" selected>5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="40">40</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+        <div class="control hint">
+          <div class="hint-title">Tips</div>
+          <ul class="hint-body">
+            <li>Use Pause to freeze the waveform.</li>
+            <li>Use left/right arrows to adjust V/div.</li>
+            <li>Please check your systems' microphone levels.</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
