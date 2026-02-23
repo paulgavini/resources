@@ -1,0 +1,29 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Coordinate Cube Builder</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="hud">
+        <h1>3D Coordinate Cube Builder</h1>
+        <p><strong>Desktop rotate:</strong> hold right mouse button and drag</p>
+        <p><strong>Desktop zoom:</strong> mouse wheel in/out</p>
+        <p><strong>Desktop add:</strong> left click a floor tile or cube top</p>
+        <p><strong>Desktop remove:</strong> Shift + left click a cube</p>
+        <p><strong>iPad rotate:</strong> one-finger drag</p>
+        <p><strong>iPad zoom:</strong> pinch in/out</p>
+        <p><strong>iPad add:</strong> single tap</p>
+        <p><strong>iPad remove:</strong> two-finger tap</p>
+        <p id="cursorInfo"><strong>Cursor:</strong> x: -, y: -, z: -</p>
+        <button id="clearBtn" type="button">Clear All Cubes</button>
+      </section>
+      <section id="sceneRoot" class="scene-root" aria-label="3D coordinate scene"></section>
+    </main>
+
+    <script type="module" src="script.js"></script>
+  </body>
+</html>
