@@ -101,17 +101,17 @@ const planeMaterialYZ = new THREE.MeshStandardMaterial({
   side: THREE.DoubleSide
 });
 
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(GRID_CELLS, GRID_CELLS), planeMaterialXZ);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(GRID_CELLS, GRID_CELLS), planeMaterialXY);
 floor.rotation.x = -Math.PI / 2;
 floor.position.set(HALF_GRID, 0, HALF_GRID);
 scene.add(floor);
 
-const wallYZ = new THREE.Mesh(new THREE.PlaneGeometry(GRID_CELLS, GRID_CELLS), planeMaterialYZ);
+const wallYZ = new THREE.Mesh(new THREE.PlaneGeometry(GRID_CELLS, GRID_CELLS), planeMaterialXZ);
 wallYZ.rotation.y = Math.PI / 2;
 wallYZ.position.set(0, HALF_GRID, HALF_GRID);
 scene.add(wallYZ);
 
-const wallXY = new THREE.Mesh(new THREE.PlaneGeometry(GRID_CELLS, GRID_CELLS), planeMaterialXY);
+const wallXY = new THREE.Mesh(new THREE.PlaneGeometry(GRID_CELLS, GRID_CELLS), planeMaterialYZ);
 wallXY.position.set(HALF_GRID, HALF_GRID, 0);
 scene.add(wallXY);
 
@@ -154,30 +154,30 @@ function addCoordinateLabels() {
   const labels = new THREE.Group();
 
   for (let i = 0; i < GRID_CELLS; i += 1) {
+    const yTick = createTextSprite(String(i + 1), { scale: 0.4, font: "700 34px Segoe UI" });
+    yTick.position.set(i + 0.5, 0.06, -0.55);
+    labels.add(yTick);
+
     const xTick = createTextSprite(String(i + 1), { scale: 0.4, font: "700 34px Segoe UI" });
-    xTick.position.set(i + 0.5, 0.06, -0.55);
+    xTick.position.set(-0.55, 0.06, i + 0.5);
     labels.add(xTick);
 
-    const zTick = createTextSprite(String(i + 1), { scale: 0.4, font: "700 34px Segoe UI" });
-    zTick.position.set(-0.55, 0.06, i + 0.5);
+    const zTick = createTextSprite(String(i + 1), { scale: 0.38, font: "700 32px Segoe UI" });
+    zTick.position.set(-0.55, i + 0.5, -0.55);
     labels.add(zTick);
-
-    const yTick = createTextSprite(String(i + 1), { scale: 0.38, font: "700 32px Segoe UI" });
-    yTick.position.set(-0.55, i + 0.5, -0.55);
-    labels.add(yTick);
   }
 
+  const yTag = createTextSprite("Y", { scale: 0.85, font: "700 44px Segoe UI" });
+  yTag.position.set(HALF_GRID, 0.1, GRID_CELLS + 1.2);
+  labels.add(yTag);
+
   const xTag = createTextSprite("X", { scale: 0.85, font: "700 44px Segoe UI" });
-  xTag.position.set(HALF_GRID, 0.1, GRID_CELLS + 1.2);
+  xTag.position.set(-1.15, 0.1, HALF_GRID);
   labels.add(xTag);
 
   const zTag = createTextSprite("Z", { scale: 0.85, font: "700 44px Segoe UI" });
-  zTag.position.set(-1.15, 0.1, HALF_GRID);
+  zTag.position.set(-1.15, HALF_GRID, -1.1);
   labels.add(zTag);
-
-  const yTag = createTextSprite("Y", { scale: 0.85, font: "700 44px Segoe UI" });
-  yTag.position.set(-1.15, HALF_GRID, -1.1);
-  labels.add(yTag);
 
   scene.add(labels);
 }
@@ -345,7 +345,7 @@ function updateCursorInfo(target) {
   }
 
   const topY = getColumnHeight(target.x, target.z);
-  cursorInfo.innerHTML = `<strong>Cursor:</strong> x: ${target.x + 1}, y: ${topY + 1}, z: ${target.z + 1}`;
+  cursorInfo.innerHTML = `<strong>Cursor:</strong> x: ${target.z + 1}, y: ${target.x + 1}, z: ${topY + 1}`;
 }
 
 renderer.domElement.addEventListener("mousemove", (event) => {
