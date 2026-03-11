@@ -22,12 +22,6 @@ const inkLabels = {
   "#ff0000": "Red"
 };
 
-function setStatus(message) {
-  if (statusEl) {
-    statusEl.textContent = message;
-  }
-}
-
 function resizeCanvas() {
   const rect = canvas.getBoundingClientRect();
   const previousDpr = dpr;
@@ -106,7 +100,7 @@ function setToolMode(mode) {
   eraseBtn.classList.toggle("is-active", mode === "erase");
 
   if (!isDrawing) {
-    setStatus(mode === "erase" ? "Eraser ready." : drawReadyMessage());
+    statusEl.textContent = mode === "erase" ? "Eraser ready." : drawReadyMessage();
   }
 }
 
@@ -135,22 +129,22 @@ async function toggleFullscreen() {
       } else if (document.webkitExitFullscreen) {
         document.webkitExitFullscreen();
       }
-      setStatus("Exited full screen.");
+      statusEl.textContent = "Exited full screen.";
       return;
     }
 
     const target = document.documentElement;
     if (target.requestFullscreen) {
       await target.requestFullscreen();
-      setStatus("Entered full screen.");
+      statusEl.textContent = "Entered full screen.";
     } else if (target.webkitRequestFullscreen) {
       target.webkitRequestFullscreen();
-      setStatus("Entered full screen.");
+      statusEl.textContent = "Entered full screen.";
     } else {
-      setStatus("Full screen is not supported in this browser.");
+      statusEl.textContent = "Full screen is not supported in this browser.";
     }
   } catch (_error) {
-    setStatus("Unable to toggle full screen.");
+    statusEl.textContent = "Unable to toggle full screen.";
   } finally {
     updateFullscreenButton();
   }
@@ -161,7 +155,7 @@ function beginDraw(event) {
   activePenPointerId = event.pointerId;
   lastPoint = getPoint(event);
   showCursorAt(lastPoint.x, lastPoint.y);
-  setStatus(toolMode === "erase" ? "Erasing..." : `${inkLabels[selectedInkColor] || "Ink"} ink drawing...`);
+  statusEl.textContent = toolMode === "erase" ? "Erasing..." : `${inkLabels[selectedInkColor] || "Ink"} ink drawing...`;
 }
 
 function continueDraw(event) {
@@ -180,7 +174,7 @@ function endDraw() {
   isDrawing = false;
   activePenPointerId = null;
   lastPoint = null;
-  setStatus(toolMode === "erase" ? "Eraser ready." : drawReadyMessage());
+  statusEl.textContent = toolMode === "erase" ? "Eraser ready." : drawReadyMessage();
 }
 
 function isPen(event) {
@@ -193,7 +187,7 @@ canvas.addEventListener("pointerenter", (event) => {
   }
   const p = getPoint(event);
   showCursorAt(p.x, p.y);
-  setStatus("Stylus hover detected.");
+  statusEl.textContent = "Stylus hover detected.";
 });
 
 canvas.addEventListener("pointermove", (event) => {
@@ -208,13 +202,13 @@ canvas.addEventListener("pointermove", (event) => {
   if (isDrawing && event.pointerId === activePenPointerId) {
     continueDraw(event);
   } else {
-    setStatus("Stylus hover detected.");
+    statusEl.textContent = "Stylus hover detected.";
   }
 });
 
 canvas.addEventListener("pointerdown", (event) => {
   if (!isPen(event)) {
-    setStatus("Use a stylus pen to draw.");
+    statusEl.textContent = "Use a stylus pen to draw.";
     return;
   }
   event.preventDefault();
@@ -243,7 +237,7 @@ canvas.addEventListener("pointercancel", (event) => {
     endDraw();
   }
   hideCursor();
-  setStatus("Stylus input cancelled.");
+  statusEl.textContent = "Stylus input cancelled.";
 });
 
 canvas.addEventListener("lostpointercapture", (event) => {
@@ -258,13 +252,13 @@ canvas.addEventListener("pointerleave", (event) => {
   }
   if (!isDrawing) {
     hideCursor();
-    setStatus("Waiting for stylus input...");
+    statusEl.textContent = "Waiting for stylus input...";
   }
 });
 
 clearBtn.addEventListener("click", () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  setStatus("Canvas cleared.");
+  statusEl.textContent = "Canvas cleared.";
 });
 
 colorButtons.forEach((button) => {
@@ -297,7 +291,7 @@ saveBtn.addEventListener("click", () => {
   link.href = exportCanvas.toDataURL("image/png");
   link.click();
 
-  setStatus("Image saved as PNG.");
+  statusEl.textContent = "Image saved as PNG.";
 });
 
 window.addEventListener("resize", resizeCanvas);
@@ -310,7 +304,7 @@ setInkColor(selectedInkColor);
 updateFullscreenButton();
 
 if (window.PointerEvent) {
-  setStatus(`${inkLabels[selectedInkColor]} ink ready. Hover with stylus (where supported) or start drawing.`);
+  statusEl.textContent = `${inkLabels[selectedInkColor]} ink ready. Hover with stylus (where supported) or start drawing.`;
 } else {
-  setStatus("Pointer Events not supported in this browser.");
+  statusEl.textContent = "Pointer Events not supported in this browser.";
 }
