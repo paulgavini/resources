@@ -3,6 +3,7 @@ const colorButtons = Array.from(document.querySelectorAll(".color-btn"));
 const eraseBtn = document.getElementById("eraseBtn");
 const undoBtn = document.getElementById("undoBtn");
 const gridBtn = document.getElementById("gridBtn");
+const pasteBtn = document.getElementById("pasteBtn");
 const fullScreenBtn = document.getElementById("fullScreenBtn");
 const clearBtn = document.getElementById("clearBtn");
 const saveBtn = document.getElementById("saveBtn");
@@ -569,6 +570,26 @@ function getClipboardImageFile(event) {
   return item ? item.getAsFile() : null;
 }
 
+async function getClipboardImageFromApi() {
+  if (!navigator.clipboard || typeof navigator.clipboard.read !== "function") {
+    return null;
+  }
+
+  const clipboardItems = await navigator.clipboard.read();
+  for (const item of clipboardItems) {
+    const imageType = item.types.find((type) => type.startsWith("image/"));
+    if (!imageType) {
+      continue;
+    }
+    const blob = await item.getType(imageType);
+    if (blob) {
+      return new File([blob], "pasted-image", { type: imageType });
+    }
+  }
+
+  return null;
+}
+
 function onPlacementPointerDown(event) {
   if (!isPastePlacementActive || !placementRect) {
     return;
@@ -656,6 +677,7 @@ function updatePageControls() {
   saveProjectBtn.disabled = interactionLocked;
   loadProjectBtn.disabled = interactionLocked;
   gridBtn.disabled = interactionLocked;
+  pasteBtn.disabled = interactionLocked;
   eraseBtn.disabled = interactionLocked;
   fullScreenBtn.disabled = interactionLocked;
   clearBtn.disabled = interactionLocked;
@@ -1058,6 +1080,23 @@ gridBtn.addEventListener("click", () => {
   setGridVisible(!isGridVisible);
   if (!isDrawing) {
     statusEl.textContent = isGridVisible ? "1cm grid enabled." : drawReadyMessage();
+  }
+});
+
+pasteBtn.addEventListener("click", async () => {
+  if (isPageTransitioning || isExportingPdf || isProjectLoading || isPastePlacementActive) {
+    return;
+  }
+
+  try {
+    const imageFile = await getClipboardImageFromApi();
+    if (!imageFile) {
+      statusEl.textContent = "Clipboard image unavailable. Copy an image, then tap Paste.";
+      return;
+    }
+    await startImagePlacementFromFile(imageFile);
+  } catch (_error) {
+    statusEl.textContent = "Clipboard access blocked. Enable clipboard permissions, then try Paste.";
   }
 });
 

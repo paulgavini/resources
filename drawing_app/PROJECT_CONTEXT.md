@@ -44,6 +44,7 @@ Working single-page app with stylus-focused drawing controls and right-side tool
   - `Load Project` restores from that JSON file.
 - Clipboard image placement workflow:
   - Paste image from clipboard (`Ctrl+V` / paste action).
+  - `Paste` button under `1cm Grid` to trigger clipboard image read without a keyboard (tablet-friendly, browser permission dependent).
   - Drag and corner-resize overlay to position before committing.
   - `Place Image` commits to canvas; `Cancel Image` discards.
 - Full Screen button toggles fullscreen / exit fullscreen (with browser compatibility fallback).
