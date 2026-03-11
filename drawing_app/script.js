@@ -10,6 +10,7 @@ const saveBtn = document.getElementById("saveBtn");
 const saveProjectBtn = document.getElementById("saveProjectBtn");
 const loadProjectBtn = document.getElementById("loadProjectBtn");
 const loadProjectInput = document.getElementById("loadProjectInput");
+const pasteImageInput = document.getElementById("pasteImageInput");
 const placeImageBtn = document.getElementById("placeImageBtn");
 const cancelImageBtn = document.getElementById("cancelImageBtn");
 const prevPageBtn = document.getElementById("prevPageBtn");
@@ -570,6 +571,22 @@ function getClipboardImageFile(event) {
   return item ? item.getAsFile() : null;
 }
 
+function canReadClipboardImages() {
+  return Boolean(navigator.clipboard && typeof navigator.clipboard.read === "function");
+}
+
+function isAndroidBrowser() {
+  return /Android/i.test(navigator.userAgent || "");
+}
+
+function openPasteImagePicker(statusMessage) {
+  pasteImageInput.value = "";
+  pasteImageInput.click();
+  if (statusMessage) {
+    statusEl.textContent = statusMessage;
+  }
+}
+
 async function getClipboardImageFromApi() {
   if (!navigator.clipboard || typeof navigator.clipboard.read !== "function") {
     return null;
@@ -1088,16 +1105,36 @@ pasteBtn.addEventListener("click", async () => {
     return;
   }
 
+  if (isAndroidBrowser()) {
+    openPasteImagePicker("Android clipboard paste is limited in this browser. Select an image to place.");
+    return;
+  }
+
+  if (!canReadClipboardImages()) {
+    openPasteImagePicker("Clipboard image read is unavailable here. Select an image to place.");
+    return;
+  }
+
   try {
     const imageFile = await getClipboardImageFromApi();
     if (!imageFile) {
-      statusEl.textContent = "Clipboard image unavailable. Copy an image, then tap Paste.";
+      statusEl.textContent = "No image found in clipboard. Copy an image, then tap Paste.";
       return;
     }
     await startImagePlacementFromFile(imageFile);
   } catch (_error) {
-    statusEl.textContent = "Clipboard access blocked. Enable clipboard permissions, then try Paste.";
+    statusEl.textContent = "Clipboard access blocked. Use the browser paste action or choose an image file.";
   }
+});
+
+pasteImageInput.addEventListener("change", async () => {
+  const file = pasteImageInput.files && pasteImageInput.files[0];
+  if (!file) {
+    return;
+  }
+
+  await startImagePlacementFromFile(file);
+  pasteImageInput.value = "";
 });
 
 fullScreenBtn.addEventListener("click", () => {
