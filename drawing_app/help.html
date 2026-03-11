@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drawing App Help</title>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --card: #ffffff;
+      --ink: #1b2430;
+      --muted: #536377;
+      --border: #d6deea;
+      --accent: #2a4a74;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(180deg, #eaf1f9, #f7faff 30%, #f1f5fb);
+      color: var(--ink);
+    }
+
+    main {
+      width: min(980px, 94vw);
+      margin: 16px auto 32px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+
+    .warning {
+      border-color: #d2a50d;
+      background: #fff8dc;
+      color: #5a4400;
+      font-weight: 600;
+    }
+
+    h1 {
+      font-size: 1.15rem;
+      margin: 0 0 8px;
+      color: var(--accent);
+    }
+
+    h2 {
+      font-size: 1rem;
+      margin: 0 0 8px;
+      color: var(--accent);
+    }
+
+    p {
+      margin: 0 0 8px;
+      color: var(--muted);
+    }
+
+    ul,
+    ol {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--ink);
+    }
+
+    li {
+      margin: 0 0 6px;
+    }
+
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.93em;
+      background: #eef3fa;
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    .small {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="card warning">
+      Warning: Refreshing or closing the drawing page will lose unsaved work. Use <code>Save Project</code> before refresh.
+    </section>
+
+    <section class="card">
+      <h1>Drawing App Help</h1>
+      <p>This page explains all current controls and workflows in the drawing app.</p>
+      <p class="small">Keep your drawing tab open while using this help page.</p>
+    </section>
+
+    <section class="card">
+      <h2>Quick Start</h2>
+      <ol>
+        <li>Use a stylus to draw on the canvas.</li>
+        <li>Pick ink color from the three color dots.</li>
+        <li>Use <code>Eraser</code> for corrections and <code>Undo</code> for step-back actions.</li>
+        <li>Use <code>New Page</code> when you need more space.</li>
+        <li>Use <code>Save Project</code> regularly to avoid losing work on refresh.</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2>Drawing Controls (Right Panel)</h2>
+      <ul>
+        <li><code>Eraser</code>: switches to erase mode.</li>
+        <li><code>Undo</code>: undoes the most recent action on the current page (up to 10 states per page).</li>
+        <li><code>1cm Grid</code>: toggles faint grey graph grid lines.</li>
+        <li><code>Full Screen</code>: enter or exit fullscreen view.</li>
+        <li><code>Clear</code>: clears only the current page.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Project Persistence</h2>
+      <ul>
+        <li><code>Save Project</code>: downloads a <code>.json</code> file containing full app state (pages, current page, undo history, color/tool mode, grid state).</li>
+        <li><code>Load Project</code>: restores the app state from a previously saved project file.</li>
+        <li>Important: refreshing the app clears unsaved in-memory state. Save projects often.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Export and Sharing</h2>
+      <ul>
+        <li><code>Export PDF</code>: exports all pages into one PDF file.</li>
+        <li>If <code>1cm Grid</code> is enabled, the grid is included in exported PDF pages.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Page Management</h2>
+      <ul>
+        <li><code>Prev</code> / <code>Next</code>: move between pages.</li>
+        <li><code>New Page</code>: inserts a new blank page after the current page.</li>
+        <li><code>Delete Page</code>: removes the current page (with confirmation).</li>
+        <li><code>Page X of Y</code>: shows your position in the document.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Image Paste and Placement</h2>
+      <ul>
+        <li>Copy an image, then paste with <code>Ctrl+V</code> (or device paste action).</li>
+        <li>The image appears as a movable overlay.</li>
+        <li>Drag to reposition.</li>
+        <li>Use the bottom-right handle to resize.</li>
+        <li><code>Place Image</code> commits it to the page.</li>
+        <li><code>Cancel Image</code> discards the temporary overlay.</li>
+        <li>Keyboard shortcuts in placement mode:
+          <ul>
+            <li><code>Enter</code>: place image</li>
+            <li><code>Esc</code>: cancel placement</li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Notes and Limits</h2>
+      <ul>
+        <li>Stylus is required for drawing; finger touch is ignored for ink strokes.</li>
+        <li>Undo history is capped at 10 states per page.</li>
+        <li>Maximum page count is currently 15 pages.</li>
+        <li><code>Load Project</code> expects project files created by this app.</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
