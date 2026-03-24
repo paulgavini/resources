@@ -43,6 +43,7 @@ const state = {
   brushColor: colorPicker.value,
   brushSize: Number(brushSize.value),
   zoom: 1,
+  hasUnsavedChanges: false,
   drawing: false,
   activeStroke: null,
   renderToken: 0,
@@ -54,6 +55,14 @@ const state = {
 
 function setStatus(message) {
   statusText.textContent = message;
+}
+
+function markUnsavedChanges() {
+  state.hasUnsavedChanges = true;
+}
+
+function clearUnsavedChanges() {
+  state.hasUnsavedChanges = false;
 }
 
 function setViewerVisible(isVisible) {
@@ -78,6 +87,7 @@ function resetLoadedPdfState() {
   state.activeStroke = null;
   state.drawing = false;
   state.zoom = 1;
+  state.hasUnsavedChanges = false;
   state.activePointers.clear();
   state.pinch = null;
   state.pan = null;
@@ -285,6 +295,7 @@ function finishStroke() {
   pageState.redoStack = [];
   state.activeStroke = null;
   state.drawing = false;
+  markUnsavedChanges();
   updatePageControls();
 }
 
@@ -432,6 +443,7 @@ async function loadPdfBytes(bytes, fileName) {
   state.activeStroke = null;
   state.drawing = false;
   state.zoom = 1;
+  state.hasUnsavedChanges = false;
   state.activePointers.clear();
   state.pinch = null;
   state.pan = null;
@@ -469,6 +481,7 @@ function clearCurrentPage() {
 
   state.pageAnnotations.set(state.currentPage, createPageState());
   redrawAnnotations();
+  markUnsavedChanges();
   updatePageControls();
   setStatus(`Cleared annotations on page ${state.currentPage}.`);
 }
@@ -486,6 +499,7 @@ function undoStroke() {
 
   pageState.redoStack.push(stroke);
   redrawAnnotations();
+  markUnsavedChanges();
   updatePageControls();
   setStatus(`Undid the last mark on page ${state.currentPage}.`);
 }
@@ -503,6 +517,7 @@ function redoStroke() {
 
   pageState.strokes.push(stroke);
   redrawAnnotations();
+  markUnsavedChanges();
   updatePageControls();
   setStatus(`Restored the last undone mark on page ${state.currentPage}.`);
 }
@@ -609,6 +624,7 @@ async function exportPdf() {
       new Blob([pdfBytes], { type: "application/pdf" }),
       buildTimestampedFileName(state.sourceFileName || "annotated")
     );
+    clearUnsavedChanges();
     setStatus("Saved annotated PDF.");
   } catch (error) {
     console.error(error);
@@ -977,6 +993,15 @@ window.addEventListener("keydown", (event) => {
     event.preventDefault();
     redoStroke();
   }
+});
+
+window.addEventListener("beforeunload", (event) => {
+  if (!state.hasUnsavedChanges) {
+    return;
+  }
+
+  event.preventDefault();
+  event.returnValue = "You have unsaved changes.";
 });
 
 document.addEventListener("fullscreenchange", updateFullscreenButton);
