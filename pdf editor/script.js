@@ -65,6 +65,14 @@ function clearUnsavedChanges() {
   state.hasUnsavedChanges = false;
 }
 
+function confirmDiscardUnsavedChanges() {
+  if (!state.hasUnsavedChanges) {
+    return true;
+  }
+
+  return window.confirm("You have unsaved changes. Continue without exporting?");
+}
+
 function setViewerVisible(isVisible) {
   emptyState.classList.toggle("hidden", isVisible);
   viewerShell.classList.toggle("hidden", !isVisible);
@@ -640,6 +648,11 @@ pdfInput.addEventListener("change", async (event) => {
     return;
   }
 
+  if (!confirmDiscardUnsavedChanges()) {
+    event.target.value = "";
+    return;
+  }
+
   try {
     await loadPdf(file);
   } catch (error) {
@@ -956,6 +969,10 @@ workspace.addEventListener("drop", async (event) => {
 
   if (!file) {
     setStatus("Drop a PDF file to open it.");
+    return;
+  }
+
+  if (!confirmDiscardUnsavedChanges()) {
     return;
   }
 
