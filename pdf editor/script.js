@@ -631,6 +631,10 @@ drawCanvas.addEventListener("pointerdown", (event) => {
     return;
   }
 
+  if (event.pointerType !== "pen") {
+    return;
+  }
+
   const { x, y } = getPointerPosition(event);
   if (!isWithinCanvasBounds(x, y)) {
     return;
