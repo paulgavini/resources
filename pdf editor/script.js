@@ -19,6 +19,7 @@ const viewerShell = document.getElementById("viewerShell");
 const workspace = document.getElementById("workspace");
 const pdfCanvas = document.getElementById("pdfCanvas");
 const drawCanvas = document.getElementById("drawCanvas");
+const penCursor = document.getElementById("penCursor");
 const swatchButtons = Array.from(document.querySelectorAll(".swatch-button"));
 
 const pdfContext = pdfCanvas.getContext("2d");
@@ -83,6 +84,7 @@ function resetLoadedPdfState() {
   updatePageControls();
   setViewerVisible(false);
   updateCanvasCursor();
+  hidePenCursor();
 }
 
 function createPageState() {
@@ -101,10 +103,26 @@ function setMode(mode) {
 function updateCanvasCursor() {
   if (state.pan) {
     drawCanvas.style.cursor = "grabbing";
+    hidePenCursor();
     return;
   }
 
-  drawCanvas.style.cursor = 'url("./cursor-arrow-lime.svg") 5 3, auto';
+  drawCanvas.style.cursor = "none";
+}
+
+function showPenCursorAtEvent(event) {
+  if (event.pointerType !== "pen") {
+    return;
+  }
+
+  const rect = drawCanvas.getBoundingClientRect();
+  penCursor.style.display = "block";
+  penCursor.style.left = `${event.clientX - rect.left}px`;
+  penCursor.style.top = `${event.clientY - rect.top}px`;
+}
+
+function hidePenCursor() {
+  penCursor.style.display = "none";
 }
 
 function getPageState(pageNumber) {
@@ -171,12 +189,17 @@ function cancelActiveStroke() {
 }
 
 function shouldStartPan(event) {
+  if (event.pointerType === "touch") {
+    return getTouchPointers().length === 1;
+  }
+
   return (event.pointerType === "pen" || event.pointerType === "mouse") && event.ctrlKey;
 }
 
 function beginPan(event) {
   cancelActiveStroke();
   redrawAnnotations();
+  hidePenCursor();
   state.pan = {
     pointerId: event.pointerId,
     startX: event.clientX,
@@ -210,6 +233,9 @@ function endPan(event) {
 
   state.pan = null;
   updateCanvasCursor();
+  if (event && event.pointerType === "pen") {
+    showPenCursorAtEvent(event);
+  }
   return true;
 }
 
@@ -616,6 +642,7 @@ drawCanvas.addEventListener("pointerdown", (event) => {
 
   updatePointerRecord(event);
   drawCanvas.setPointerCapture(event.pointerId);
+  showPenCursorAtEvent(event);
 
   if (shouldStartPan(event)) {
     beginPan(event);
@@ -646,6 +673,7 @@ drawCanvas.addEventListener("pointerdown", (event) => {
 
 drawCanvas.addEventListener("pointermove", (event) => {
   updatePointerRecord(event);
+  showPenCursorAtEvent(event);
 
   if (state.pan) {
     updatePan(event);
@@ -669,6 +697,10 @@ drawCanvas.addEventListener("pointermove", (event) => {
 
   appendPointToStroke(x, y);
   redrawAnnotations();
+});
+
+drawCanvas.addEventListener("pointerenter", (event) => {
+  showPenCursorAtEvent(event);
 });
 
 function stopDrawing(event) {
@@ -722,6 +754,8 @@ function beginPinchGesture() {
     return;
   }
 
+  state.pan = null;
+  updateCanvasCursor();
   cancelActiveStroke();
   redrawAnnotations();
   state.pinch = {
@@ -762,10 +796,16 @@ drawCanvas.addEventListener("pointerup", (event) => {
       drawCanvas.releasePointerCapture(event.pointerId);
     }
     state.pinch = getTouchPointers().length >= 2 ? state.pinch : null;
+    if (!state.pinch && event.pointerType !== "pen") {
+      hidePenCursor();
+    }
     return;
   }
 
   stopDrawing(event);
+  if (event.pointerType !== "pen") {
+    hidePenCursor();
+  }
 });
 
 drawCanvas.addEventListener("pointercancel", (event) => {
@@ -780,10 +820,14 @@ drawCanvas.addEventListener("pointercancel", (event) => {
       drawCanvas.releasePointerCapture(event.pointerId);
     }
     state.pinch = getTouchPointers().length >= 2 ? state.pinch : null;
+    if (!state.pinch) {
+      hidePenCursor();
+    }
     return;
   }
 
   stopDrawing(event);
+  hidePenCursor();
 });
 
 drawCanvas.addEventListener("pointerleave", (event) => {
@@ -800,6 +844,10 @@ drawCanvas.addEventListener("pointerleave", (event) => {
 
   if (state.drawing && event.buttons === 0) {
     stopDrawing(event);
+  }
+
+  if (event.pointerType === "pen" && !state.drawing) {
+    hidePenCursor();
   }
 });
 

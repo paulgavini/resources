@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDF Draw Editor</title>
-  <link rel="stylesheet" href="styles.css?v=14">
+  <link rel="stylesheet" href="styles.css?v=15">
 </head>
 <body>
   <div class="app-shell">
@@ -21,6 +21,7 @@
             <div class="canvas-stage">
               <canvas id="pdfCanvas"></canvas>
               <canvas id="drawCanvas"></canvas>
+              <img id="penCursor" src="cursor-arrow-lime.svg" alt="" aria-hidden="true">
             </div>
           </div>
         </div>
@@ -69,6 +70,6 @@
 
   <script src="vendor/pdf.min.js"></script>
   <script src="vendor/pdf-lib.min.js"></script>
-  <script src="script.js?v=8"></script>
+  <script src="script.js?v=10"></script>
 </body>
 </html>
