@@ -55,6 +55,16 @@ label {
   transition: background 160ms ease;
 }
 
+.workspace,
+.viewer-shell,
+.canvas-stage,
+#pdfCanvas,
+#drawCanvas {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
 .stage-shell {
   width: 100%;
   display: flex;
@@ -208,6 +218,10 @@ label {
   background: linear-gradient(180deg, rgba(252, 254, 255, 0.96), rgba(238, 244, 250, 0.96));
   box-shadow: 0 8px 22px rgba(126, 145, 171, 0.16);
   backdrop-filter: blur(6px);
+}
+
+body.ios-webkit-strict.pen-active-session .control-rail {
+  pointer-events: none;
 }
 
 .swatch-stack,

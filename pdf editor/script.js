@@ -28,6 +28,14 @@ const drawContext = drawCanvas.getContext("2d");
 const ERASER_SIZE_MULTIPLIER = 3;
 const MIN_ZOOM = 0.75;
 const MAX_ZOOM = 4;
+const PEN_TOUCH_SUPPRESSION_MS = 140;
+
+const userAgent = navigator.userAgent || "";
+const isIOSDevice =
+  /iPad|iPhone|iPod/i.test(userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isWebKitEngine = /WebKit/i.test(userAgent) && !/CriOS|FxiOS|EdgiOS/i.test(userAgent);
+const USE_STRICT_TOUCH_SUPPRESSION = isIOSDevice && isWebKitEngine;
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "vendor/pdf.worker.min.js";
@@ -50,8 +58,65 @@ const state = {
   renderScheduled: false,
   activePointers: new Map(),
   pinch: null,
-  pan: null
+  pan: null,
+  isPenActive: false,
+  touchSuppressionUntil: 0,
+  useStrictTouchSuppression: USE_STRICT_TOUCH_SUPPRESSION
 };
+
+if (state.useStrictTouchSuppression) {
+  document.body.classList.add("ios-webkit-strict");
+}
+
+function nowMs() {
+  if (typeof performance !== "undefined" && typeof performance.now === "function") {
+    return performance.now();
+  }
+
+  return Date.now();
+}
+
+function setPenInteractionLock(isActive) {
+  if (!state.useStrictTouchSuppression) {
+    return;
+  }
+
+  if (isActive) {
+    state.isPenActive = true;
+    state.touchSuppressionUntil = nowMs() + PEN_TOUCH_SUPPRESSION_MS;
+    document.body.classList.add("pen-active-session");
+    return;
+  }
+
+  if (!state.isPenActive) {
+    document.body.classList.remove("pen-active-session");
+    return;
+  }
+
+  state.isPenActive = false;
+  state.touchSuppressionUntil = nowMs() + PEN_TOUCH_SUPPRESSION_MS;
+  document.body.classList.remove("pen-active-session");
+}
+
+function shouldSuppressTouchPointer(event) {
+  if (!state.useStrictTouchSuppression || event.pointerType !== "touch") {
+    return false;
+  }
+
+  return state.isPenActive || nowMs() < state.touchSuppressionUntil;
+}
+
+function suppressTouchPointerEvent(event) {
+  if (!shouldSuppressTouchPointer(event)) {
+    return;
+  }
+
+  if (event.cancelable) {
+    event.preventDefault();
+  }
+  event.stopPropagation();
+  removePointerRecord(event);
+}
 
 function setStatus(message) {
   statusText.textContent = message;
@@ -99,6 +164,7 @@ function resetLoadedPdfState() {
   state.activePointers.clear();
   state.pinch = null;
   state.pan = null;
+  setPenInteractionLock(false);
   updatePageControls();
   setViewerVisible(false);
   updateCanvasCursor();
@@ -204,6 +270,7 @@ function getToolSizePx(mode, sizePx) {
 function cancelActiveStroke() {
   state.activeStroke = null;
   state.drawing = false;
+  setPenInteractionLock(false);
 }
 
 function shouldStartPan(event) {
@@ -455,6 +522,7 @@ async function loadPdfBytes(bytes, fileName) {
   state.activePointers.clear();
   state.pinch = null;
   state.pan = null;
+  setPenInteractionLock(false);
   state.sourceFileName = fileName.replace(/\.pdf$/i, "");
 
   setStatus("Loading PDF...");
@@ -669,16 +737,23 @@ drawCanvas.addEventListener("pointerdown", (event) => {
     return;
   }
 
+  if (shouldSuppressTouchPointer(event)) {
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+    return;
+  }
+
   updatePointerRecord(event);
-  drawCanvas.setPointerCapture(event.pointerId);
-  showPenCursorAtEvent(event);
 
   if (shouldStartPan(event)) {
+    drawCanvas.setPointerCapture(event.pointerId);
     beginPan(event);
     return;
   }
 
   if (event.pointerType === "touch" && getTouchPointers().length >= 2) {
+    drawCanvas.setPointerCapture(event.pointerId);
     beginPinchGesture();
     return;
   }
@@ -691,6 +766,13 @@ drawCanvas.addEventListener("pointerdown", (event) => {
     return;
   }
 
+  if (event.cancelable) {
+    event.preventDefault();
+  }
+  drawCanvas.setPointerCapture(event.pointerId);
+  setPenInteractionLock(true);
+  showPenCursorAtEvent(event);
+
   const { x, y } = getPointerPosition(event);
   if (!isWithinCanvasBounds(x, y)) {
     return;
@@ -701,8 +783,19 @@ drawCanvas.addEventListener("pointerdown", (event) => {
 });
 
 drawCanvas.addEventListener("pointermove", (event) => {
+  if (shouldSuppressTouchPointer(event)) {
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+    return;
+  }
+
   updatePointerRecord(event);
   showPenCursorAtEvent(event);
+
+  if (event.pointerType === "pen" && event.cancelable) {
+    event.preventDefault();
+  }
 
   if (state.pan) {
     updatePan(event);
@@ -738,11 +831,17 @@ function stopDrawing(event) {
   }
 
   if (!state.drawing) {
+    if (event && event.pointerType === "pen") {
+      setPenInteractionLock(false);
+    }
     return;
   }
 
   finishStroke();
   redrawAnnotations();
+  if (event && event.pointerType === "pen") {
+    setPenInteractionLock(false);
+  }
 }
 
 function updatePointerRecord(event) {
@@ -814,7 +913,19 @@ function updatePinchGesture() {
 }
 
 drawCanvas.addEventListener("pointerup", (event) => {
+  if (shouldSuppressTouchPointer(event)) {
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+    removePointerRecord(event);
+    return;
+  }
+
   removePointerRecord(event);
+
+  if (event.pointerType === "pen" && event.cancelable) {
+    event.preventDefault();
+  }
 
   if (endPan(event)) {
     return;
@@ -838,7 +949,19 @@ drawCanvas.addEventListener("pointerup", (event) => {
 });
 
 drawCanvas.addEventListener("pointercancel", (event) => {
+  if (shouldSuppressTouchPointer(event)) {
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+    removePointerRecord(event);
+    return;
+  }
+
   removePointerRecord(event);
+
+  if (event.pointerType === "pen" && event.cancelable) {
+    event.preventDefault();
+  }
 
   if (endPan(event)) {
     return;
@@ -860,6 +983,11 @@ drawCanvas.addEventListener("pointercancel", (event) => {
 });
 
 drawCanvas.addEventListener("pointerleave", (event) => {
+  if (shouldSuppressTouchPointer(event)) {
+    removePointerRecord(event);
+    return;
+  }
+
   removePointerRecord(event);
 
   if (endPan(event)) {
@@ -984,6 +1112,19 @@ workspace.addEventListener("drop", async (event) => {
     setStatus("Could not open that dropped PDF.");
   }
 });
+
+workspace.addEventListener("selectionstart", (event) => {
+  event.preventDefault();
+});
+
+if (state.useStrictTouchSuppression) {
+  ["pointerdown", "pointermove", "pointerup", "pointercancel"].forEach((eventName) => {
+    document.addEventListener(eventName, suppressTouchPointerEvent, {
+      capture: true,
+      passive: false
+    });
+  });
+}
 
 window.addEventListener("keydown", (event) => {
   if (!state.pdfDoc) {
