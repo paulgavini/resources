@@ -1,6 +1,7 @@
 const pdfInput = document.getElementById("pdfInput");
 const eraseModeBtn = document.getElementById("eraseModeBtn");
 const clearPageBtn = document.getElementById("clearPageBtn");
+const gridBtn = document.getElementById("gridBtn");
 const zoomOutBtn = document.getElementById("zoomOutBtn");
 const zoomInBtn = document.getElementById("zoomInBtn");
 const fullscreenBtn = document.getElementById("fullscreenBtn");
@@ -18,17 +19,21 @@ const emptyState = document.getElementById("emptyState");
 const viewerShell = document.getElementById("viewerShell");
 const workspace = document.getElementById("workspace");
 const pdfCanvas = document.getElementById("pdfCanvas");
+const gridCanvas = document.getElementById("gridCanvas");
 const drawCanvas = document.getElementById("drawCanvas");
 const penCursor = document.getElementById("penCursor");
 const swatchButtons = Array.from(document.querySelectorAll(".swatch-button"));
 
 const pdfContext = pdfCanvas.getContext("2d");
+const gridContext = gridCanvas.getContext("2d");
 const drawContext = drawCanvas.getContext("2d");
 
 const ERASER_SIZE_MULTIPLIER = 3;
 const MIN_ZOOM = 0.75;
 const MAX_ZOOM = 4;
 const PEN_TOUCH_SUPPRESSION_MS = 140;
+const CM_TO_POINTS = 72 / 2.54;
+const GRID_LINE_COLOR = "rgba(133, 144, 159, 0.32)";
 
 const userAgent = navigator.userAgent || "";
 const isIOSDevice =
@@ -48,6 +53,7 @@ const state = {
   sourceFileName: "annotated",
   pageAnnotations: new Map(),
   mode: "draw",
+  isGridVisible: false,
   brushColor: colorPicker.value,
   brushSize: Number(brushSize.value),
   zoom: 1,
@@ -156,6 +162,7 @@ function syncActiveSwatch() {
 function resetLoadedPdfState() {
   state.pdfDoc = null;
   state.pdfBytes = null;
+  state.currentViewport = null;
   state.pageAnnotations.clear();
   state.activeStroke = null;
   state.drawing = false;
@@ -165,6 +172,8 @@ function resetLoadedPdfState() {
   state.pinch = null;
   state.pan = null;
   setPenInteractionLock(false);
+  clearGridLayer();
+  clearDrawLayer();
   updatePageControls();
   setViewerVisible(false);
   updateCanvasCursor();
@@ -182,6 +191,12 @@ function setMode(mode) {
   state.mode = mode;
   eraseModeBtn.classList.toggle("active", mode === "erase");
   updateCanvasCursor();
+}
+
+function setGridVisible(visible) {
+  state.isGridVisible = Boolean(visible);
+  gridBtn.classList.toggle("active", state.isGridVisible);
+  redrawGrid();
 }
 
 function updateCanvasCursor() {
@@ -238,6 +253,7 @@ function updatePageControls() {
   undoBtn.disabled = !state.pdfDoc || pageState.strokes.length === 0;
   redoBtn.disabled = !state.pdfDoc || pageState.redoStack.length === 0;
   clearPageBtn.disabled = !state.pdfDoc || pageState.strokes.length === 0;
+  gridBtn.disabled = !state.pdfDoc;
   downloadBtn.disabled = !state.pdfDoc;
 }
 
@@ -251,8 +267,62 @@ function resizePdfLayer(width, height) {
   pdfCanvas.height = height;
 }
 
+function resizeGridLayer(width, height) {
+  gridCanvas.width = width;
+  gridCanvas.height = height;
+}
+
+function clearGridLayer() {
+  gridContext.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+}
+
 function clearDrawLayer() {
   drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+}
+
+function drawGridLines(context, width, height, spacing, color, lineWidth) {
+  if (!spacing || spacing <= 0) {
+    return;
+  }
+
+  context.save();
+  context.strokeStyle = color;
+  context.lineWidth = lineWidth;
+  context.beginPath();
+
+  for (let x = 0; x <= width; x += spacing) {
+    const xPosition = x + 0.5;
+    context.moveTo(xPosition, 0);
+    context.lineTo(xPosition, height);
+  }
+
+  for (let y = 0; y <= height; y += spacing) {
+    const yPosition = y + 0.5;
+    context.moveTo(0, yPosition);
+    context.lineTo(width, yPosition);
+  }
+
+  context.stroke();
+  context.restore();
+}
+
+function getGridSpacingPxFromScale(scale) {
+  if (!scale || scale <= 0) {
+    return 0;
+  }
+
+  return CM_TO_POINTS * scale;
+}
+
+function redrawGrid() {
+  clearGridLayer();
+
+  if (!state.isGridVisible || !state.currentViewport) {
+    return;
+  }
+
+  const spacing = getGridSpacingPxFromScale(state.currentViewport.scale);
+  drawGridLines(gridContext, gridCanvas.width, gridCanvas.height, spacing, GRID_LINE_COLOR, 1);
 }
 
 function normalizedBrushSize(width, height, brushPx) {
@@ -455,6 +525,7 @@ async function renderCurrentPage() {
 
   state.currentViewport = viewport;
   resizePdfLayer(viewport.width, viewport.height);
+  resizeGridLayer(viewport.width, viewport.height);
   resizeDrawLayer(viewport.width, viewport.height);
 
   await page.render({
@@ -467,6 +538,7 @@ async function renderCurrentPage() {
   }
 
   setViewerVisible(true);
+  redrawGrid();
   redrawAnnotations();
   updatePageControls();
   setStatus(`Viewing page ${state.currentPage} of ${state.pdfDoc.numPages} at ${Math.round(state.zoom * 100)}%.`);
@@ -648,12 +720,18 @@ async function canvasToPngBytes(canvas) {
   return await blob.arrayBuffer();
 }
 
-function renderAnnotationsToCanvas(pageNumber, width, height) {
+function renderAnnotationsToCanvas(pageNumber, width, height, gridScale = 0) {
   const exportCanvas = document.createElement("canvas");
   exportCanvas.width = width;
   exportCanvas.height = height;
 
   const exportContext = exportCanvas.getContext("2d");
+
+  if (state.isGridVisible) {
+    const spacing = getGridSpacingPxFromScale(gridScale);
+    drawGridLines(exportContext, width, height, spacing, GRID_LINE_COLOR, 1);
+  }
+
   const strokes = getPageData(pageNumber);
   strokes.forEach((stroke) => drawStroke(exportContext, stroke, width, height));
   exportContext.globalCompositeOperation = "source-over";
@@ -674,13 +752,13 @@ async function exportPdf() {
 
     for (let pageNumber = 1; pageNumber <= state.pdfDoc.numPages; pageNumber += 1) {
       const strokes = getPageData(pageNumber);
-      if (!strokes.length) {
+      if (!strokes.length && !state.isGridVisible) {
         continue;
       }
 
       const sourcePage = await state.pdfDoc.getPage(pageNumber);
       const viewport = sourcePage.getViewport({ scale: 2 });
-      const overlayCanvas = renderAnnotationsToCanvas(pageNumber, viewport.width, viewport.height);
+      const overlayCanvas = renderAnnotationsToCanvas(pageNumber, viewport.width, viewport.height, viewport.scale);
       const overlayBytes = await canvasToPngBytes(overlayCanvas);
       const overlayImage = await outputPdf.embedPng(overlayBytes);
 
@@ -1012,6 +1090,14 @@ eraseModeBtn.addEventListener("click", () => setMode("erase"));
 undoBtn.addEventListener("click", undoStroke);
 redoBtn.addEventListener("click", redoStroke);
 clearPageBtn.addEventListener("click", clearCurrentPage);
+gridBtn.addEventListener("click", () => {
+  if (!state.pdfDoc) {
+    return;
+  }
+
+  setGridVisible(!state.isGridVisible);
+  setStatus(state.isGridVisible ? "1cm grid enabled." : "1cm grid disabled.");
+});
 zoomOutBtn.addEventListener("click", zoomOut);
 zoomInBtn.addEventListener("click", zoomIn);
 fullscreenBtn.addEventListener("click", toggleFullscreen);
@@ -1168,5 +1254,6 @@ updateBrushLabel();
 updatePageControls();
 updateFullscreenButton();
 setMode("draw");
+setGridVisible(false);
 setViewerVisible(false);
 syncActiveSwatch();

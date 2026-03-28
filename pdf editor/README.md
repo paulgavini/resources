@@ -7,6 +7,7 @@ Small browser-based PDF annotator built with HTML, CSS, and JavaScript.
 - Open a PDF from the file picker
 - Draw freehand annotations on each page
 - Erase marks
+- Toggle a 1cm page grid on/off
 - Undo and redo strokes per page
 - Move between PDF pages
 - Save a new annotated PDF
