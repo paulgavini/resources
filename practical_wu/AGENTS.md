@@ -149,6 +149,35 @@ This file tracks session history and project changes so future sessions can resu
   - status messages updated to reference browser database / IndexedDB.
 - Updated `README.md` to document IndexedDB usage and migration.
 
+### 2026-03-28 23:40 ACDT
+
+- Added a top-right attribution block in `index.html` to match the Oscillioscope style.
+- Credit text added to header: "Made by Paul Gavini using CODEX" with a YouTube link to `https://www.youtube.com/@paulgavini`.
+- Updated `css/styles.css`:
+  - topbar now uses a two-column grid for desktop so credit sits in the top-right corner
+  - added `.project-credit` styles and link hover/focus styling
+  - ensured `.top-controls` and `.status-row` span full width below the header row
+  - added responsive behaviour at smaller widths so credit shifts to left-aligned and stacked layout.
+
+### 2026-03-28 23:44 ACDT
+
+- Added a dedicated usage guide page: `instructions.html`.
+- The guide includes:
+  - project purpose and quick-start workflow
+  - table-based explanation of all top header controls/buttons
+  - section navigation behaviour
+  - explanation of every section-level button (add/remove/regenerate controls)
+  - notes on research question validation, graph preview, saving, and compatibility.
+- Added a new top control link button in `index.html`:
+  - `Instructions` (opens `./instructions.html` in a new tab).
+- Updated `css/styles.css`:
+  - added `.button-link` styles so anchor links can look/behave like toolbar buttons
+  - added `.button-link.secondary` and keyboard focus-visible styles for accessibility.
+
+### 2026-03-28 23:45 ACDT
+
+- Removed the sentence "Classroom guide for students and teachers in South Australia." from the header of `instructions.html` as requested.
+
 ## Current File List
 
 - `.gitignore`
@@ -157,6 +186,7 @@ This file tracks session history and project changes so future sessions can resu
 - `css/print.css`
 - `css/styles.css`
 - `index.html`
+- `instructions.html`
 - `js/app.js`
 - `js/charts.js`
 - `js/report.js`

@@ -79,6 +79,10 @@ No build tools are required.
 1. Open `index.html` directly in a browser, or
 2. Use VS Code Live Server on the project folder.
 
+Optional guide:
+
+- Open `instructions.html` for a full user guide with button-by-button explanations.
+
 ## Project structure
 
 - `index.html` - app layout and section forms

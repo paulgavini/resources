@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Practical Investigation Builder - Instructions</title>
+    <style>
+      :root {
+        --bg: #f2f5f7;
+        --surface: #ffffff;
+        --surface-alt: #eef3f6;
+        --text: #11202e;
+        --muted: #4f6172;
+        --primary: #0b5ea8;
+        --accent: #0f766e;
+        --border: #c7d2de;
+        --radius: 12px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Aptos", "Calibri", "Noto Sans", "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 15% 20%, rgba(15, 118, 110, 0.1), transparent 35%),
+          radial-gradient(circle at 85% 10%, rgba(11, 94, 168, 0.14), transparent 32%),
+          var(--bg);
+        line-height: 1.45;
+      }
+
+      .page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 1rem;
+      }
+
+      .top {
+        background: linear-gradient(115deg, #092844, #0b4c82 65%, #0f766e);
+        color: #fff;
+        border-radius: var(--radius);
+        padding: 1rem 1.2rem;
+        margin-bottom: 1rem;
+      }
+
+      .top h1 {
+        margin: 0 0 0.35rem;
+        font-family: "Aptos Display", "Franklin Gothic Medium", "Trebuchet MS", sans-serif;
+      }
+
+      .top p {
+        margin: 0.2rem 0;
+        color: rgba(255, 255, 255, 0.92);
+      }
+
+      .top-links {
+        margin-top: 0.8rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+      }
+
+      .btn-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        border-radius: 10px;
+        border: 1px solid transparent;
+        text-decoration: none;
+        font-weight: 700;
+        padding: 0.55rem 0.9rem;
+      }
+
+      .btn-primary {
+        background: #fff;
+        color: #0b4c82;
+      }
+
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.35);
+      }
+
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      h2,
+      h3 {
+        margin: 0 0 0.6rem;
+        font-family: "Aptos Display", "Franklin Gothic Medium", "Trebuchet MS", sans-serif;
+      }
+
+      p {
+        margin: 0 0 0.65rem;
+      }
+
+      ol,
+      ul {
+        margin: 0.1rem 0 0.7rem 1.2rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 0.4rem;
+        background: #fff;
+      }
+
+      th,
+      td {
+        border: 1px solid #d6e0ea;
+        padding: 0.55rem 0.6rem;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #f0f5fa;
+        color: #1c3c57;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .tip {
+        background: var(--surface-alt);
+        border-left: 4px solid var(--accent);
+        border-radius: 8px;
+        padding: 0.6rem 0.7rem;
+        margin-top: 0.45rem;
+      }
+
+      code {
+        font-family: "Consolas", "Menlo", "Monaco", monospace;
+        background: #eef3f8;
+        padding: 0.05rem 0.35rem;
+        border-radius: 4px;
+      }
+
+      @media (max-width: 740px) {
+        .page {
+          padding: 0.7rem;
+        }
+
+        .top,
+        .panel {
+          padding: 0.85rem;
+        }
+
+        th,
+        td {
+          font-size: 0.95rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="top">
+        <h1>Practical Investigation Builder - User Guide</h1>
+        <p class="muted">This page explains how to use the app and what every button does.</p>
+        <div class="top-links">
+          <a class="btn-link btn-primary" href="./index.html">Open The Builder</a>
+          <a class="btn-link btn-secondary" href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener noreferrer">YouTube</a>
+        </div>
+      </header>
+
+      <section class="panel">
+        <h2>1. What this project does</h2>
+        <p>
+          Practical Investigation Builder helps students plan, complete, analyse and report a science practical
+          investigation in one guided workflow.
+        </p>
+        <ul>
+          <li>Complete all 12 investigation sections from setup through to conclusion.</li>
+          <li>Build data tables and create line, scatter or bar graphs.</li>
+          <li>See a live report preview as you work.</li>
+          <li>Save and load work in your browser database (IndexedDB).</li>
+          <li>Export and import investigations as JSON.</li>
+          <li>Print a clean report (or save as PDF).</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>2. Quick start</h2>
+        <ol>
+          <li>Enter your investigation details in section 1.</li>
+          <li>Write your research question, hypothesis and variables.</li>
+          <li>Add risk controls, materials and method steps.</li>
+          <li>Define data columns and rows, then enter your results.</li>
+          <li>Choose graph type and x/y columns in the analysis section.</li>
+          <li>Complete evaluation and conclusion prompts.</li>
+          <li>Use Save, Export JSON, or Print/PDF when finished.</li>
+        </ol>
+      </section>
+
+      <section class="panel">
+        <h2>3. Header controls (top of app)</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Control</th>
+              <th>What it does</th>
+              <th>When to use it</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Starter template</strong> (dropdown)</td>
+              <td>Selects one of the built-in investigation examples.</td>
+              <td>Use at the start when you want a scaffolded investigation.</td>
+            </tr>
+            <tr>
+              <td><strong>Instructions</strong></td>
+              <td>Opens this guide page in a new tab.</td>
+              <td>Use any time you need help with controls or workflow.</td>
+            </tr>
+            <tr>
+              <td><strong>Apply template</strong></td>
+              <td>Loads the selected template into the form fields.</td>
+              <td>After choosing a template from the dropdown.</td>
+            </tr>
+            <tr>
+              <td><strong>Save</strong></td>
+              <td>Saves the current investigation to IndexedDB in this browser.</td>
+              <td>Use regularly for a manual save point.</td>
+            </tr>
+            <tr>
+              <td><strong>Load</strong></td>
+              <td>Loads the last saved investigation from IndexedDB.</td>
+              <td>When resuming work on the same device/browser.</td>
+            </tr>
+            <tr>
+              <td><strong>Export JSON</strong></td>
+              <td>Downloads the current investigation as a JSON file.</td>
+              <td>For backup, submission, transfer, or version snapshots.</td>
+            </tr>
+            <tr>
+              <td><strong>Import JSON</strong></td>
+              <td>Loads investigation data from a previously exported JSON file.</td>
+              <td>When moving work between devices or restoring a backup.</td>
+            </tr>
+            <tr>
+              <td><strong>Print/PDF</strong></td>
+              <td>Opens browser print dialog using print-friendly styling.</td>
+              <td>To print or save the report as PDF.</td>
+            </tr>
+            <tr>
+              <td><strong>Clear all</strong></td>
+              <td>Clears the current investigation form after confirmation.</td>
+              <td>Only when you want to start a new investigation from scratch.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2>4. Sidebar and section controls</h2>
+        <p>
+          The left sidebar buttons jump to each section. Each button also shows a completion status.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Section control</th>
+              <th>What it does</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Section navigation buttons (1-12)</strong></td>
+              <td>Scroll to and focus each section quickly.</td>
+            </tr>
+            <tr>
+              <td><strong>Incomplete / Complete badge</strong></td>
+              <td>Shows whether required content for that section is currently present.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2>5. Buttons inside each section</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Section</th>
+              <th>Button</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Variables</td>
+              <td><strong>Add controlled variable</strong></td>
+              <td>Adds a new controlled-variable row with fields for name, why, and control method.</td>
+            </tr>
+            <tr>
+              <td>Risk assessment</td>
+              <td><strong>Add risk row</strong></td>
+              <td>Adds a new hazard/risk/precaution row to the risk table.</td>
+            </tr>
+            <tr>
+              <td>Materials</td>
+              <td><strong>Add material</strong></td>
+              <td>Adds a new material entry with item, quantity and unit.</td>
+            </tr>
+            <tr>
+              <td>Method</td>
+              <td><strong>Add method step</strong></td>
+              <td>Adds a new numbered method step.</td>
+            </tr>
+            <tr>
+              <td>Data tables</td>
+              <td><strong>Add column</strong></td>
+              <td>Adds a custom data column definition.</td>
+            </tr>
+            <tr>
+              <td>Data tables</td>
+              <td><strong>Add trial column</strong></td>
+              <td>Quick-adds a trial column for repeated measurements.</td>
+            </tr>
+            <tr>
+              <td>Data tables</td>
+              <td><strong>Generate/update table</strong></td>
+              <td>Builds or refreshes the editable data grid from current column and row settings.</td>
+            </tr>
+            <tr>
+              <td>Dynamic lists/tables</td>
+              <td><strong>Remove</strong> (row delete buttons)</td>
+              <td>Deletes the relevant row (controlled variable, risk row, material, method step, or column).</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="tip">
+          Method steps can also be reordered by dragging the handle beside each step.
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>6. Research question feedback (heuristic validator)</h2>
+        <p>
+          The validator checks if a question is probably specific enough using transparent rules. It is not AI judging.
+        </p>
+        <ul>
+          <li><strong>Green:</strong> good</li>
+          <li><strong>Amber:</strong> needs improvement</li>
+          <li><strong>Red:</strong> too vague</li>
+        </ul>
+        <p>
+          The app suggests practical improvements such as naming what you will change and what you will measure.
+        </p>
+      </section>
+
+      <section class="panel">
+        <h2>7. Live report preview and graph</h2>
+        <ul>
+          <li>The right-side report preview updates as fields are edited.</li>
+          <li>The analysis graph appears in preview when enough valid data is available.</li>
+          <li>Axis labels include units where units are entered in data column settings.</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>8. Saving and compatibility notes</h2>
+        <ul>
+          <li>Saved data is stored in this browser profile using IndexedDB.</li>
+          <li>Saving in one browser/device does not automatically sync to another.</li>
+          <li>Use <strong>Export JSON</strong> and <strong>Import JSON</strong> to move data.</li>
+          <li>Running from GitHub Pages works because it is served over HTTP/HTTPS.</li>
+          <li>Direct <code>file://</code> opening can behave differently in some browsers for module scripts.</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
