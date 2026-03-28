@@ -12,10 +12,10 @@
     <header class="app-header">
       <div class="brand">Outline Noter</div>
       <div class="header-actions">
-        <button id="newRoot" title="New Database">New</button>
-        <button id="importJson" title="Load JSON">Load</button>
-        <button id="exportJson" title="Save JSON">Save</button>
-        <button id="exportHtml" title="Export Static HTML">Export HTML</button>
+        <button id="newRoot" type="button" title="New Database" aria-label="Create new outline">New</button>
+        <button id="importJson" type="button" title="Load JSON" aria-label="Load outline JSON">Load</button>
+        <button id="exportJson" type="button" title="Save As JSON" aria-label="Save As outline JSON">Save As</button>
+        <button id="exportHtml" type="button" title="Export Static HTML" aria-label="Export standalone HTML">Export HTML</button>
         <a class="credits" href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener">By Paul Gavini using CODEX</a>
       </div>
     </header>
@@ -29,43 +29,31 @@
             <input id="titleInput" type="text" placeholder="Node title" />
           </div>
           <div class="tree-actions">
-            <button id="addChild" title="Add Child (Ctrl+Enter)">+ Child</button>
-            <button id="addSibling" title="Add Sibling (Enter)">+ Sibling</button>
-            <button id="deleteNode" title="Delete (Del)">Delete</button>
+            <button id="addChild" type="button" title="Add Child (Ctrl+Enter)">+ Child</button>
+            <button id="addSibling" type="button" title="Add Sibling (Enter)">+ Sibling</button>
+            <button id="deleteNode" type="button" title="Delete (Del)">Delete</button>
           </div>
           <div class="tree-move">
-            <button id="moveUp" title="Move Up (Alt+ArrowUp)">↑</button>
-            <button id="moveDown" title="Move Down (Alt+ArrowDown)">↓</button>
-            <button id="indent" title="Indent (Tab)">▶︎</button>
-            <button id="outdent" title="Outdent (Shift+Tab)">◀︎</button>
+            <button id="moveUp" type="button" title="Move Up (Alt+ArrowUp)">Up</button>
+            <button id="moveDown" type="button" title="Move Down (Alt+ArrowDown)">Down</button>
+            <button id="indent" type="button" title="Indent (Tab)">Indent</button>
+            <button id="outdent" type="button" title="Outdent (Shift+Tab)">Outdent</button>
           </div>
         </div>
-        <nav id="tree" class="tree" aria-label="Notes Tree"></nav>
+        <nav id="tree" class="tree" aria-label="Notes Tree" role="tree"></nav>
       </aside>
 
       <section class="editor-pane">
-        <div class="editor-toolbar">
-          <button data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
-          <button data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
-          <button data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button>
-          <button data-cmd="insertUnorderedList" title="Bulleted List">• List</button>
-          <button data-cmd="insertOrderedList" title="Numbered List">1. List</button>
-          <button id="makeLink" title="Insert Link">Link</button>
-          <button id="attachImage" title="Insert Image (paste/upload)">Image</button>
-          <button id="insertFormula" title="Insert Formula (LaTeX subset)">Formula</button>
-          <button id="clearFormat" title="Clear Formatting">Clear</button>
-        </div>
-        <div id="editor" class="editor" contenteditable="true" spellcheck="true"></div>
+        <div id="editor" class="editor" contenteditable="true" spellcheck="true" aria-label="Note editor"></div>
       </section>
     </main>
 
     <footer class="app-footer">
-      <span id="status">Ready</span>
-      <span id="usageMeter" class="usage"></span>
+      <span id="status" role="status" aria-live="polite">Ready</span>
+      <span id="usageMeter" class="usage" aria-live="polite"></span>
     </footer>
 
     <input id="fileInput" type="file" accept="application/json" style="display:none" />
-    <input id="imageInput" type="file" accept="image/*" multiple style="display:none" />
 
     <script src="se/katex/katex.min.js"></script>
     <script src="se/suneditor.min.js"></script>

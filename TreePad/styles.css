@@ -60,6 +60,7 @@ body {
 .tree .node button.toggle { border: none; background: transparent; width: 18px; cursor: pointer; color: var(--muted); }
 .tree .node .title { padding: 4px 6px; border-radius: 4px; cursor: pointer; flex: 1; }
 .tree .node .title.active { background: #eaf0ff; color: #0a2dff; }
+.tree .node .title:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .tree .muted { color: var(--muted); font-size: 12px; }
 
 /* Drag & drop indicators */
@@ -73,16 +74,6 @@ body {
   display: flex;
   flex-direction: column;
 }
-.editor-toolbar {
-  display: none; /* hidden when using SunEditor */
-  align-items: center;
-  gap: 6px;
-  padding: 8px;
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
-}
-.editor-toolbar .title-edit { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; }
-.editor-toolbar input { padding: 4px 6px; }
 
 .editor {
   flex: 1;
@@ -103,18 +94,9 @@ body {
   font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   color: var(--text);
 }
-.editor:empty:before { content: 'Start typing your note…'; color: var(--muted); }
 .editor a { color: var(--accent); }
 /* Keep images within editor width */
 .editor img { max-width: 100%; height: auto; }
-/* Indicate droppable for image files */
-.editor.dragover { outline: 2px dashed var(--accent); outline-offset: -6px; }
-
-/* Custom image resizer overlay (shown if browser lacks native handles) */
-.img-resizer { position: absolute; border: 1px dashed var(--accent); pointer-events: none; z-index: 999; }
-.img-resizer.hidden { display: none; }
-.img-resizer .handle { position: absolute; width: 10px; height: 10px; background: var(--accent); border: 2px solid #fff; border-radius: 2px; pointer-events: auto; }
-.img-resizer .handle.se { right: -6px; bottom: -6px; cursor: se-resize; }
 
 /* Formula minimal styling */
 .formula { display: inline-block; vertical-align: middle; padding: 1px 2px; }
@@ -149,7 +131,27 @@ button {
   cursor: pointer;
 }
 button:disabled { opacity: 0.6; cursor: default; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.katex-font-fallback .katex {
+  font-family: "Times New Roman", Georgia, serif !important;
+}
 
 @media (max-width: 900px) {
   .sidebar { width: 260px; }
+}
+
+@media (max-width: 760px) {
+  .app-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .header-actions { flex-wrap: wrap; row-gap: 6px; }
+  .app-main { flex-direction: column; height: auto; min-height: calc(100% - 88px); }
+  .sidebar {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 45vh;
+  }
+  .editor-pane { min-height: 50vh; }
 }

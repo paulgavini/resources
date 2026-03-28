@@ -152,31 +152,6 @@
       function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]))}
       function renderLatexSubset(src){
         const s = String(src);
-        function greek(str){
-          const map={alpha:'α',beta:'β',gamma:'γ',delta:'δ',epsilon:'ε',zeta:'ζ',eta:'η',theta:'θ',iota:'ι',kappa:'κ',lambda:'λ',mu:'μ',nu:'ν',xi:'ξ',pi:'π',rho:'ρ',sigma:'σ',tau:'τ',upsilon:'υ',phi:'φ',chi:'χ',psi:'ψ',omega:'ω',Gamma:'Γ',Delta:'Δ',Theta:'Θ',Lambda:'Λ',Xi:'Ξ',Pi:'Π',Sigma:'Σ',Upsilon:'Υ',Phi:'Φ',Psi:'Ψ',Omega:'Ω'};
-          return str.replace(/\\([A-Za-z]+)/g,(m,n)=>map[n]||m);
-        }
-        function latexArrows(str){
-          return str
-            .replace(/\\(to|rightarrow)\b/g,'→')
-            .replace(/\\leftarrow\b/g,'←')
-            .replace(/\\leftrightarrow\b/g,'↔')
-            .replace(/\\Rightarrow\b/g,'⇒')
-            .replace(/\\Leftarrow\b/g,'⇐')
-            .replace(/\\Leftrightarrow\b/g,'⇔')
-            .replace(/\\longrightarrow\b/g,'→')
-            .replace(/\\Longrightarrow\b/g,'⇒')
-            .replace(/\\longleftarrow\b/g,'←')
-            .replace(/\\Longleftarrow\b/g,'⇐')
-            .replace(/\\(rightleftharpoons|leftrightharpoons)\b/g,'⇌');
-        }
-        function textArrows(str){
-          return str
-            .replace(/&lt;=&gt;/g,'⇌')
-            .replace(/&lt;-&gt;/g,'↔')
-            .replace(/-&gt;/g,'→')
-            .replace(/&lt;-/g,'←');
-        }
         function fracOnce(str){return str.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g,(_,a,b)=>`<span class="mfrac"><span class="num">${renderLatexSubset(a)}</span><span class="den">${renderLatexSubset(b)}</span></span>`)}
         function sqrtOnce(str){return str.replace(/\\sqrt\s*\{([^{}]+)\}/g,(_,a)=>`<span class="msqrt">√<span class="radicand">${renderLatexSubset(a)}</span></span>`)}
         function superSub(str){
@@ -230,7 +205,7 @@
           .replace(/\\Leftrightarrow\b/g,'&hArr;')
           .replace(/\\longrightarrow\b/g,'&rarr;')
           .replace(/\\Longrightarrow\b/g,'&rArr;')
-          .replace(/\\longleftarrow\b/g,'&lArr;')
+          .replace(/\\longleftarrow\b/g,'&larr;')
           .replace(/\\Longleftarrow\b/g,'&lArr;')
           .replace(/\\(rightleftharpoons|leftrightharpoons)\b/g,'&#8652;');
       }

@@ -1,8 +1,8 @@
 /*
   TreePad Web (vanilla JS)
   - Hierarchical tree with add/rename/delete/move/indent/outdent
-  - Rich text editor using contenteditable (stores HTML per node)
-  - Autosave to localStorage; JSON import/export; static HTML export
+  - Rich text editor using SunEditor (stores HTML per node)
+  - Autosave to IndexedDB (with localStorage fallback); JSON import/export; static HTML export
   - Simple search (title+content)
 */
 
@@ -48,15 +48,6 @@
       p.onerror = () => reject(p.error);
     }));
   }
-  function idbDel(store, key) {
-    return openIDB().then(dbx => new Promise((resolve, reject) => {
-      const tx = dbx.transaction(store, 'readwrite');
-      const os = tx.objectStore(store);
-      const d = os.delete(key);
-      d.onsuccess = () => resolve();
-      d.onerror = () => reject(d.error);
-    }));
-  }
   async function requestPersistentStorage() {
     try { if (navigator.storage?.persist) await navigator.storage.persist(); } catch {}
   }
@@ -68,6 +59,9 @@
 
   let db = { root: createNode('Root') };
   let selection = db.root.id;
+  const AUTOSAVE_DEBOUNCE_MS = 350;
+  let saveDebounceTimer = null;
+  let saveQueue = Promise.resolve();
 
   function findNodeById(id, node = db.root, parent = null, index = 0) {
     if (node.id === id) return { node, parent, index };
@@ -78,29 +72,71 @@
     return null;
   }
 
+  function getTreeItemById(id) {
+    const items = $$('#tree .title[role="treeitem"]');
+    return items.find(el => el.dataset.id === id) || null;
+  }
+
+  function focusTreeItem(id = selection, opts = {}) {
+    const item = getTreeItemById(id);
+    if (!item) return;
+    try { item.focus(opts); } catch { item.focus(); }
+  }
+
+  function getVisibleNodeIds() {
+    const ids = [];
+    (function walk(node) {
+      ids.push(node.id);
+      if (!node.collapsed) node.children.forEach(walk);
+    })(db.root);
+    return ids;
+  }
+
   function renderTree() {
     const container = $('#tree');
     container.innerHTML = '';
+    container.setAttribute('role', 'tree');
 
-    function renderNode(node) {
+    function renderNode(node, level = 1) {
       const li = document.createElement('li');
+      li.setAttribute('role', 'none');
+
       const row = document.createElement('div');
       row.className = 'node';
       row.dataset.id = node.id;
+      row.setAttribute('role', 'none');
+
+      const hasChildren = node.children.length > 0;
+      const isSelected = selection === node.id;
 
       const toggle = document.createElement('button');
+      toggle.type = 'button';
       toggle.className = 'toggle';
-      toggle.textContent = node.children.length ? (node.collapsed ? '▸' : '▾') : '·';
-      toggle.disabled = node.children.length === 0;
-      // Override toggle text with ASCII to avoid glyph issues
-      toggle.textContent = node.children.length ? (node.collapsed ? '[+]' : '[-]') : '';
-      toggle.addEventListener('click', () => { node.collapsed = !node.collapsed; save(); renderTree(); });
+      toggle.disabled = !hasChildren;
+      toggle.textContent = hasChildren ? (node.collapsed ? '[+]' : '[-]') : '';
+      toggle.setAttribute('aria-label', hasChildren ? (node.collapsed ? `Expand ${node.title || 'node'}` : `Collapse ${node.title || 'node'}`) : 'No children');
+      toggle.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (!hasChildren) return;
+        node.collapsed = !node.collapsed;
+        save({ silent: true });
+        renderTree();
+        focusTreeItem(node.id);
+      });
 
       const title = document.createElement('div');
-      title.className = 'title' + (selection === node.id ? ' active' : '');
+      title.id = `treeitem-${node.id}`;
+      title.className = 'title' + (isSelected ? ' active' : '');
       title.textContent = node.title || '(untitled)';
-      title.title = node.title;
-      title.addEventListener('click', () => selectNode(node.id));
+      title.title = node.title || '';
+      title.dataset.id = node.id;
+      title.setAttribute('role', 'treeitem');
+      title.setAttribute('tabindex', isSelected ? '0' : '-1');
+      title.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      title.setAttribute('aria-level', String(level));
+      if (hasChildren) title.setAttribute('aria-expanded', String(!node.collapsed));
+      title.addEventListener('click', () => selectNode(node.id, { focusTree: true }));
+      title.addEventListener('focus', () => { if (selection !== node.id) selectNode(node.id, { focusTree: true }); });
 
       // Drag & drop
       title.setAttribute('draggable', 'true');
@@ -113,23 +149,30 @@
       row.appendChild(title);
       li.appendChild(row);
 
-      if (!node.collapsed && node.children.length) {
+      if (!node.collapsed && hasChildren) {
         const ul = document.createElement('ul');
-        node.children.forEach(child => ul.appendChild(renderNode(child)));
+        ul.setAttribute('role', 'group');
+        node.children.forEach(child => ul.appendChild(renderNode(child, level + 1)));
         li.appendChild(ul);
       }
       return li;
     }
 
     const ul = document.createElement('ul');
+    ul.setAttribute('role', 'group');
     ul.appendChild(renderNode(db.root));
     container.appendChild(ul);
+    const activeId = selection ? `treeitem-${selection}` : '';
+    if (activeId) container.setAttribute('aria-activedescendant', activeId);
   }
 
-  function selectNode(id) {
+  function selectNode(id, opts = {}) {
+    if (!id) return;
+    const changed = selection !== id;
     selection = id;
-    renderTree();
-    updateEditor();
+    if (changed || opts.forceRender) renderTree();
+    if (changed || opts.forceEditor) updateEditor();
+    if (opts.focusTree) requestAnimationFrame(() => focusTreeItem(id, { preventScroll: true }));
     // No status text needed on selection
   }
 
@@ -158,7 +201,6 @@
     node.children.push(child);
     node.collapsed = false;
     save();
-    renderTree();
     selectNode(child.id);
   }
 
@@ -171,19 +213,7 @@
     const sib = createNode('New node');
     found.parent.children.splice(found.index + 1, 0, sib);
     save();
-    renderTree();
     selectNode(sib.id);
-  }
-
-  function renameNode() {
-    const { node } = findNodeById(selection) || {};
-    if (!node) return;
-    const t = prompt('Rename node', node.title);
-    if (t == null) return;
-    node.title = t.trim() || 'Untitled';
-    save();
-    renderTree();
-    updateEditor();
   }
 
   function deleteNode() {
@@ -192,7 +222,6 @@
     if (!confirm(`Delete "${found.node.title}" and its children?`)) return;
     found.parent.children.splice(found.index, 1);
     save();
-    renderTree();
     selectNode(found.parent.id);
   }
 
@@ -238,18 +267,22 @@
     save(); renderTree();
   }
 
-  // Search (simple): filter by title/content, collapse non-matching, and track match list
+  // Search: filter by title/content text, collapse non-matching, and track match list.
   const lastSearch = { query: '', ids: [], index: 0 };
+  function htmlToSearchText(html) {
+    const d = document.createElement('div');
+    d.innerHTML = html || '';
+    return (d.textContent || '').toLowerCase();
+  }
   function applySearch(q) {
     const query = q.trim().toLowerCase();
     const matchedIds = [];
     if (!query) { renderTree(); return matchedIds; }
 
     function mark(node) {
-      const textContent = (node.content || '').toLowerCase();
       const inTitle = (node.title || '').toLowerCase().includes(query);
-      const inContent = textContent.includes(query);
-      let match = inTitle || inContent;
+      const inContent = htmlToSearchText(node.content).includes(query);
+      const match = inTitle || inContent;
       let childMatch = false;
       for (const c of node.children) {
         if (mark(c)) childMatch = true;
@@ -263,27 +296,112 @@
     return matchedIds;
   }
 
-  // Editor commands
-  function exec(cmd, value = null) {
-    try { document.execCommand(cmd, false, value); } catch {}
-    onEditorInput();
+  function sanitizeInlineStyle(styleValue) {
+    const src = String(styleValue || '');
+    if (!src) return '';
+    if (/expression\s*\(|javascript:|vbscript:/i.test(src)) return '';
+    return src
+      .split(';')
+      .map(part => part.trim())
+      .filter(Boolean)
+      .filter(part => !/url\s*\(\s*['"]?\s*(javascript:|vbscript:|data:text\/html)/i.test(part))
+      .join('; ');
+  }
+
+  function isSafeLinkUrl(raw) {
+    const value = String(raw || '').trim();
+    if (!value) return false;
+    if (/^(javascript:|vbscript:|file:)/i.test(value)) return false;
+    if (/^(https?:|mailto:|tel:|#|\/)/i.test(value)) return true;
+    return !/^[a-z][a-z0-9+.-]*:/i.test(value);
+  }
+
+  function isSafeImageSrc(raw) {
+    const value = String(raw || '').trim();
+    if (!value) return false;
+    if (/^(javascript:|vbscript:|file:)/i.test(value)) return false;
+    if (/^data:image\//i.test(value)) return true;
+    if (/^(https?:|blob:|\/)/i.test(value)) return true;
+    return !/^[a-z][a-z0-9+.-]*:/i.test(value);
+  }
+
+  function sanitizeEditorHtml(html) {
+    const root = document.createElement('div');
+    root.innerHTML = String(html || '');
+    root.querySelectorAll('script,style,iframe,object,embed,link,meta').forEach(el => el.remove());
+    const all = root.querySelectorAll('*');
+    for (const el of all) {
+      for (const attr of Array.from(el.attributes)) {
+        const name = attr.name.toLowerCase();
+        const value = attr.value || '';
+        if (name.startsWith('on')) {
+          el.removeAttribute(attr.name);
+          continue;
+        }
+        if (name === 'style') {
+          const cleanStyle = sanitizeInlineStyle(value);
+          if (cleanStyle) el.setAttribute('style', cleanStyle);
+          else el.removeAttribute('style');
+        }
+      }
+      if (el.tagName === 'A') {
+        const href = el.getAttribute('href') || '';
+        if (!isSafeLinkUrl(href)) el.removeAttribute('href');
+        const target = el.getAttribute('target');
+        if (target === '_blank' && !el.getAttribute('rel')) {
+          el.setAttribute('rel', 'noopener noreferrer');
+        }
+      }
+      if (el.tagName === 'IMG') {
+        const assetId = el.getAttribute('data-asset-id');
+        if (assetId) {
+          el.removeAttribute('src');
+          el.removeAttribute('srcset');
+        } else {
+          const src = el.getAttribute('src') || '';
+          if (!isSafeImageSrc(src)) {
+            el.remove();
+            continue;
+          }
+          el.removeAttribute('srcset');
+        }
+      }
+    }
+    return root.innerHTML;
+  }
+
+  function sanitizeNodeTree(node) {
+    if (!node || typeof node !== 'object') return createNode('New node');
+    const safeNode = {
+      id: (typeof node.id === 'string' && node.id.trim()) ? node.id : crypto.randomUUID(),
+      title: typeof node.title === 'string' ? node.title : '',
+      content: sanitizeEditorHtml(typeof node.content === 'string' ? node.content : ''),
+      children: [],
+      collapsed: !!node.collapsed
+    };
+    const children = Array.isArray(node.children) ? node.children : [];
+    safeNode.children = children.map(child => sanitizeNodeTree(child));
+    return safeNode;
+  }
+
+  function sanitizeDbState(candidateDb) {
+    if (!candidateDb?.root) return { root: createNode('Root') };
+    return { root: sanitizeNodeTree(candidateDb.root) };
+  }
+
+  function normalizeSelection(candidateSelection) {
+    if (!candidateSelection) return db.root.id;
+    const found = findNodeById(candidateSelection);
+    return found?.node?.id || db.root.id;
   }
 
   function onEditorInput() {
     const f = findNodeById(selection);
     if (!f) return;
-    // Sanitize editor HTML: remove transient src on asset images
-    const tmp = document.createElement('div');
-    let html = '';
-    if (sun && sun.getContents) {
-      html = sun.getContents();
-    } else {
-      const editor = $('#editor');
-      html = editor ? editor.innerHTML : '';
-    }
-    tmp.innerHTML = html;
-    tmp.querySelectorAll('img[data-asset-id]').forEach(img => img.removeAttribute('src'));
-    f.node.content = tmp.innerHTML;
+    const html = (sun && sun.getContents)
+      ? sun.getContents()
+      : ($('#editor') ? $('#editor').innerHTML : '');
+    f.node.content = sanitizeEditorHtml(html);
     save({ silent: true });
   }
 
@@ -291,30 +409,69 @@
     const f = findNodeById(selection);
     if (!f) return;
     f.node.title = e.target.value;
+    const item = getTreeItemById(selection);
+    if (item) {
+      item.textContent = f.node.title || '(untitled)';
+      item.title = f.node.title || '';
+    }
     save({ silent: true });
-    renderTree();
+    if (lastSearch.query.trim()) {
+      lastSearch.ids = applySearch(lastSearch.query);
+      lastSearch.index = Math.max(0, lastSearch.ids.indexOf(selection));
+    }
   }
 
   // Persistence
-function save(opts = {}) {
-    (async () => {
-      try {
-        await idbPut('meta', { key: 'state', db, selection });
-        if (!opts.silent) status('Saved');
-        try { refreshUsage(); } catch {}
-      } catch (e) {
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ db, selection })); } catch {}
-        if (!opts.silent) status('Saved (LS fallback)');
-        try { refreshUsage(); } catch {}
-      }
-    })();
+  async function persistState(showStatus = false) {
+    let fallback = false;
+    try {
+      await idbPut('meta', { key: 'state', db, selection });
+    } catch (e) {
+      fallback = true;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ db, selection })); } catch {}
+    }
+    if (showStatus) status(fallback ? 'Saved (LS fallback)' : 'Saved');
+    try { refreshUsage(); } catch {}
   }
+
+  function queuePersist(showStatus = false) {
+    saveQueue = saveQueue.then(() => persistState(showStatus)).catch(() => {});
+    return saveQueue;
+  }
+
+  function flushPendingSave(showStatus = false) {
+    if (saveDebounceTimer) {
+      clearTimeout(saveDebounceTimer);
+      saveDebounceTimer = null;
+      return queuePersist(showStatus);
+    }
+    return showStatus ? queuePersist(true) : saveQueue;
+  }
+
+  function save(opts = {}) {
+    const showStatus = !opts.silent;
+    const immediate = !!opts.immediate || showStatus;
+    if (immediate) {
+      if (saveDebounceTimer) {
+        clearTimeout(saveDebounceTimer);
+        saveDebounceTimer = null;
+      }
+      return queuePersist(showStatus);
+    }
+    if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+    saveDebounceTimer = setTimeout(() => {
+      saveDebounceTimer = null;
+      queuePersist(false);
+    }, AUTOSAVE_DEBOUNCE_MS);
+    return saveQueue;
+  }
+
   async function load() {
     try {
       const state = await idbGet('meta', 'state');
       if (state?.db?.root?.id) {
-        db = state.db;
-        selection = state.selection || state.db.root.id;
+        db = sanitizeDbState(state.db);
+        selection = normalizeSelection(state.selection || state.db.root.id);
         return;
       }
     } catch (e) {
@@ -325,11 +482,11 @@ function save(opts = {}) {
       if (!raw) return;
       const parsed = JSON.parse(raw);
       if (parsed?.db?.root?.id) {
-        db = parsed.db;
-        selection = parsed.selection || db.root.id;
+        db = sanitizeDbState(parsed.db);
+        selection = normalizeSelection(parsed.selection || db.root.id);
       } else if (parsed?.root?.id) {
-        db = parsed;
-        selection = db.root.id;
+        db = sanitizeDbState(parsed);
+        selection = normalizeSelection(db.root.id);
       }
     } catch (e) {
       console.warn('Failed to load legacy localStorage DB', e);
@@ -390,8 +547,8 @@ function save(opts = {}) {
       try {
         const parsed = JSON.parse(String(reader.result));
         let newDb = null; let newSel = null; let assetsInline = null;
-        if (parsed?.db?.root?.id) { newDb = parsed.db; newSel = parsed.selection || parsed.db.root.id; assetsInline = parsed.assetsInline || null; }
-        else if (parsed?.root?.id) { newDb = parsed; newSel = parsed.root.id; assetsInline = parsed.assetsInline || null; }
+        if (parsed?.db?.root?.id) { newDb = sanitizeDbState(parsed.db); newSel = parsed.selection || parsed.db.root.id; assetsInline = parsed.assetsInline || null; }
+        else if (parsed?.root?.id) { newDb = sanitizeDbState(parsed); newSel = parsed.root.id; assetsInline = parsed.assetsInline || null; }
         else throw new Error('Invalid DB');
         (async () => {
           if (assetsInline && typeof assetsInline === 'object') {
@@ -402,10 +559,10 @@ function save(opts = {}) {
               } catch {}
             }
           }
-          db = newDb; selection = newSel || newDb.root.id;
+          db = newDb;
+          selection = normalizeSelection(newSel || newDb.root.id);
           save();
-          renderTree();
-          await updateEditor();
+          selectNode(selection, { forceRender: true, forceEditor: true });
           try { refreshUsage(); } catch {}
         })();
       } catch (e) {
@@ -448,7 +605,7 @@ function save(opts = {}) {
     function inlineAssets(html) {
       if (!html) return '';
       const d = document.createElement('div');
-      d.innerHTML = html;
+      d.innerHTML = sanitizeEditorHtml(html);
       d.querySelectorAll('img[data-asset-id]').forEach(img => {
         const id = img.getAttribute('data-asset-id');
         const dataUrl = idToDataUrl[id];
@@ -465,6 +622,9 @@ function save(opts = {}) {
     try {
       const res = await fetch('se/katex/katex.min.css');
       katexCss = await res.text();
+      // Font files are not bundled in this project; keep KaTeX layout CSS and use local serif fallbacks.
+      katexCss = katexCss.replace(/@font-face\s*{[^}]*}/g, '');
+      katexCss += '\n.katex{font-family:"Times New Roman",Georgia,serif!important;}';
     } catch {}
 
     const parts = [];
@@ -609,21 +769,115 @@ function save(opts = {}) {
         arr.splice(ins, 0, src.node);
       }
     }
-    save(); renderTree(); selectNode(src.node.id);
+    save();
+    selectNode(src.node.id, { forceRender: true });
+  }
+
+  function onTreeKeyDown(e) {
+    const titleEl = e.target?.closest?.('.title[role="treeitem"]');
+    if (!titleEl) return;
+    const focusedId = titleEl.dataset.id;
+    if (focusedId && focusedId !== selection) selection = focusedId;
+    const current = findNodeById(selection);
+    if (!current) return;
+    const visibleIds = getVisibleNodeIds();
+    const idx = Math.max(0, visibleIds.indexOf(selection));
+    const selectAndFocus = (id) => {
+      if (!id) return;
+      selectNode(id, { focusTree: true });
+    };
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectAndFocus(visibleIds[idx + 1]);
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectAndFocus(visibleIds[idx - 1]);
+      return;
+    }
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      if (current.node.children.length && current.node.collapsed) {
+        current.node.collapsed = false;
+        save({ silent: true });
+        renderTree();
+        focusTreeItem(selection);
+      } else if (current.node.children.length) {
+        selectAndFocus(current.node.children[0].id);
+      }
+      return;
+    }
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      if (current.node.children.length && !current.node.collapsed) {
+        current.node.collapsed = true;
+        save({ silent: true });
+        renderTree();
+        focusTreeItem(selection);
+      } else if (current.parent) {
+        selectAndFocus(current.parent.id);
+      }
+      return;
+    }
+    if (e.key === 'Home') {
+      e.preventDefault();
+      selectAndFocus(visibleIds[0]);
+      return;
+    }
+    if (e.key === 'End') {
+      e.preventDefault();
+      selectAndFocus(visibleIds[visibleIds.length - 1]);
+      return;
+    }
+    if (e.key === 'Enter' && e.ctrlKey) {
+      e.preventDefault();
+      addChild();
+      focusTreeItem(selection);
+      return;
+    }
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      selectAndFocus(selection);
+      return;
+    }
+    if (e.key === 'Delete') {
+      e.preventDefault();
+      deleteNode();
+      return;
+    }
+    if (e.key === 'F2') {
+      e.preventDefault();
+      const t = $('#titleInput');
+      if (t) { t.focus(); try { t.select(); } catch {} }
+      return;
+    }
+  }
+
+  async function applyKatexFontFallbackIfNeeded() {
+    try {
+      if (!document.fonts || !document.fonts.check) return;
+      await document.fonts.ready;
+      const hasKatex = document.fonts.check('12px KaTeX_Main');
+      if (!hasKatex) {
+        document.body.classList.add('katex-font-fallback');
+      }
+    } catch {}
   }
 
   // Wire up UI
   function bindUI() {
     $('#addChild').addEventListener('click', addChild);
     $('#addSibling').addEventListener('click', addSibling);
-    const rn = $('#renameNode'); if (rn) rn.addEventListener('click', renameNode);
     $('#deleteNode').addEventListener('click', deleteNode);
     $('#moveUp').addEventListener('click', moveUp);
     $('#moveDown').addEventListener('click', moveDown);
     $('#indent').addEventListener('click', indent);
     $('#outdent').addEventListener('click', outdent);
-
     $('#titleInput').addEventListener('input', onTitleInput);
+    $('#tree').addEventListener('keydown', onTreeKeyDown);
+
     // Initialize SunEditor instance
     createSunEditor();
 
@@ -638,32 +892,34 @@ function save(opts = {}) {
     $('#newRoot').addEventListener('click', () => {
       if (!confirm('Start a new empty database? This will replace the current tree in memory.')) return;
       db = { root: createNode('Root') };
-      selection = db.root.id; save(); renderTree(); updateEditor();
+      selection = db.root.id;
+      save();
+      selectNode(selection, { forceRender: true, forceEditor: true });
     });
 
     $('#exportJson').addEventListener('click', exportJson);
     $('#exportHtml').addEventListener('click', exportHtml);
     $('#importJson').addEventListener('click', () => $('#fileInput').click());
-    $('#fileInput').addEventListener('change', (e) => { const f = e.target.files?.[0]; if (f) importJsonFile(f); e.target.value=''; });
-
-    // Normalize any garbled labels to safe text at runtime
-    const upBtn = $('#moveUp'); if (upBtn) upBtn.textContent = 'Up';
-    const downBtn = $('#moveDown'); if (downBtn) downBtn.textContent = 'Down';
-    const indentBtn = $('#indent'); if (indentBtn) indentBtn.textContent = 'Indent';
-    const outdentBtn = $('#outdent'); if (outdentBtn) outdentBtn.textContent = 'Outdent';
-    const ulBtn = document.querySelector('button[data-cmd="insertUnorderedList"]'); if (ulBtn) ulBtn.textContent = '* List';
-
-    // Placeholder handled by SunEditor options
+    $('#fileInput').addEventListener('change', (e) => {
+      const f = e.target.files?.[0];
+      if (f) importJsonFile(f);
+      e.target.value = '';
+    });
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
       const inEditor = !!(document.activeElement && document.activeElement.closest && document.activeElement.closest('.sun-editor'));
       const inTitle = document.activeElement === $('#titleInput');
       const inSearch = document.activeElement === $('#search');
-      if (!inEditor && !inTitle && !inSearch) {
+      const inTree = !!(document.activeElement && document.activeElement.closest && document.activeElement.closest('#tree'));
+      if (!inEditor && !inTitle && !inSearch && !inTree) {
         if (e.key === 'Enter' && !e.ctrlKey) { e.preventDefault(); addSibling(); }
         if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); addChild(); }
-        if (e.key === 'F2') { e.preventDefault(); const t=$('#titleInput'); if (t) { t.focus(); try{ t.select(); }catch{} } }
+        if (e.key === 'F2') {
+          e.preventDefault();
+          const t = $('#titleInput');
+          if (t) { t.focus(); try { t.select(); } catch {} }
+        }
         if (e.key === 'Delete') { e.preventDefault(); deleteNode(); }
         if (e.key === 'ArrowUp' && e.altKey) { e.preventDefault(); moveUp(); }
         if (e.key === 'ArrowDown' && e.altKey) { e.preventDefault(); moveDown(); }
@@ -682,53 +938,37 @@ function save(opts = {}) {
           }
           if (lastSearch.ids.length) selectNode(lastSearch.ids[lastSearch.index]);
         } else if (e.key === 'Escape') {
-          e.preventDefault(); $('#search').value = ''; lastSearch.query = ''; lastSearch.ids = []; lastSearch.index = 0; renderTree();
+          e.preventDefault();
+          $('#search').value = '';
+          lastSearch.query = '';
+          lastSearch.ids = [];
+          lastSearch.index = 0;
+          renderTree();
         }
       }
-      if (inEditor) {
-        if (e.key.toLowerCase() === 'b' && e.ctrlKey) { e.preventDefault(); exec('bold'); }
-        if (e.key.toLowerCase() === 'i' && e.ctrlKey) { e.preventDefault(); exec('italic'); }
-        if (e.key.toLowerCase() === 'u' && e.ctrlKey) { e.preventDefault(); exec('underline'); }
-      }
+    });
+
+    window.addEventListener('beforeunload', () => { flushPendingSave(false); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flushPendingSave(false);
     });
   }
 
   async function init() {
     await load();
-    if (!selection) selection = db.root.id;
-    renderTree();
+    selection = normalizeSelection(selection);
     bindUI();
-    selectNode(selection);
+    selectNode(selection, { forceRender: true, forceEditor: true });
     try { document.execCommand('enableObjectResizing', false, true); } catch (e) {}
     try { document.execCommand('enableInlineTableEditing', false, true); } catch (e) {}
-    // setupImageResizerFallback(); // Not needed with SunEditor
     requestPersistentStorage();
+    await applyKatexFontFallbackIfNeeded();
     status('Loaded');
     refreshUsage();
     setInterval(refreshUsage, 60000);
   }
 
   document.addEventListener('DOMContentLoaded', init);
-
-  // Insert image file at caret
-  function insertImageFile(file) {
-    return new Promise((resolve, reject) => {
-      (async () => {
-        try {
-          const id = crypto.randomUUID();
-          await idbPut('assets', { id, blob: file, type: file.type, name: file.name, size: file.size, createdAt: Date.now() });
-          const url = URL.createObjectURL(file);
-          const img = document.createElement('img');
-          img.setAttribute('data-asset-id', id);
-          img.setAttribute('alt', escapeHtml(file.name));
-          img.src = url;
-          insertNodeAtCaret(img);
-          onEditorInput();
-          resolve();
-        } catch (e) { reject(e); }
-      })();
-    });
-  }
 
   async function resolveImagesInEditor() {
     const root = (sun && sun.context && sun.context.element && sun.context.element.wysiwyg)
@@ -802,212 +1042,5 @@ function save(opts = {}) {
     if (sun) {
       sun.onChange = () => onEditorInput();
     }
-  }
-
-  // Insert LaTeX formula (subset) as non-editable element preserving source in data-tex
-  function insertFormula() {
-    const input = prompt('Enter LaTeX (use $$...$$ for display mode):');
-    if (input == null) return;
-    const tex = String(input).trim();
-    if (!tex) return;
-    const display = (tex.startsWith('$$') && tex.endsWith('$$'));
-    const inner = display ? tex.slice(2, -2) : (tex.startsWith('$') && tex.endsWith('$') ? tex.slice(1, -1) : tex);
-    const html = renderLatexSubset(inner);
-    const wrapper = document.createElement(display ? 'div' : 'span');
-    wrapper.className = 'formula' + (display ? ' block' : '');
-    wrapper.setAttribute('contenteditable', 'false');
-    wrapper.setAttribute('tabindex', '0');
-    wrapper.setAttribute('data-tex', inner);
-    wrapper.innerHTML = html;
-    insertNodeAtCaret(wrapper);
-    onEditorInput();
-  }
-
-  function replaceFormulaElement(el, texSource) {
-    el.setAttribute('data-tex', texSource);
-    el.innerHTML = renderLatexSubset(texSource);
-    onEditorInput();
-  }
-
-  function insertNodeAtCaret(node) {
-    const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) { $('#editor').appendChild(node); return; }
-    const range = sel.getRangeAt(0);
-    range.deleteContents();
-    range.insertNode(node);
-    range.setStartAfter(node);
-    range.setEndAfter(node);
-    sel.removeAllRanges(); sel.addRange(range);
-  }
-
-  // Minimal offline LaTeX subset renderer
-  function renderLatexSubset(src) {
-    const s = String(src);
-    function esc(t){ return escapeHtml(t); }
-    function greek(str){
-      const map = {alpha:'α',beta:'β',gamma:'γ',delta:'δ',epsilon:'ε',zeta:'ζ',eta:'η',theta:'θ',iota:'ι',kappa:'κ',lambda:'λ',mu:'μ',nu:'ν',xi:'ξ',pi:'π',rho:'ρ',sigma:'σ',tau:'τ',upsilon:'υ',phi:'φ',chi:'χ',psi:'ψ',omega:'ω',Gamma:'Γ',Delta:'Δ',Theta:'Θ',Lambda:'Λ',Xi:'Ξ',Pi:'Π',Sigma:'Σ',Upsilon:'Υ',Phi:'Φ',Psi:'Ψ',Omega:'Ω'};
-      return str.replace(/\\([A-Za-z]+)/g, (m,n)=> map[n]||m);
-    }
-    function latexArrows(str){
-      return str
-        .replace(/\\(to|rightarrow)\b/g, '→')
-        .replace(/\\leftarrow\b/g, '←')
-        .replace(/\\leftrightarrow\b/g, '↔')
-        .replace(/\\Rightarrow\b/g, '⇒')
-        .replace(/\\Leftarrow\b/g, '⇐')
-        .replace(/\\Leftrightarrow\b/g, '⇔')
-        .replace(/\\longrightarrow\b/g, '→')
-        .replace(/\\Longrightarrow\b/g, '⇒')
-        .replace(/\\longleftarrow\b/g, '←')
-        .replace(/\\Longleftarrow\b/g, '⇐')
-        .replace(/\\(rightleftharpoons|leftrightharpoons)\b/g, '⇌');
-    }
-    function textArrows(str){
-      return str
-        .replace(/&lt;=&gt;/g, '⇌')
-        .replace(/&lt;-&gt;/g, '↔')
-        .replace(/-&gt;/g, '→')
-        .replace(/&lt;-/g, '←');
-    }
-    function fracOnce(str){
-      return str.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g, (_,a,b)=>`<span class="mfrac"><span class="num">${renderLatexSubset(a)}</span><span class="den">${renderLatexSubset(b)}</span></span>`);
-    }
-    function sqrtOnce(str){
-      return str.replace(/\\sqrt\s*\{([^{}]+)\}/g, (_,a)=>`<span class="msqrt">√<span class="radicand">${renderLatexSubset(a)}</span></span>`);
-    }
-    function superSub(str){
-      str = str.replace(/\^\{([^{}]+)\}/g, (_,a)=>`<sup>${renderLatexSubset(a)}</sup>`);
-      str = str.replace(/_\{([^{}]+)\}/g, (_,a)=>`<sub>${renderLatexSubset(a)}</sub>`);
-      str = str.replace(/\^([A-Za-z0-9])/g, (_,a)=>`<sup>${esc(a)}</sup>`);
-      str = str.replace(/_([A-Za-z0-9])/g, (_,a)=>`<sub>${esc(a)}</sub>`);
-      return str;
-    }
-    // Safer mappings using HTML entities via wrapper helpers below
-    let out = esc(s);
-    out = greekSafe(out);
-    out = latexArrowsSafe(out);
-    out = textArrowsSafe(out);
-    for (let i=0;i<3;i++){ out = fracOnce(out); out = sqrtOnceSafe(out); }
-    out = superSub(out);
-    return out;
-  }
-
-  // Safe helpers (do not depend on platform encoding)
-  function greekSafe(str){
-    return str.replace(/\\([A-Za-z]+)/g, (m,n)=>({
-      alpha:'&alpha;', beta:'&beta;', gamma:'&gamma;', delta:'&delta;', epsilon:'&epsilon;', zeta:'&zeta;', eta:'&eta;', theta:'&theta;', iota:'&iota;', kappa:'&kappa;', lambda:'&lambda;', mu:'&mu;', nu:'&nu;', xi:'&xi;', pi:'&pi;', rho:'&rho;', sigma:'&sigma;', tau:'&tau;', upsilon:'&upsilon;', phi:'&phi;', chi:'&chi;', psi:'&psi;', omega:'&omega;',
-      Gamma:'&Gamma;', Delta:'&Delta;', Theta:'&Theta;', Lambda:'&Lambda;', Xi:'&Xi;', Pi:'&Pi;', Sigma:'&Sigma;', Upsilon:'&Upsilon;', Phi:'&Phi;', Psi:'&Psi;', Omega:'&Omega;'
-    }[n]||m));
-  }
-  function latexArrowsSafe(str){
-    return str
-      .replace(/\\(to|rightarrow)\b/g, '&rarr;')
-      .replace(/\\leftarrow\b/g, '&larr;')
-      .replace(/\\leftrightarrow\b/g, '&harr;')
-      .replace(/\\Rightarrow\b/g, '&rArr;')
-      .replace(/\\Leftarrow\b/g, '&lArr;')
-      .replace(/\\Leftrightarrow\b/g, '&hArr;')
-      .replace(/\\longrightarrow\b/g, '&rarr;')
-      .replace(/\\Longrightarrow\b/g, '&rArr;')
-      .replace(/\\longleftarrow\b/g, '&larr;')
-      .replace(/\\Longleftarrow\b/g, '&lArr;')
-      .replace(/\\(rightleftharpoons|leftrightharpoons)\b/g, '&#8652;');
-  }
-  function textArrowsSafe(str){
-    return str
-      .replace(/&lt;=&gt;/g, '&#8652;')
-      .replace(/&lt;-&gt;/g, '&harr;')
-      .replace(/-&gt;/g, '&rarr;')
-      .replace(/&lt;-/g, '&larr;');
-  }
-  function sqrtOnceSafe(str){
-    return str.replace(/\\sqrt\s*\{([^{}]+)\}/g, (_,a)=>`<span class="msqrt">&#8730;<span class="radicand">${renderLatexSubset(a)}</span></span>`);
-  }
-
-  // Fallback image resizer (for browsers without native handles in contenteditable)
-  function setupImageResizerFallback() {
-    const editor = $('#editor');
-    const overlay = document.createElement('div');
-    overlay.className = 'img-resizer hidden';
-    const se = document.createElement('div');
-    se.className = 'handle se';
-    overlay.appendChild(se);
-    editor.appendChild(overlay);
-
-    let currentImg = null;
-    let dragging = false;
-    let startX = 0, startY = 0, startW = 0, startH = 0;
-
-    function updateOverlay() {
-      if (!currentImg) { overlay.classList.add('hidden'); return; }
-      const imgRect = currentImg.getBoundingClientRect();
-      const edRect = editor.getBoundingClientRect();
-      const top = imgRect.top - edRect.top + editor.scrollTop;
-      const left = imgRect.left - edRect.left + editor.scrollLeft;
-      overlay.style.top = `${top}px`;
-      overlay.style.left = `${left}px`;
-      overlay.style.width = `${imgRect.width}px`;
-      overlay.style.height = `${imgRect.height}px`;
-      overlay.classList.remove('hidden');
-    }
-
-    function pickImageFromSelection(evt) {
-      const t = evt?.target;
-      if (t && t.tagName === 'IMG') {
-        currentImg = t;
-        updateOverlay();
-        return;
-      }
-      // If clicking outside any image, hide overlay
-      if (!editor.contains(t)) { hideOverlay(); return; }
-      if (t && t.closest && t.closest('.img-resizer')) return; // clicks on overlay
-      // Not on image: hide
-      hideOverlay();
-    }
-
-    function hideOverlay() {
-      currentImg = null; overlay.classList.add('hidden');
-    }
-
-    se.addEventListener('mousedown', (e) => {
-      if (!currentImg) return;
-      e.preventDefault(); e.stopPropagation();
-      dragging = true;
-      startX = e.clientX; startY = e.clientY;
-      const rect = currentImg.getBoundingClientRect();
-      startW = rect.width; startH = rect.height;
-      document.addEventListener('mousemove', onDrag);
-      document.addEventListener('mouseup', onUp, { once: true });
-    });
-
-    function onDrag(e) {
-      if (!dragging || !currentImg) return;
-      const dx = e.clientX - startX;
-      const newW = Math.max(20, Math.round(startW + dx));
-      currentImg.style.width = `${newW}px`;
-      currentImg.style.height = 'auto';
-      updateOverlay();
-      onEditorInput();
-    }
-    function onUp() {
-      dragging = false;
-      document.removeEventListener('mousemove', onDrag);
-      updateOverlay();
-    }
-
-    // Events
-    editor.addEventListener('click', pickImageFromSelection);
-    editor.addEventListener('scroll', () => { if (currentImg) updateOverlay(); });
-    window.addEventListener('resize', () => { if (currentImg) updateOverlay(); });
-    // If an image is inserted via paste/upload, select it and show handles
-    editor.addEventListener('input', () => {
-      // Heuristic: if last child is an image or selection contains an image
-      const sel = document.getSelection();
-      if (sel && sel.anchorNode) {
-        let el = sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement;
-        const img = el?.closest && el.closest('img');
-        if (img) { currentImg = img; updateOverlay(); return; }
-      }
-    });
   }
 })();
