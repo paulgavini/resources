@@ -178,6 +178,15 @@ This file tracks session history and project changes so future sessions can resu
 
 - Removed the sentence "Classroom guide for students and teachers in South Australia." from the header of `instructions.html` as requested.
 
+### 2026-03-28 23:52 ACDT
+
+- Fixed GitHub Pages display issue where the `Instructions` control appeared as a plain hyperlink.
+- Updated `index.html`:
+  - replaced the header `Instructions` anchor link with a standard `<button>` using `data-action="open-instructions"` and existing `.secondary` button styling.
+- Updated `js/app.js`:
+  - added `open-instructions` action handler to open `./instructions.html` in a new tab.
+  - includes fallback to same-tab navigation if popup opening is blocked.
+
 ## Current File List
 
 - `.gitignore`

@@ -335,6 +335,14 @@ async function handleAction(action, trigger) {
       return;
     }
 
+    case "open-instructions": {
+      const opened = window.open("./instructions.html", "_blank", "noopener,noreferrer");
+      if (!opened) {
+        window.location.href = "./instructions.html";
+      }
+      return;
+    }
+
     case "clear-data": {
       const confirmed = window.confirm(
         "Clear all current investigation data and remove saved browser data?",
