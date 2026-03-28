@@ -187,6 +187,94 @@ This file tracks session history and project changes so future sessions can resu
   - added `open-instructions` action handler to open `./instructions.html` in a new tab.
   - includes fallback to same-tab navigation if popup opening is blocked.
 
+### 2026-03-29 09:12 ACDT
+
+- User reported dynamic form inputs losing focus after each typed character in sections 4-8.
+- Updated `js/app.js`:
+  - added active-field snapshot/restore helpers for bound inputs, dynamic array rows, and data table cells.
+  - `renderApp()` now captures the current focused field (including cursor position) before rerender and restores it after rerender.
+- Result: typing can continue normally in variables, risk, materials, method, and data-table inputs without re-clicking per character.
+
+### 2026-03-29 09:21 ACDT
+
+- User requested implementation of true Word export (`.docx`).
+- Updated `index.html`:
+  - added `Export Word` button in top controls with `data-action="export-word"`.
+  - added browser CDN script for `docx` library (`jsdelivr`).
+- Updated `js/app.js`:
+  - added `export-word` action handler.
+  - integrated chart snapshot reuse for Word export so the generated document can include the current graph image.
+  - refactored chart snapshot logic into a shared helper.
+- Added `js/word-export.js`:
+  - builds and downloads a formatted `.docx` report using the app state.
+  - includes setup, question, hypothesis, variables, risk table, materials, method, data table, analysis graph (when available), evaluation, and conclusion.
+- Updated docs:
+  - `README.md` now lists `.docx` export support and the new module.
+  - `instructions.html` header controls table now includes `Export Word`.
+
+### 2026-03-29 09:37 ACDT
+
+- User requested all trendline options plus `R^2` displayed as a percentage.
+- Updated `index.html`:
+  - added analysis dropdown `Trendline` with options:
+    - none, linear, quadratic, exponential, logarithmic, power, moving average.
+- Updated `js/state.js`:
+  - added `analysis.trendlineType` default (`none`).
+  - added trendline type normalisation guard for imported/legacy data.
+- Rebuilt `js/charts.js` trendline engine:
+  - added line/scatter trendline overlays for all requested types.
+  - added regression calculations for linear, quadratic, exponential, logarithmic, and power.
+  - added moving-average trendline (3-point window with automatic fallback for short data series).
+  - added `R^2` calculation and status display as a percentage.
+  - for non-numeric X in line charts, regression uses row order and reports this in status.
+  - for bar charts, trendlines are not applied and status explains why.
+- Updated docs:
+  - `README.md` now documents trendline support and `R^2` percentage output.
+  - `instructions.html` now explains trendline choices and `R^2` display in the graph section.
+
+### 2026-03-29 09:41 ACDT
+
+- User requested graph status to also show trendline equation and standard deviation.
+- Updated `js/charts.js`:
+  - trendline builders now generate equation strings for:
+    - linear, quadratic, exponential, logarithmic, power, moving average.
+  - added residual standard deviation calculation for each trendline fit.
+  - graph status now reports:
+    - equation
+    - standard deviation (SD)
+    - `R^2` percentage.
+- Updated docs:
+  - `README.md` now notes equation + SD + `R^2` in graph status.
+  - `instructions.html` graph section updated to mention equation, SD, and `R^2`.
+
+### 2026-03-29 09:46 ACDT
+
+- User requested equation/SD/`R²` output to be displayed in the graph area and to use superscript formatting for 2.
+- Updated `js/charts.js`:
+  - added a chart overlay plugin that draws the fitted summary text inside the graph canvas area.
+  - added summary text builder in the requested style:
+    - `Equation: ... SD: ... R²: ...`
+  - switched trendline status label formatting from `R^2` to `R²`.
+  - included compatibility fallback for browsers without `canvas.roundRect`.
+- Updated docs:
+  - replaced `R^2` references with `R²` in `README.md` and `instructions.html`.
+
+### 2026-03-29 09:49 ACDT
+
+- User requested moving the equation/SD/`R²` display to sit under the x-axis variable label.
+- Updated `js/charts.js`:
+  - repositioned summary drawing from top-left overlay to centered text below the x-axis label.
+  - added bottom layout padding when summary text is present so text does not overlap/clamp.
+- Updated docs:
+  - `README.md` and `instructions.html` now describe the summary position as below the x-axis label.
+
+### 2026-03-29 09:51 ACDT
+
+- User requested removing trendline details from the text status under the graph.
+- Updated `js/charts.js`:
+  - graph status message now only reports the base graph update/error state.
+  - removed trendline-specific status text (trendline fit details remain displayed in-graph below the x-axis label).
+
 ## Current File List
 
 - `.gitignore`
@@ -204,6 +292,7 @@ This file tracks session history and project changes so future sessions can resu
 - `js/templates.js`
 - `js/ui.js`
 - `js/validation.js`
+- `js/word-export.js`
 
 ## Entry Template
 

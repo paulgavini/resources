@@ -30,6 +30,7 @@
           <button type="button" data-action="export-json">Export JSON</button>
           <button type="button" data-action="import-json">Import JSON</button>
           <button type="button" data-action="print-report">Print/PDF</button>
+          <button type="button" data-action="export-word">Export Word</button>
           <button class="danger" type="button" data-action="clear-data">Clear all</button>
         </div>
         <div class="status-row" aria-live="polite" id="save-status">Ready</div>
@@ -241,6 +242,18 @@
                 </select>
               </label>
               <label>
+                Trendline
+                <select data-bind="analysis.trendlineType">
+                  <option value="none">None</option>
+                  <option value="linear">Linear</option>
+                  <option value="quadratic">Quadratic</option>
+                  <option value="exponential">Exponential</option>
+                  <option value="logarithmic">Logarithmic</option>
+                  <option value="power">Power</option>
+                  <option value="moving-average">Moving average</option>
+                </select>
+              </label>
+              <label>
                 X-axis column
                 <select data-bind="analysis.xColumn" id="graph-x-select"></select>
               </label>
@@ -312,7 +325,7 @@
 
           <section class="section-card" id="section-export" data-section="export">
             <h2>12. Report export</h2>
-            <p class="support-text">Use the top controls to save, load, import/export JSON, or print this report as PDF.</p>
+            <p class="support-text">Use the top controls to save, load, export JSON/Word, import JSON, or print this report as PDF.</p>
             <ul class="checklist" id="export-checklist"></ul>
           </section>
         </main>
@@ -329,6 +342,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docx@8.2.4/build/index.umd.js"></script>
     <script type="module" src="./js/app.js"></script>
   </body>
 </html>

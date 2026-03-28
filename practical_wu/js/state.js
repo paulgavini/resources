@@ -1,4 +1,13 @@
 const GRAPH_TYPES = new Set(["line", "scatter", "bar"]);
+const TRENDLINE_TYPES = new Set([
+  "none",
+  "linear",
+  "quadratic",
+  "exponential",
+  "logarithmic",
+  "power",
+  "moving-average",
+]);
 
 export function createDefaultState() {
   return {
@@ -39,6 +48,7 @@ export function createDefaultState() {
     },
     analysis: {
       graphType: "line",
+      trendlineType: "none",
       xColumn: 0,
       yColumn: 1,
       trend: "",
@@ -218,6 +228,10 @@ export function normaliseState(candidateState) {
 
   if (!GRAPH_TYPES.has(merged.analysis.graphType)) {
     merged.analysis.graphType = "line";
+  }
+
+  if (!TRENDLINE_TYPES.has(merged.analysis.trendlineType)) {
+    merged.analysis.trendlineType = "none";
   }
 
   const maxColumnIndex = merged.data.includeAverage

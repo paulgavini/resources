@@ -21,6 +21,7 @@ import { getTemplateById, getTemplateList } from "./templates.js";
 import { validateAllSections } from "./validation.js";
 import { buildReportHtml, generateConclusionParagraph } from "./report.js";
 import { renderChart } from "./charts.js";
+import { exportReportToWord } from "./word-export.js";
 import {
   createUI,
   initialiseMethodSortable,
@@ -167,6 +168,118 @@ function parseBoundValue(target) {
   }
 
   return target.value;
+}
+
+function captureActiveFieldSnapshot() {
+  const activeElement = document.activeElement;
+  if (
+    !(
+      activeElement instanceof HTMLInputElement ||
+      activeElement instanceof HTMLTextAreaElement ||
+      activeElement instanceof HTMLSelectElement
+    )
+  ) {
+    return null;
+  }
+
+  const hasArrayMeta =
+    typeof activeElement.dataset.array === "string" &&
+    typeof activeElement.dataset.index === "string";
+  const hasTableMeta =
+    activeElement.dataset.tableCell === "true" &&
+    typeof activeElement.dataset.row === "string" &&
+    typeof activeElement.dataset.column === "string";
+  const hasBindMeta = typeof activeElement.dataset.bind === "string";
+
+  let meta = null;
+
+  if (hasTableMeta) {
+    meta = {
+      kind: "table",
+      row: activeElement.dataset.row,
+      column: activeElement.dataset.column,
+    };
+  } else if (hasArrayMeta) {
+    meta = {
+      kind: "array",
+      array: activeElement.dataset.array,
+      index: activeElement.dataset.index,
+      field: activeElement.dataset.field ?? "",
+    };
+  } else if (hasBindMeta) {
+    meta = {
+      kind: "bind",
+      bind: activeElement.dataset.bind,
+    };
+  }
+
+  if (!meta) {
+    return null;
+  }
+
+  const hasSelection =
+    activeElement instanceof HTMLInputElement ||
+    activeElement instanceof HTMLTextAreaElement;
+
+  return {
+    ...meta,
+    selectionStart: hasSelection ? activeElement.selectionStart : null,
+    selectionEnd: hasSelection ? activeElement.selectionEnd : null,
+    selectionDirection: hasSelection ? activeElement.selectionDirection : null,
+  };
+}
+
+function findRestoredField(snapshot) {
+  if (!snapshot) {
+    return null;
+  }
+
+  if (snapshot.kind === "bind") {
+    return document.querySelector(`[data-bind="${snapshot.bind}"]`);
+  }
+
+  if (snapshot.kind === "array") {
+    const fieldSelector = snapshot.field
+      ? `[data-field="${snapshot.field}"]`
+      : ":not([data-field])";
+
+    return document.querySelector(
+      `[data-array="${snapshot.array}"][data-index="${snapshot.index}"]${fieldSelector}`,
+    );
+  }
+
+  if (snapshot.kind === "table") {
+    return document.querySelector(
+      `[data-table-cell="true"][data-row="${snapshot.row}"][data-column="${snapshot.column}"]`,
+    );
+  }
+
+  return null;
+}
+
+function restoreActiveFieldSnapshot(snapshot) {
+  const restored = findRestoredField(snapshot);
+  if (!(restored instanceof HTMLElement)) {
+    return;
+  }
+
+  restored.focus({ preventScroll: true });
+
+  if (
+    (restored instanceof HTMLInputElement || restored instanceof HTMLTextAreaElement) &&
+    snapshot.selectionStart !== null &&
+    snapshot.selectionEnd !== null
+  ) {
+    try {
+      restored.setSelectionRange(
+        snapshot.selectionStart,
+        snapshot.selectionEnd,
+        snapshot.selectionDirection ?? "none",
+      );
+    } catch (error) {
+      // Some input types do not support text selection ranges.
+    }
+  }
 }
 
 function handleBoundInput(target) {
@@ -322,6 +435,24 @@ async function handleAction(action, trigger) {
     case "export-json": {
       exportAsJson(getState());
       updateStatus("JSON export downloaded.");
+      return;
+    }
+
+    case "export-word": {
+      try {
+        const state = getState();
+        const { chartResult, chartImageUrl } = buildChartSnapshot(state);
+        setGraphStatus(ui.graphStatus, chartResult.message, !chartResult.ok);
+
+        await exportReportToWord(state, {
+          chartImageUrl,
+          chartStatus: chartResult.message,
+        });
+        updateStatus("Word export downloaded (.docx).");
+      } catch (error) {
+        console.error(error);
+        updateStatus("Word export failed. Check browser compatibility and try again.");
+      }
       return;
     }
 
@@ -557,6 +688,7 @@ function attachSectionObserver() {
 }
 
 function renderApp() {
+  const focusSnapshot = captureActiveFieldSnapshot();
   const state = getState();
 
   renderBoundInputs(state);
@@ -576,14 +708,8 @@ function renderApp() {
   const conclusionParagraph = generateConclusionParagraph(state.conclusion);
   setConclusionPreview(ui.conclusionPreview, conclusionParagraph);
 
-  const chartResult = renderChart(ui.chartCanvas, state);
+  const { chartResult, chartImageUrl } = buildChartSnapshot(state);
   setGraphStatus(ui.graphStatus, chartResult.message, !chartResult.ok);
-  const chartImageUrl =
-    chartResult.ok && chartResult.imageDataUrl
-      ? chartResult.imageDataUrl
-      : chartResult.ok && typeof ui.chartCanvas?.toDataURL === "function"
-      ? ui.chartCanvas.toDataURL("image/png")
-      : "";
   setReportPreview(
     ui.reportPreview,
     buildReportHtml(state, {
@@ -599,6 +725,22 @@ function renderApp() {
   methodSortable = initialiseMethodSortable(ui.methodSteps, moveMethodStep);
 
   setSaveStatus(ui.saveStatus, statusText);
+  restoreActiveFieldSnapshot(focusSnapshot);
+}
+
+function buildChartSnapshot(state) {
+  const chartResult = renderChart(ui.chartCanvas, state);
+  const chartImageUrl =
+    chartResult.ok && chartResult.imageDataUrl
+      ? chartResult.imageDataUrl
+      : chartResult.ok && typeof ui.chartCanvas?.toDataURL === "function"
+      ? ui.chartCanvas.toDataURL("image/png")
+      : "";
+
+  return {
+    chartResult,
+    chartImageUrl,
+  };
 }
 
 function initialiseTemplates() {

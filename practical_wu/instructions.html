@@ -187,7 +187,7 @@
           <li>Build data tables and create line, scatter or bar graphs.</li>
           <li>See a live report preview as you work.</li>
           <li>Save and load work in your browser database (IndexedDB).</li>
-          <li>Export and import investigations as JSON.</li>
+          <li>Export investigations as JSON or Word (.docx), and import JSON backups.</li>
           <li>Print a clean report (or save as PDF).</li>
         </ul>
       </section>
@@ -201,7 +201,7 @@
           <li>Define data columns and rows, then enter your results.</li>
           <li>Choose graph type and x/y columns in the analysis section.</li>
           <li>Complete evaluation and conclusion prompts.</li>
-          <li>Use Save, Export JSON, or Print/PDF when finished.</li>
+          <li>Use Save, Export JSON/Word, or Print/PDF when finished.</li>
         </ol>
       </section>
 
@@ -245,6 +245,11 @@
               <td><strong>Export JSON</strong></td>
               <td>Downloads the current investigation as a JSON file.</td>
               <td>For backup, submission, transfer, or version snapshots.</td>
+            </tr>
+            <tr>
+              <td><strong>Export Word</strong></td>
+              <td>Downloads the current investigation as a Word document (.docx).</td>
+              <td>When you need a Word version for editing, marking, or submission.</td>
             </tr>
             <tr>
               <td><strong>Import JSON</strong></td>
@@ -368,6 +373,8 @@
         <ul>
           <li>The right-side report preview updates as fields are edited.</li>
           <li>The analysis graph appears in preview when enough valid data is available.</li>
+          <li>Choose trendlines (linear, quadratic, exponential, logarithmic, power, moving average) or set to none.</li>
+          <li>When a trendline is applied, the graph area shows equation, standard deviation, and <code>R²</code> as a percentage below the x-axis label.</li>
           <li>Axis labels include units where units are entered in data column settings.</li>
         </ul>
       </section>

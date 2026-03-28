@@ -25,9 +25,12 @@ Students can plan, complete, analyse, and report an investigation through guided
 - Supports drag-and-drop method step ordering (SortableJS).
 - Generates editable data tables with optional calculated average column.
 - Draws line/scatter/bar charts from entered data (Chart.js).
+- Supports graph trendlines: none, linear, quadratic, exponential, logarithmic, power, and moving average.
+- Shows trendline equation, standard deviation, and `R²` as a percentage below the x-axis label in the graph area.
 - Shows a live report preview suitable for printing.
 - Saves and loads investigations in `IndexedDB` (with legacy `localStorage` migration).
 - Exports/imports investigation JSON.
+- Exports a formatted Microsoft Word report (`.docx`).
 - Supports print/PDF via browser print dialog.
 - Includes 3 built-in starter templates:
   - Effect of temperature on reaction rate
@@ -96,6 +99,7 @@ Optional guide:
 - `js/validation.js` - section checks and feedback rules
 - `js/report.js` - live report HTML generation
 - `js/charts.js` - Chart.js graph preparation/rendering
+- `js/word-export.js` - `.docx` Word report generation and download
 - `AGENTS.md` - session/change tracking log
 
 ## Future extension ideas
