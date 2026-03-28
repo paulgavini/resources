@@ -1,0 +1,66 @@
+@media print {
+  * {
+    box-shadow: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000;
+    font-size: 11pt;
+  }
+
+  .topbar,
+  .sidebar,
+  .editor,
+  .preview-note {
+    display: none !important;
+  }
+
+  .workspace {
+    display: block !important;
+    padding: 0 !important;
+  }
+
+  .preview-panel {
+    position: static !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+
+  .preview-panel h2 {
+    display: none;
+  }
+
+  .report-preview {
+    font-size: 10.5pt;
+  }
+
+  .report-section {
+    break-inside: avoid;
+  }
+
+  .report-graph-image {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .report-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .report-table th,
+  .report-table td {
+    border: 1px solid #000;
+  }
+
+  a,
+  button {
+    color: #000 !important;
+  }
+}
