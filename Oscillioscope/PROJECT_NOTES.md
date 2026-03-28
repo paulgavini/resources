@@ -16,7 +16,9 @@ Core Features
 - Pause button freezes the waveform for analysis.
 - Cursor readout on pause: horizontal and vertical dashed lines with time/voltage at cursor.
 - Frequency readout from autocorrelation estimate; period derived from frequency.
+- Frequency analysis is throttled for performance and uses a short hold window to prevent flicker.
 - Vpp (peak-to-peak) readout based on current V/div and waveform peak.
+- Accessible live status/readout support is included for assistive technology.
 
 Files
 - index.html
@@ -31,6 +33,8 @@ Files
   - Triggered window selection (positive edge at left).
   - Waveform draw loop, frequency estimation, Vpp calculation, and cursor overlay.
   - Keyboard control for V/div (left/right arrows).
+  - Startup flow now allows retry if microphone permission fails.
+  - Audio lifecycle cleanup on page hide/unload (stream tracks stopped, context closed).
 
 Important Implementation Notes
 - Timebase updates analyzer fftSize so larger ms/div shows more data.
@@ -38,6 +42,8 @@ Important Implementation Notes
 - Cursor values are computed from the canvas position relative to current time window and V/div.
 - Frequency estimation uses autocorrelation on the displayed window with DC removal and sensible bounds.
 - V/div display shows 3 decimal places; range is 0.005 to 1.5 V/div.
+- Waveform plotting uses the actual triggered view length to avoid out-of-range sample reads.
+- Runtime checks guard against missing canvas/context or unsupported microphone APIs.
 
 Usage Tips
 - Use Pause to freeze the waveform; move the mouse over the canvas for cursor readings.

@@ -10,7 +10,7 @@
   <div class="app">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-title">Oscillioscope</div>
+        <div class="brand-title">Oscilloscope</div>
         <div class="brand-sub">Microphone Input</div>
       </div>
       <div class="credit">
@@ -18,23 +18,24 @@
         <a href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener noreferrer">YouTube</a>
       </div>
       <div class="actions">
-        <button id="startBtn" class="btn">Start Audio</button>
-        <button id="pauseBtn" class="btn" disabled>Pause</button>
+        <button id="startBtn" class="btn" type="button" aria-label="Start microphone audio">Start Audio</button>
+        <button id="pauseBtn" class="btn" type="button" aria-label="Pause waveform display" disabled>Pause</button>
       </div>
     </header>
 
     <main class="main">
-      <section class="scope">
-        <canvas id="scope" width="960" height="480"></canvas>
+      <section class="scope" role="region" aria-label="Oscilloscope display">
+        <canvas id="scope" width="960" height="480" role="img" aria-label="Live waveform from microphone input"></canvas>
         <div class="grid-labels">
-          <div id="vPerDivLabel">V/div: 1.00</div>
+          <div id="vPerDivLabel">V/div: 0.500</div>
           <div id="tPerDivLabel">ms/div: 5.00</div>
           <div id="freqLabel">Freq: -- Hz</div>
           <div id="ampLabel">Vpp: -- V</div>
           <div id="periodLabel">Period: -- ms</div>
           <div id="cursorLabel">Cursor: --</div>
         </div>
-        <div id="status" class="status">Click Start Audio to begin.</div>
+        <div id="status" class="status" role="status" aria-live="polite">Click Start Audio to begin.</div>
+        <div id="readoutLive" class="sr-only" aria-live="polite" aria-atomic="true"></div>
       </section>
 
       <section class="controls">
@@ -59,7 +60,7 @@
           <ul class="hint-body">
             <li>Use Pause to freeze the waveform.</li>
             <li>Use left/right arrows to adjust V/div.</li>
-            <li>Please check your systems' microphone levels.</li>
+            <li>Please check your system microphone levels.</li>
           </ul>
         </div>
       </section>
