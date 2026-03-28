@@ -1,4 +1,5 @@
 const pdfInput = document.getElementById("pdfInput");
+const newBlankBtn = document.getElementById("newBlankBtn");
 const eraseModeBtn = document.getElementById("eraseModeBtn");
 const clearPageBtn = document.getElementById("clearPageBtn");
 const gridBtn = document.getElementById("gridBtn");
@@ -34,6 +35,9 @@ const MAX_ZOOM = 4;
 const PEN_TOUCH_SUPPRESSION_MS = 140;
 const CM_TO_POINTS = 72 / 2.54;
 const GRID_LINE_COLOR = "rgba(133, 144, 159, 0.32)";
+const DEFAULT_BLANK_PAGE_SIZE = [595.28, 841.89];
+const MIN_BLANK_PAGE_COUNT = 1;
+const MAX_BLANK_PAGE_COUNT = 50;
 
 const userAgent = navigator.userAgent || "";
 const isIOSDevice =
@@ -581,6 +585,62 @@ async function loadPdf(file) {
   await loadPdfBytes(bytes, file.name);
 }
 
+function getBlankPageCountFromPrompt() {
+  const response = window.prompt(
+    `How many blank pages do you want? (${MIN_BLANK_PAGE_COUNT}-${MAX_BLANK_PAGE_COUNT})`,
+    "1"
+  );
+
+  if (response === null) {
+    return null;
+  }
+
+  const normalized = response.trim();
+  if (!/^\d+$/.test(normalized)) {
+    return Number.NaN;
+  }
+
+  return Number.parseInt(normalized, 10);
+}
+
+async function buildBlankPdfBytes(pageCount) {
+  const blankPdf = await PDFLib.PDFDocument.create();
+
+  for (let pageIndex = 0; pageIndex < pageCount; pageIndex += 1) {
+    blankPdf.addPage(DEFAULT_BLANK_PAGE_SIZE);
+  }
+
+  return await blankPdf.save();
+}
+
+async function createBlankPdf() {
+  if (!confirmDiscardUnsavedChanges()) {
+    return;
+  }
+
+  const pageCount = getBlankPageCountFromPrompt();
+  if (pageCount === null) {
+    return;
+  }
+
+  if (!Number.isInteger(pageCount) || pageCount < MIN_BLANK_PAGE_COUNT || pageCount > MAX_BLANK_PAGE_COUNT) {
+    setStatus(`Enter a whole number from ${MIN_BLANK_PAGE_COUNT} to ${MAX_BLANK_PAGE_COUNT}.`);
+    return;
+  }
+
+  setStatus(`Creating blank PDF with ${pageCount} page(s)...`);
+
+  try {
+    const blankPdfBytes = await buildBlankPdfBytes(pageCount);
+    const fileName = `blank-${pageCount}-page${pageCount === 1 ? "" : "s"}.pdf`;
+    await loadPdfBytes(blankPdfBytes, fileName);
+    setStatus(`Created blank PDF with ${pageCount} page(s).`);
+  } catch (error) {
+    console.error(error);
+    setStatus("Could not create a blank PDF.");
+  }
+}
+
 async function loadPdfBytes(bytes, fileName) {
   const sourceBytes = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
 
@@ -1087,6 +1147,12 @@ drawCanvas.addEventListener("pointerleave", (event) => {
 });
 
 eraseModeBtn.addEventListener("click", () => setMode("erase"));
+newBlankBtn.addEventListener("click", () => {
+  createBlankPdf().catch((error) => {
+    console.error(error);
+    setStatus("Could not create a blank PDF.");
+  });
+});
 undoBtn.addEventListener("click", undoStroke);
 redoBtn.addEventListener("click", redoStroke);
 clearPageBtn.addEventListener("click", clearCurrentPage);

@@ -5,6 +5,7 @@ Small browser-based PDF annotator built with HTML, CSS, and JavaScript.
 ## What it does
 
 - Open a PDF from the file picker
+- Create a blank PDF with a chosen page count
 - Draw freehand annotations on each page
 - Erase marks
 - Toggle a 1cm page grid on/off

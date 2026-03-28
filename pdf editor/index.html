@@ -12,7 +12,7 @@
       <div class="stage-shell">
         <div id="emptyState" class="empty-state">
           <p class="empty-eyebrow">PDF Editor</p>
-          <h2>Drop a PDF or use Open PDF</h2>
+          <h2>Drop a PDF, open one, or create a blank PDF</h2>
           <p>Draw directly on the page, erase marks, then save an annotated copy.</p>
         </div>
 
@@ -41,6 +41,7 @@
         <input id="colorPicker" class="visually-hidden" type="color" value="#2d4f83">
 
         <label class="tool-button file-button" for="pdfInput">Open PDF</label>
+        <button id="newBlankBtn" class="tool-button" type="button">New Blank PDF</button>
         <button id="eraseModeBtn" class="tool-button" type="button">Eraser</button>
         <button id="undoBtn" class="tool-button" type="button" disabled>Undo</button>
         <button id="redoBtn" class="tool-button" type="button" disabled>Redo</button>
@@ -65,13 +66,13 @@
           <input id="brushSize" type="range" min="1" max="24" value="4">
         </div>
 
-        <p id="statusText" class="status-text">Select a PDF to begin.</p>
+        <p id="statusText" class="status-text">Open or create a PDF to begin.</p>
       </div>
     </aside>
   </div>
 
   <script src="vendor/pdf.min.js"></script>
   <script src="vendor/pdf-lib.min.js"></script>
-  <script src="script.js?v=12"></script>
+  <script src="script.js?v=13"></script>
 </body>
 </html>
