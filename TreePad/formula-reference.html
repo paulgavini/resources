@@ -1,9 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Outline Noter — LaTeX Subset Reference</title>
+    <title>Outline Noter - LaTeX Subset Reference</title>
     <style>
       :root { --text:#1e1e24; --muted:#666b7a; --accent:#3a72ff; --border:#e1e4ea; }
       body{margin:0;font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);background:#fff}
@@ -38,7 +38,7 @@
   <body>
     <header>
       <h1>LaTeX Subset Reference (Offline, used by Outline Noter)</h1>
-      <div class="note">This page documents the minimal LaTeX subset supported by the offline renderer in your TreePad Web editor.</div>
+      <div class="note">This page documents the minimal LaTeX subset supported by the offline renderer in your Outliner Web editor.</div>
     </header>
     <main>
       <h2>Delimiters</h2>
@@ -134,7 +134,7 @@
       <div class="playground">
         <div class="label">Playground</div>
         <div class="note">Type LaTeX (use $...$ for inline or $$...$$ for block) and see the rendered output below.</div>
-        <textarea id="src">$\frac{a^2+b^2}{\sqrt{c}}$</textarea>
+        <textarea id="src">$&#92;frac{a^2+b^2}{&#92;sqrt{c}}$</textarea>
         <div id="out" class="preview"></div>
       </div>
 
@@ -143,7 +143,7 @@
         <li>Implemented: superscripts/subscripts (^, _ with optional braces), \frac{...}{...}, \sqrt{...}, and common Greek letters.</li>
         <li>Shallow nesting only (a few levels). Deeply nested expressions may not fully render.</li>
         <li>Not implemented: matrices, sums/integrals/limits, alignment, spacing commands, fonts, advanced macros.</li>
-        <li>Renderer is offline and self‑contained; no external libraries are used.</li>
+        <li>Renderer is offline and self-contained; no external libraries are used.</li>
       </ul>
     </main>
 
@@ -153,7 +153,6 @@
       function renderLatexSubset(src){
         const s = String(src);
         function fracOnce(str){return str.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g,(_,a,b)=>`<span class="mfrac"><span class="num">${renderLatexSubset(a)}</span><span class="den">${renderLatexSubset(b)}</span></span>`)}
-        function sqrtOnce(str){return str.replace(/\\sqrt\s*\{([^{}]+)\}/g,(_,a)=>`<span class="msqrt">√<span class="radicand">${renderLatexSubset(a)}</span></span>`)}
         function superSub(str){
           str=str.replace(/\^\{([^{}]+)\}/g,(_,a)=>`<sup>${renderLatexSubset(a)}</sup>`);
           str=str.replace(/_\{([^{}]+)\}/g,(_,a)=>`<sub>${renderLatexSubset(a)}</sub>`);
@@ -235,3 +234,4 @@
     </script>
   </body>
   </html>
+

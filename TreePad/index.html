@@ -12,11 +12,24 @@
     <header class="app-header">
       <div class="brand">Outline Noter</div>
       <div class="header-actions">
-        <button id="newRoot" type="button" title="New Database" aria-label="Create new outline">New</button>
-        <button id="importJson" type="button" title="Load JSON" aria-label="Load outline JSON">Load</button>
-        <button id="exportJson" type="button" title="Save As JSON" aria-label="Save As outline JSON">Save As</button>
-        <button id="exportHtml" type="button" title="Export Static HTML" aria-label="Export standalone HTML">Export HTML</button>
-        <a class="credits" href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener">By Paul Gavini using CODEX</a>
+        <div class="diagram-actions">
+          <button id="undoAction" type="button" title="Undo (Ctrl+Z)">Undo</button>
+          <button id="zoomOut" type="button" title="Zoom out">-</button>
+          <button id="zoomIn" type="button" title="Zoom in">+</button>
+          <button id="fitMap" type="button" title="Fit map to viewport">Fit</button>
+          <button id="autoArrange" type="button" title="Auto arrange map nodes">Auto Arrange</button>
+          <button id="toggleDiagram" type="button" aria-pressed="true" title="Enable or disable diagram">Disable Diagram</button>
+          <button id="deleteSelection" type="button" title="Delete selected node or link">Delete Selected</button>
+        </div>
+        <span class="header-divider" aria-hidden="true">|</span>
+        <div class="file-actions">
+          <button id="newRoot" type="button" title="New Database" aria-label="Create new outline">New</button>
+          <button id="importJson" type="button" title="Load JSON" aria-label="Load outline JSON">Load</button>
+          <button id="exportJson" type="button" title="Save As JSON" aria-label="Save As outline JSON">Save As</button>
+          <button id="exportWord" type="button" title="Export Word document">Export Word</button>
+          <button id="exportHtml" type="button" title="Export Static HTML" aria-label="Export standalone HTML">Export HTML</button>
+          <a class="credits" href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener">By Paul Gavini using CODEX</a>
+        </div>
       </div>
     </header>
 
@@ -24,27 +37,61 @@
       <aside class="sidebar">
         <div class="sidebar-top">
           <input id="search" type="search" placeholder="Search..." />
-          <div class="title-box">
-            <label for="titleInput">Title:</label>
-            <input id="titleInput" type="text" placeholder="Node title" />
-          </div>
           <div class="tree-actions">
             <button id="addChild" type="button" title="Add Child (Ctrl+Enter)">+ Child</button>
             <button id="addSibling" type="button" title="Add Sibling (Enter)">+ Sibling</button>
             <button id="deleteNode" type="button" title="Delete (Del)">Delete</button>
           </div>
           <div class="tree-move">
-            <button id="moveUp" type="button" title="Move Up (Alt+ArrowUp)">Up</button>
-            <button id="moveDown" type="button" title="Move Down (Alt+ArrowDown)">Down</button>
-            <button id="indent" type="button" title="Indent (Tab)">Indent</button>
-            <button id="outdent" type="button" title="Outdent (Shift+Tab)">Outdent</button>
+            <button id="moveUp" type="button" title="Move Up (Alt+ArrowUp)" aria-label="Move Up">
+              <span aria-hidden="true">&#8593;</span>
+            </button>
+            <button id="moveDown" type="button" title="Move Down (Alt+ArrowDown)" aria-label="Move Down">
+              <span aria-hidden="true">&#8595;</span>
+            </button>
+            <button id="indent" type="button" title="Indent (Tab)" aria-label="Indent">
+              <span aria-hidden="true">&#8594;</span>
+            </button>
+            <button id="outdent" type="button" title="Outdent (Shift+Tab)" aria-label="Outdent">
+              <span aria-hidden="true">&#8592;</span>
+            </button>
           </div>
         </div>
-        <nav id="tree" class="tree" aria-label="Notes Tree" role="tree"></nav>
+        <div id="tree" class="tree" aria-label="Notes Tree" role="tree"></div>
       </aside>
 
-      <section class="editor-pane">
-        <div id="editor" class="editor" contenteditable="true" spellcheck="true" aria-label="Note editor"></div>
+      <section id="editorPane" class="editor-pane">
+        <section class="map-panel" aria-label="Concept map workspace">
+          <div id="mapStage" class="map-stage">
+            <svg id="mapCanvas" viewBox="0 0 1600 1000" aria-label="Concept map canvas" tabindex="0">
+              <defs>
+                <marker id="parentArrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+                  <path d="M 0 0 L 9 3.5 L 0 7 z"></path>
+                </marker>
+                <marker id="linkArrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+                  <path d="M 0 0 L 10 4 L 0 8 z"></path>
+                </marker>
+              </defs>
+              <g id="parentEdgeLayer"></g>
+              <g id="relationEdgeLayer"></g>
+              <g id="nodeLayer"></g>
+            </svg>
+          </div>
+        </section>
+
+        <div
+          id="notesResizeHandle"
+          class="notes-resize-handle"
+          role="separator"
+          aria-orientation="horizontal"
+          aria-label="Resize notes panel"
+          title="Drag to resize notes panel"
+        ></div>
+
+        <section id="notesPanel" class="notes-panel">
+          <div class="notes-header">Notes for <strong id="noteNodeLabel">(untitled)</strong></div>
+          <div id="editor" class="editor" contenteditable="true" spellcheck="true" aria-label="Note editor"></div>
+        </section>
       </section>
     </main>
 
@@ -53,7 +100,7 @@
       <span id="usageMeter" class="usage" aria-live="polite"></span>
     </footer>
 
-    <input id="fileInput" type="file" accept="application/json" style="display:none" />
+    <input id="fileInput" type="file" accept=".json,application/json" hidden />
 
     <script src="se/katex/katex.min.js"></script>
     <script src="se/suneditor.min.js"></script>
