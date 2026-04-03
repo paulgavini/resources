@@ -23,10 +23,13 @@ Students can plan, complete, analyse, and report an investigation through guided
 - Uses a transparent heuristic research-question validator (rule-based, no backend, no AI judging).
 - Marks section completion in the sidebar.
 - Supports drag-and-drop method step ordering (SortableJS).
-- Generates editable data tables with optional calculated average column.
+- Generates editable data tables with optional calculated average and standard deviation columns.
 - Draws line/scatter/bar charts from entered data (Chart.js).
+- Supports multiple graph cards in the analysis section.
+- Supports multiple Y-axis columns on the same graph with distinct colours and a legend.
+- Includes a per-graph option to force the graph to start at `0,0` for scatter graphs and line graphs with numeric X values.
 - Supports graph trendlines: none, linear, quadratic, exponential, logarithmic, power, and moving average.
-- Shows trendline equation, standard deviation, and `R²` as a percentage below the x-axis label in the graph area.
+- Shows trendline equation, standard deviation, and `R²` as a percentage below the x-axis label in the graph area when one Y-axis column is selected.
 - Shows a live report preview suitable for printing.
 - Saves and loads investigations in `IndexedDB` (with legacy `localStorage` migration).
 - Exports/imports investigation JSON.

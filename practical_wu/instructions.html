@@ -184,7 +184,7 @@
         </p>
         <ul>
           <li>Complete all 12 investigation sections from setup through to conclusion.</li>
-          <li>Build data tables and create line, scatter or bar graphs.</li>
+          <li>Build data tables with optional average and standard deviation columns, then create one or more line, scatter or bar graphs.</li>
           <li>See a live report preview as you work.</li>
           <li>Save and load work in your browser database (IndexedDB).</li>
           <li>Export investigations as JSON or Word (.docx), and import JSON backups.</li>
@@ -199,7 +199,7 @@
           <li>Write your research question, hypothesis and variables.</li>
           <li>Add risk controls, materials and method steps.</li>
           <li>Define data columns and rows, then enter your results.</li>
-          <li>Choose graph type and x/y columns in the analysis section.</li>
+          <li>Choose graph type, x-axis column, and one or more Y-axis columns in the analysis section.</li>
           <li>Complete evaluation and conclusion prompts.</li>
           <li>Use Save, Export JSON/Word, or Print/PDF when finished.</li>
         </ol>
@@ -342,6 +342,16 @@
               <td>Builds or refreshes the editable data grid from current column and row settings.</td>
             </tr>
             <tr>
+              <td>Data tables</td>
+              <td><strong>Average / Standard deviation</strong> (checkboxes)</td>
+              <td>Adds calculated summary columns to the data table so they can also be graphed.</td>
+            </tr>
+            <tr>
+              <td>Graph and analysis</td>
+              <td><strong>Add graph</strong></td>
+              <td>Adds another graph card so you can compare different graph setups in the same investigation.</td>
+            </tr>
+            <tr>
               <td>Dynamic lists/tables</td>
               <td><strong>Remove</strong> (row delete buttons)</td>
               <td>Deletes the relevant row (controlled variable, risk row, material, method step, or column).</td>
@@ -372,9 +382,13 @@
         <h2>7. Live report preview and graph</h2>
         <ul>
           <li>The right-side report preview updates as fields are edited.</li>
-          <li>The analysis graph appears in preview when enough valid data is available.</li>
+          <li>Each analysis graph card appears in preview when enough valid data is available.</li>
+          <li>You can add extra graph cards and delete any graph after the first one.</li>
+          <li>Each graph can plot multiple Y-axis columns on the same graph using different colours and a legend.</li>
+          <li>Each graph also has a checkbox to force the graph to start at <code>0,0</code> for scatter graphs and line graphs with numeric X values.</li>
           <li>Choose trendlines (linear, quadratic, exponential, logarithmic, power, moving average) or set to none.</li>
           <li>When a trendline is applied, the graph area shows equation, standard deviation, and <code>R²</code> as a percentage below the x-axis label.</li>
+          <li>Trendlines are shown when one Y-axis column is selected for that graph.</li>
           <li>Axis labels include units where units are entered in data column settings.</li>
         </ul>
       </section>

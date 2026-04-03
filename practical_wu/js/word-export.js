@@ -1,3 +1,5 @@
+import { getDisplayCellValue, getDisplayColumns } from "./charts.js";
+
 function hasText(value) {
   return String(value ?? "").trim().length > 0;
 }
@@ -5,25 +7,6 @@ function hasText(value) {
 function asText(value, fallback = "Not yet completed.") {
   const text = String(value ?? "").trim();
   return text || fallback;
-}
-
-function parseNumeric(value) {
-  const parsed = Number.parseFloat(String(value ?? "").trim());
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function averageFromRow(row) {
-  const numbers = row
-    .slice(1)
-    .map((cell) => parseNumeric(cell))
-    .filter((value) => value !== null);
-
-  if (numbers.length === 0) {
-    return "";
-  }
-
-  const average = numbers.reduce((sum, value) => sum + value, 0) / numbers.length;
-  return Number.isFinite(average) ? average.toFixed(2) : "";
 }
 
 function formatColumnLabel(column, fallbackName) {
@@ -175,20 +158,13 @@ function addMethodList(children, docxApi, steps) {
 function addDataTable(children, docxApi, state) {
   const columns = Array.isArray(state.data?.columns) ? state.data.columns : [];
   const rows = Array.isArray(state.data?.rows) ? state.data.rows : [];
-  const includeAverage = Boolean(state.data?.includeAverage);
 
   if (columns.length === 0) {
     children.push(new docxApi.Paragraph("No data columns yet."));
     return;
   }
 
-  const displayColumns = [...columns];
-  if (includeAverage) {
-    displayColumns.push({
-      name: "Average",
-      unit: columns[1]?.unit ?? "",
-    });
-  }
+  const displayColumns = getDisplayColumns(state.data);
 
   const headers = [
     "Row",
@@ -199,52 +175,81 @@ function addDataTable(children, docxApi, state) {
 
   const bodyRows = rows.map((row, rowIndex) => {
     const safeRow = Array.isArray(row) ? row : [];
-    const baseCells = columns.map((_, columnIndex) => String(safeRow[columnIndex] ?? ""));
-    const averageCell = includeAverage ? [averageFromRow(safeRow)] : [];
-    return [String(rowIndex + 1), ...baseCells, ...averageCell];
+    const cells = displayColumns.map((column) =>
+      String(getDisplayCellValue(state.data, safeRow, column) ?? ""),
+    );
+    return [String(rowIndex + 1), ...cells];
   });
 
   children.push(buildRowsTable(docxApi, headers, bodyRows));
 }
 
-function addAnalysisGraph(children, docxApi, options) {
+function addAnalysisGraphs(children, docxApi, options) {
   const { AlignmentType, HeadingLevel, ImageRun, Paragraph, TextRun } = docxApi;
-  const imageBytes = toDataUrlBytes(options?.chartImageUrl ?? "");
+  const graphs =
+    Array.isArray(options?.graphs) && options.graphs.length > 0
+      ? options.graphs
+      : options?.chartImageUrl || options?.chartStatus
+      ? [
+          {
+            title: "Graph 1",
+            imageDataUrl: options.chartImageUrl,
+            message: options.chartStatus,
+          },
+        ]
+      : [];
 
-  children.push(
-    new Paragraph({
-      text: "Graph",
-      heading: HeadingLevel.HEADING_2,
-      spacing: { before: 180, after: 80 },
-    }),
-  );
-
-  if (imageBytes) {
+  if (graphs.length === 0) {
     children.push(
       new Paragraph({
-        alignment: AlignmentType.CENTER,
-        children: [
-          new ImageRun({
-            data: imageBytes,
-            transformation: {
-              width: 560,
-              height: 330,
-            },
-          }),
-        ],
+        text: "Graph",
+        heading: HeadingLevel.HEADING_2,
+        spacing: { before: 180, after: 80 },
       }),
     );
-  } else {
     children.push(new Paragraph("Graph preview unavailable for the current data."));
+    return;
   }
 
-  if (hasText(options?.chartStatus)) {
+  graphs.forEach((graph, index) => {
+    const imageBytes = toDataUrlBytes(graph?.imageDataUrl ?? "");
+    const title = asText(graph?.title, `Graph ${index + 1}`);
+
     children.push(
       new Paragraph({
-        children: [new TextRun({ text: `Graph status: ${options.chartStatus}`, italics: true })],
+        text: title,
+        heading: HeadingLevel.HEADING_2,
+        spacing: { before: 180, after: 80 },
       }),
     );
-  }
+
+    if (imageBytes) {
+      children.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [
+            new ImageRun({
+              data: imageBytes,
+              transformation: {
+                width: 560,
+                height: 330,
+              },
+            }),
+          ],
+        }),
+      );
+    } else {
+      children.push(new Paragraph("Graph preview unavailable for the current data."));
+    }
+
+    if (hasText(graph?.message)) {
+      children.push(
+        new Paragraph({
+          children: [new TextRun({ text: `Graph status: ${graph.message}`, italics: true })],
+        }),
+      );
+    }
+  });
 }
 
 export async function exportReportToWord(state, options = {}) {
@@ -338,7 +343,7 @@ export async function exportReportToWord(state, options = {}) {
   addDataTable(children, docxApi, state);
 
   children.push(sectionHeading(docxApi, "Analysis"));
-  addAnalysisGraph(children, docxApi, options);
+  addAnalysisGraphs(children, docxApi, options);
   children.push(labelParagraph(docxApi, "Trend", state.analysis?.trend));
   children.push(labelParagraph(docxApi, "Anomalies", state.analysis?.anomalies));
   children.push(

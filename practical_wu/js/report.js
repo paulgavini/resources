@@ -1,3 +1,5 @@
+import { getDisplayCellValue, getDisplayColumns } from "./charts.js";
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -32,21 +34,6 @@ function buildList(items, className = "report-list", ordered = false) {
   return `<${tag} class="${className}">${listItems}</${tag}>`;
 }
 
-function tryNumber(value) {
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function getAverageFromRow(row) {
-  const numeric = row.map(tryNumber).filter((value) => value !== null);
-  if (numeric.length === 0) {
-    return "";
-  }
-
-  const average = numeric.reduce((sum, value) => sum + value, 0) / numeric.length;
-  return Number.isFinite(average) ? average.toFixed(2) : "";
-}
-
 function buildDataTable(state) {
   const columns = Array.isArray(state.data.columns) ? state.data.columns : [];
   const rows = Array.isArray(state.data.rows) ? state.data.rows : [];
@@ -55,10 +42,7 @@ function buildDataTable(state) {
     return '<p class="empty-text">No data columns yet.</p>';
   }
 
-  const displayColumns = [...columns];
-  if (state.data.includeAverage) {
-    displayColumns.push({ name: "Average", unit: columns[1]?.unit ?? "" });
-  }
+  const displayColumns = getDisplayColumns(state.data);
 
   const headers = displayColumns
     .map(
@@ -70,13 +54,10 @@ function buildDataTable(state) {
   const bodyRows = rows
     .map((row) => {
       const safeRow = Array.isArray(row) ? row : [];
-      const cells = columns
-        .map((_, index) => `<td>${escapeHtml(safeRow[index] ?? "")}</td>`)
+      const cells = displayColumns
+        .map((column) => `<td>${escapeHtml(getDisplayCellValue(state.data, safeRow, column))}</td>`)
         .join("");
-      const averageCell = state.data.includeAverage
-        ? `<td>${escapeHtml(getAverageFromRow(safeRow.slice(1)))}</td>`
-        : "";
-      return `<tr>${cells}${averageCell}</tr>`;
+      return `<tr>${cells}</tr>`;
     })
     .join("");
 
@@ -111,6 +92,37 @@ function buildMaterialsList(materials) {
   return buildList(lines);
 }
 
+function buildGraphBlocks(graphs) {
+  if (!Array.isArray(graphs) || graphs.length === 0) {
+    return `
+      <div class="report-graph-block">
+        <h4>Graph</h4>
+        <p class="empty-text">Graph preview unavailable until enough numeric data is entered.</p>
+      </div>
+    `;
+  }
+
+  return graphs
+    .map((graph, index) => {
+      const title = String(graph?.title ?? "").trim() || `Graph ${index + 1}`;
+      const imageDataUrl = String(graph?.imageDataUrl ?? "");
+      const message = String(graph?.message ?? "");
+
+      return `
+        <div class="report-graph-block">
+          <h4>${escapeHtml(title)}</h4>
+          ${
+            imageDataUrl
+              ? `<img class="report-graph-image" src="${escapeAttr(imageDataUrl)}" alt="${escapeAttr(title)} preview" />`
+              : '<p class="empty-text">Graph preview unavailable until enough numeric data is entered.</p>'
+          }
+          ${message ? `<p class="report-note">${escapeHtml(message)}</p>` : ""}
+        </div>
+      `;
+    })
+    .join("");
+}
+
 export function generateConclusionParagraph(conclusion) {
   const claim = String(conclusion.claim ?? "").trim();
   const evidence = String(conclusion.evidence ?? "").trim();
@@ -130,8 +142,18 @@ export function generateConclusionParagraph(conclusion) {
 }
 
 export function buildReportHtml(state, options = {}) {
-  const chartImageUrl = String(options.chartImageUrl ?? "");
-  const chartStatus = String(options.chartStatus ?? "");
+  const graphs =
+    Array.isArray(options.graphs) && options.graphs.length > 0
+      ? options.graphs
+      : options.chartImageUrl || options.chartStatus
+      ? [
+          {
+            title: "Graph 1",
+            imageDataUrl: String(options.chartImageUrl ?? ""),
+            message: String(options.chartStatus ?? ""),
+          },
+        ]
+      : [];
   const generatedDate = new Date().toLocaleString("en-AU", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -199,15 +221,7 @@ export function buildReportHtml(state, options = {}) {
 
     <section class="report-section">
       <h3>Analysis</h3>
-      <div class="report-graph-block">
-        <h4>Graph</h4>
-        ${
-          chartImageUrl
-            ? `<img class="report-graph-image" src="${escapeAttr(chartImageUrl)}" alt="Investigation graph preview" />`
-            : '<p class="empty-text">Graph preview unavailable until enough numeric data is entered.</p>'
-        }
-        ${chartStatus ? `<p class="report-note">${escapeHtml(chartStatus)}</p>` : ""}
-      </div>
+      ${buildGraphBlocks(graphs)}
       <p><strong>Trend:</strong> ${withFallback(state.analysis.trend)}</p>
       <p><strong>Anomalies:</strong> ${withFallback(state.analysis.anomalies)}</p>
       <p><strong>Hypothesis supported:</strong> ${withFallback(state.analysis.hypothesisSupported)}</p>

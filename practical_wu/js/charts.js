@@ -1,4 +1,4 @@
-let chartInstance = null;
+let chartInstances = [];
 
 const TRENDLINE_LABELS = {
   linear: "Linear",
@@ -15,6 +15,14 @@ const EPSILON = 1e-12;
 const RSQUARED_LABEL = "R²";
 const TREND_SUMMARY_LINE_HEIGHT = 14;
 const TREND_SUMMARY_BOTTOM_PADDING = 58;
+const SERIES_COLOURS = [
+  { border: "#0a497f", background: "#2787d6" },
+  { border: "#0f766e", background: "#1da89a" },
+  { border: "#8b5a00", background: "#c98a12" },
+  { border: "#8b1e3f", background: "#c74374" },
+  { border: "#5b3f9b", background: "#7f62d4" },
+  { border: "#8f3f1b", background: "#cb6a32" },
+];
 
 function wrapCanvasText(context, text, maxWidth) {
   const words = String(text ?? "").trim().split(/\s+/).filter(Boolean);
@@ -105,6 +113,24 @@ function calculateAverage(row, startIndex = 1) {
   return Number.isFinite(average) ? average.toFixed(2) : "";
 }
 
+function calculateStandardDeviation(row, startIndex = 1) {
+  const numeric = row
+    .slice(startIndex)
+    .map((cell) => parseNumeric(cell))
+    .filter((value) => value !== null);
+
+  if (numeric.length < 2) {
+    return "";
+  }
+
+  const mean = numeric.reduce((sum, value) => sum + value, 0) / numeric.length;
+  const variance =
+    numeric.reduce((sum, value) => sum + (value - mean) ** 2, 0) /
+    (numeric.length - 1);
+  const standardDeviation = Math.sqrt(variance);
+  return Number.isFinite(standardDeviation) ? standardDeviation.toFixed(2) : "";
+}
+
 export function getDisplayColumns(data) {
   const baseColumns = (data.columns ?? []).map((column, index) => ({
     key: `base-${index}`,
@@ -124,6 +150,16 @@ export function getDisplayColumns(data) {
     });
   }
 
+  if (data.includeStandardDeviation) {
+    baseColumns.push({
+      key: "standard-deviation",
+      source: "standard-deviation",
+      sourceIndex: -1,
+      name: "Standard deviation",
+      unit: data.columns?.[1]?.unit || "",
+    });
+  }
+
   return baseColumns;
 }
 
@@ -132,25 +168,70 @@ export function getDisplayCellValue(data, row, columnMeta) {
     return calculateAverage(row.slice(1), 0);
   }
 
+  if (columnMeta.source === "standard-deviation") {
+    return calculateStandardDeviation(row.slice(1), 0);
+  }
+
   return row[columnMeta.sourceIndex] ?? "";
 }
 
-function buildChartDataset(state) {
-  const displayColumns = getDisplayColumns(state.data);
-  const xColumn = displayColumns[state.analysis.xColumn];
-  const yColumn = displayColumns[state.analysis.yColumn];
+function getSeriesColour(index) {
+  return SERIES_COLOURS[index % SERIES_COLOURS.length];
+}
 
-  if (!xColumn || !yColumn) {
-    return { ok: false, message: "Select valid columns for the graph axes." };
+function formatAxisTitle(column) {
+  const name = String(column?.name ?? "").trim() || "Axis";
+  const unit = String(column?.unit ?? "").trim();
+  return unit ? `${name} (${unit})` : name;
+}
+
+function formatYAxisTitle(yColumns) {
+  if (!Array.isArray(yColumns) || yColumns.length === 0) {
+    return "Y-axis";
   }
 
-  const rows = state.data.rows ?? [];
+  if (yColumns.length === 1) {
+    return formatAxisTitle(yColumns[0]);
+  }
+
+  return "Selected Y-axis columns";
+}
+
+function buildScatterSeries(data, rows, xColumn, yColumn) {
   const points = [];
 
   rows.forEach((row, rowIndex) => {
-    const xValue = getDisplayCellValue(state.data, row, xColumn);
-    const yValue = getDisplayCellValue(state.data, row, yColumn);
+    const xValue = getDisplayCellValue(data, row, xColumn);
+    const yValue = getDisplayCellValue(data, row, yColumn);
+    const xNum = parseNumeric(xValue);
+    const yNum = parseNumeric(yValue);
+
+    if (xNum === null || yNum === null) {
+      return;
+    }
+
+    points.push({
+      x: xNum,
+      y: yNum,
+      xRaw: xValue,
+      xNum,
+      yNum,
+      rowIndex,
+    });
+  });
+
+  return points;
+}
+
+function buildCartesianSeries(data, rows, xColumn, yColumn) {
+  const values = [];
+  const points = [];
+
+  rows.forEach((row, rowIndex) => {
+    const xValue = getDisplayCellValue(data, row, xColumn);
+    const yValue = getDisplayCellValue(data, row, yColumn);
     const numericY = parseNumeric(yValue);
+    values.push(numericY);
 
     if (numericY === null) {
       return;
@@ -164,32 +245,95 @@ function buildChartDataset(state) {
     });
   });
 
-  if (points.length < 2) {
+  return {
+    values,
+    points,
+  };
+}
+
+function rowHasNumericYValue(data, row, yColumns) {
+  return yColumns.some((yColumn) => parseNumeric(getDisplayCellValue(data, row, yColumn)) !== null);
+}
+
+function buildGraphDataset(data, graphConfig) {
+  const displayColumns = getDisplayColumns(data);
+  const xColumn = displayColumns[graphConfig?.xColumn];
+  const yColumns = (graphConfig?.yColumns ?? [])
+    .map((columnIndex) => displayColumns[columnIndex])
+    .filter(Boolean);
+
+  if (!xColumn || yColumns.length === 0) {
+    return { ok: false, message: "Select valid X-axis and Y-axis columns for the graph." };
+  }
+
+  const rows = data.rows ?? [];
+
+  if (graphConfig.graphType === "scatter") {
+    const series = yColumns
+      .map((yColumn) => ({
+        column: yColumn,
+        label: formatAxisTitle(yColumn),
+        points: buildScatterSeries(data, rows, xColumn, yColumn),
+      }))
+      .filter((entry) => entry.points.length > 0);
+
+    if (!series.some((entry) => entry.points.length >= 2)) {
+      return {
+        ok: false,
+        message: "Scatter plots need numeric values for both axes in at least two rows.",
+      };
+    }
+
+    return {
+      ok: true,
+      xColumn,
+      yColumns,
+      labels: [],
+      series,
+    };
+  }
+
+  const useLinearXAxis =
+    graphConfig.graphType === "line" &&
+    rows
+      .map((row) => ({
+        row,
+        xNumeric: parseNumeric(getDisplayCellValue(data, row, xColumn)),
+      }))
+      .every(({ row, xNumeric }) => !rowHasNumericYValue(data, row, yColumns) || xNumeric !== null);
+
+  const labels = rows.map((row) => String(getDisplayCellValue(data, row, xColumn)));
+  const series = yColumns
+    .map((yColumn) => {
+      const result = buildCartesianSeries(data, rows, xColumn, yColumn);
+      return {
+        column: yColumn,
+        label: formatAxisTitle(yColumn),
+        values: result.values,
+        points: result.points,
+      };
+    })
+    .filter((entry) => entry.points.length > 0);
+
+  const populatedRowCount = rows.filter((row) =>
+    yColumns.some((yColumn) => parseNumeric(getDisplayCellValue(data, row, yColumn)) !== null),
+  ).length;
+
+  if (series.length === 0 || populatedRowCount < 2) {
     return {
       ok: false,
       message: "Enter at least two rows with numeric Y-axis values to draw the graph.",
     };
   }
 
-  return {
-    ok: true,
-    xColumn,
-    yColumn,
-    points,
-  };
-}
-
-function destroyExistingChart() {
-  if (chartInstance) {
-    chartInstance.destroy();
-    chartInstance = null;
-  }
-}
-
-function formatAxisTitle(column) {
-  const name = String(column?.name ?? "").trim() || "Axis";
-  const unit = String(column?.unit ?? "").trim();
-  return unit ? `${name} (${unit})` : name;
+    return {
+      ok: true,
+      xColumn,
+      yColumns,
+      labels,
+      series,
+      useLinearXAxis,
+    };
 }
 
 function formatPercentage(value) {
@@ -612,8 +756,8 @@ function buildTrendContext(graphType, points) {
   };
 }
 
-function buildTrendlineDataset(graphType, points, trendlineResult) {
-  if (!trendlineResult.ok || trendlineResult.values.length !== points.length) {
+function buildTrendlineDataset(graphType, series, trendlineResult, useLinearXAxis = false) {
+  if (!trendlineResult.ok || trendlineResult.values.length !== series.points.length) {
     return null;
   }
 
@@ -629,20 +773,25 @@ function buildTrendlineDataset(graphType, points, trendlineResult) {
     tension: trendlineResult.curved ? 0.18 : 0,
   };
 
-  if (graphType === "scatter") {
+  if (graphType === "scatter" || useLinearXAxis) {
     return {
       ...common,
-      data: points.map((point, index) => ({
-        x: point.x,
+      data: series.points.map((point, index) => ({
+        x: point.x ?? point.xNum,
         y: trendlineResult.values[index],
       })),
       showLine: true,
     };
   }
 
+  const valuesByRow = Array.from({ length: series.values.length }, () => null);
+  series.points.forEach((point, index) => {
+    valuesByRow[point.rowIndex] = trendlineResult.values[index];
+  });
+
   return {
     ...common,
-    data: trendlineResult.values,
+    data: valuesByRow,
   };
 }
 
@@ -668,7 +817,7 @@ function buildTrendlineSummaryText(trendlineResult) {
     .join(" ");
 }
 
-export function renderChart(canvas, state) {
+export function renderChart(canvas, state, graphConfig, graphIndex = 0) {
   if (!canvas) {
     return { ok: false, message: "Chart canvas not found." };
   }
@@ -677,16 +826,14 @@ export function renderChart(canvas, state) {
     return { ok: false, message: "Chart.js failed to load." };
   }
 
-  const dataset = buildChartDataset(state);
+  const graphType = String(graphConfig?.graphType ?? "line");
+  const trendlineType = String(graphConfig?.trendlineType ?? "none");
+  const startAtOrigin = Boolean(graphConfig?.startAtOrigin);
+  const dataset = buildGraphDataset(state.data, graphConfig);
+
   if (!dataset.ok) {
-    destroyExistingChart();
     return dataset;
   }
-
-  const graphType = state.analysis.graphType;
-  const trendlineType = String(state.analysis.trendlineType ?? "none");
-  const colour = "#0b5ea8";
-  const border = "#0a497f";
 
   const config = {
     type: graphType,
@@ -702,7 +849,9 @@ export function renderChart(canvas, state) {
         },
       },
       plugins: {
-        legend: { display: false },
+        legend: {
+          display: dataset.series.length > 1,
+        },
         trendSummaryOverlay: {
           text: "",
         },
@@ -710,64 +859,80 @@ export function renderChart(canvas, state) {
       scales: {
         x: {
           title: { display: true, text: formatAxisTitle(dataset.xColumn) },
+          type:
+            graphType === "scatter" || (graphType === "line" && dataset.useLinearXAxis)
+              ? "linear"
+              : "category",
+          min:
+            (graphType === "scatter" || (graphType === "line" && dataset.useLinearXAxis)) &&
+            startAtOrigin
+              ? 0
+              : undefined,
         },
         y: {
-          title: { display: true, text: formatAxisTitle(dataset.yColumn) },
-          beginAtZero: false,
+          title: { display: true, text: formatYAxisTitle(dataset.yColumns) },
+          beginAtZero: startAtOrigin,
+          min: startAtOrigin ? 0 : undefined,
         },
       },
     },
   };
 
   if (graphType === "scatter") {
-    const scatterPoints = dataset.points
-      .filter((point) => point.xNum !== null)
-      .map((point) => ({ x: point.xNum, y: point.yNum }));
-
-    if (scatterPoints.length < 2) {
-      destroyExistingChart();
-      return {
-        ok: false,
-        message: "Scatter plots need numeric values for both axes in at least two rows.",
-      };
-    }
-
     config.data = {
-      datasets: [
-        {
-          label: "Data",
-          data: scatterPoints,
-          backgroundColor: colour,
-          borderColor: border,
+      datasets: dataset.series.map((series, index) => {
+        const colour = getSeriesColour(index);
+        return {
+          label: series.label,
+          data: series.points.map((point) => ({ x: point.x, y: point.y })),
+          backgroundColor: colour.background,
+          borderColor: colour.border,
           pointRadius: 5,
-        },
-      ],
+          showLine: false,
+        };
+      }),
     };
-  } else {
-    const labels = dataset.points.map((point) => String(point.xRaw));
-    const values = dataset.points.map((point) => point.yNum);
-
+  } else if (graphType === "line" && dataset.useLinearXAxis) {
     config.data = {
-      labels,
-      datasets: [
-        {
-          label: "Data",
-          data: values,
-          borderColor: border,
-          backgroundColor: graphType === "bar" ? "#2787d6" : colour,
+      datasets: dataset.series.map((series, index) => {
+        const colour = getSeriesColour(index);
+        return {
+          label: series.label,
+          data: series.points.map((point) => ({ x: point.xNum, y: point.yNum })),
+          borderColor: colour.border,
+          backgroundColor: colour.border,
           fill: false,
           tension: 0.2,
           pointRadius: 4,
-        },
-      ],
+          showLine: true,
+        };
+      }),
+    };
+  } else {
+    config.data = {
+      labels: dataset.labels,
+      datasets: dataset.series.map((series, index) => {
+        const colour = getSeriesColour(index);
+        return {
+          label: series.label,
+          data: series.values,
+          borderColor: colour.border,
+          backgroundColor: graphType === "bar" ? colour.background : colour.border,
+          fill: false,
+          tension: 0.2,
+          pointRadius: 4,
+        };
+      }),
     };
   }
 
   let trendlineSummaryText = "";
+  let trendlineSkippedForMultiY = false;
 
-  if (trendlineType !== "none") {
-    if (graphType !== "bar") {
-      const trendContext = buildTrendContext(graphType, dataset.points);
+  if (trendlineType !== "none" && graphType !== "bar") {
+    if (dataset.series.length === 1) {
+      const sourceSeries = dataset.series[0];
+      const trendContext = buildTrendContext(graphType, sourceSeries.points);
       if (trendContext.ok) {
         const trendlineResult = buildTrendlineResult(
           trendlineType,
@@ -776,8 +941,9 @@ export function renderChart(canvas, state) {
         if (trendlineResult.ok) {
           const trendlineDataset = buildTrendlineDataset(
             graphType,
-            trendContext.points,
+            sourceSeries,
             trendlineResult,
+            graphType === "line" && dataset.useLinearXAxis,
           );
 
           if (trendlineDataset) {
@@ -787,6 +953,8 @@ export function renderChart(canvas, state) {
           }
         }
       }
+    } else {
+      trendlineSkippedForMultiY = true;
     }
   }
 
@@ -795,12 +963,23 @@ export function renderChart(canvas, state) {
     ? TREND_SUMMARY_BOTTOM_PADDING
     : 0;
 
-  destroyExistingChart();
-  chartInstance = new window.Chart(canvas, config);
+  const chartInstance = new window.Chart(canvas, config);
   chartInstance.update("none");
+  chartInstances.push(chartInstance);
 
-  const baseMessage = `${graphType[0].toUpperCase()}${graphType.slice(1)} graph updated from data table.`;
-  const message = baseMessage;
+  const baseMessage = `${graphType[0].toUpperCase()}${graphType.slice(1)} graph ${graphIndex + 1} updated from data table.`;
+  const notes = [];
+  if (trendlineSkippedForMultiY) {
+    notes.push("Trendlines are only shown when one Y-axis column is selected.");
+  }
+  if (startAtOrigin && graphType !== "scatter") {
+    if (graphType === "line" && dataset.useLinearXAxis) {
+      notes.push("Axes have been forced to start at 0 where possible.");
+    } else {
+      notes.push("Y-axis has been forced to start at 0. X-axis origin forcing currently applies to scatter graphs and line graphs with numeric X values.");
+    }
+  }
+  const message = notes.length > 0 ? `${baseMessage} ${notes.join(" ")}` : baseMessage;
 
   return {
     ok: true,
@@ -812,6 +991,11 @@ export function renderChart(canvas, state) {
   };
 }
 
+export function destroyCharts() {
+  chartInstances.forEach((chartInstance) => chartInstance.destroy());
+  chartInstances = [];
+}
+
 export function destroyChart() {
-  destroyExistingChart();
+  destroyCharts();
 }

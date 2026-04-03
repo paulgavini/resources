@@ -9,6 +9,16 @@ const TRENDLINE_TYPES = new Set([
   "moving-average",
 ]);
 
+export function createBlankAnalysisGraph() {
+  return {
+    graphType: "line",
+    trendlineType: "none",
+    xColumn: 0,
+    yColumns: [1],
+    startAtOrigin: false,
+  };
+}
+
 export function createDefaultState() {
   return {
     setup: {
@@ -45,12 +55,10 @@ export function createDefaultState() {
       rowCount: 5,
       rows: createEmptyRows(5, 2),
       includeAverage: false,
+      includeStandardDeviation: false,
     },
     analysis: {
-      graphType: "line",
-      trendlineType: "none",
-      xColumn: 0,
-      yColumn: 1,
+      graphs: [createBlankAnalysisGraph()],
       trend: "",
       anomalies: "",
       hypothesisSupported: "",
@@ -152,6 +160,55 @@ function toSafeInteger(value, fallback) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function clampColumnIndex(value, maxColumnIndex, fallback) {
+  return Math.max(0, Math.min(maxColumnIndex, toSafeInteger(value, fallback)));
+}
+
+function normaliseAnalysisGraph(graph, maxColumnIndex) {
+  const safeGraph = isObject(graph) ? graph : {};
+  const fallbackGraph = createBlankAnalysisGraph();
+  const graphType = GRAPH_TYPES.has(safeGraph.graphType)
+    ? safeGraph.graphType
+    : fallbackGraph.graphType;
+  const trendlineType = TRENDLINE_TYPES.has(safeGraph.trendlineType)
+    ? safeGraph.trendlineType
+    : fallbackGraph.trendlineType;
+  const xColumn = clampColumnIndex(safeGraph.xColumn, maxColumnIndex, fallbackGraph.xColumn);
+
+  const rawYColumns = Array.isArray(safeGraph.yColumns)
+    ? safeGraph.yColumns
+    : safeGraph.yColumn !== undefined
+    ? [safeGraph.yColumn]
+    : fallbackGraph.yColumns;
+
+  const yColumns = Array.from(
+    new Set(
+      rawYColumns
+        .map((value) => toSafeInteger(value, Number.NaN))
+        .filter((value) => Number.isFinite(value))
+        .map((value) => clampColumnIndex(value, maxColumnIndex, fallbackGraph.yColumns[0]))
+        .filter((value) => value !== xColumn),
+    ),
+  );
+
+  if (yColumns.length === 0) {
+    for (let index = 0; index <= maxColumnIndex; index += 1) {
+      if (index !== xColumn) {
+        yColumns.push(index);
+        break;
+      }
+    }
+  }
+
+  return {
+    graphType,
+    trendlineType,
+    xColumn,
+    yColumns,
+    startAtOrigin: Boolean(safeGraph.startAtOrigin),
+  };
+}
+
 export function normaliseState(candidateState) {
   const defaults = createDefaultState();
   const merged = mergeWithDefaults(defaults, candidateState);
@@ -225,27 +282,39 @@ export function normaliseState(candidateState) {
   }
 
   merged.data.includeAverage = Boolean(merged.data.includeAverage);
-
-  if (!GRAPH_TYPES.has(merged.analysis.graphType)) {
-    merged.analysis.graphType = "line";
-  }
-
-  if (!TRENDLINE_TYPES.has(merged.analysis.trendlineType)) {
-    merged.analysis.trendlineType = "none";
-  }
+  merged.data.includeStandardDeviation = Boolean(merged.data.includeStandardDeviation);
 
   const maxColumnIndex = merged.data.includeAverage
-    ? merged.data.columns.length
-    : merged.data.columns.length - 1;
+    ? merged.data.columns.length + (merged.data.includeStandardDeviation ? 1 : 0)
+    : merged.data.columns.length - 1 + (merged.data.includeStandardDeviation ? 1 : 0);
 
-  merged.analysis.xColumn = Math.max(
-    0,
-    Math.min(maxColumnIndex, toSafeInteger(merged.analysis.xColumn, 0)),
-  );
-  merged.analysis.yColumn = Math.max(
-    0,
-    Math.min(maxColumnIndex, toSafeInteger(merged.analysis.yColumn, 1)),
-  );
+  const candidateAnalysis = isObject(candidateState?.analysis) ? candidateState.analysis : {};
+  const rawGraphs =
+    Array.isArray(candidateAnalysis.graphs) && candidateAnalysis.graphs.length > 0
+      ? candidateAnalysis.graphs
+      : [
+          {
+            graphType: candidateAnalysis.graphType,
+            trendlineType: candidateAnalysis.trendlineType,
+            xColumn: candidateAnalysis.xColumn,
+            yColumns: Array.isArray(candidateAnalysis.yColumns)
+              ? candidateAnalysis.yColumns
+              : [candidateAnalysis.yColumn],
+          },
+        ];
+
+  merged.analysis.graphs = rawGraphs
+    .map((graph) => normaliseAnalysisGraph(graph, maxColumnIndex))
+    .filter((graph) => Array.isArray(graph.yColumns) && graph.yColumns.length > 0);
+
+  if (merged.analysis.graphs.length === 0) {
+    merged.analysis.graphs = [normaliseAnalysisGraph(createBlankAnalysisGraph(), maxColumnIndex)];
+  }
+
+  delete merged.analysis.graphType;
+  delete merged.analysis.trendlineType;
+  delete merged.analysis.xColumn;
+  delete merged.analysis.yColumn;
 
   return merged;
 }

@@ -533,6 +533,34 @@ th {
   min-height: 240px;
 }
 
+.analysis-graph-card {
+  display: grid;
+  gap: 0.75rem;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.85rem;
+}
+
+.analysis-graph-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.analysis-graph-header h3 {
+  margin: 0;
+}
+
+.analysis-graph-controls {
+  align-items: start;
+}
+
+.axis-multiselect {
+  min-height: 7.5rem;
+}
+
 .preview-box {
   border: 1px solid var(--border);
   border-radius: 10px;

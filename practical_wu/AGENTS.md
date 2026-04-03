@@ -6,7 +6,7 @@ This file tracks session history and project changes so future sessions can resu
 
 - Project name: `practical_wu`
 - Project type: Vanilla HTML/CSS/JavaScript
-- Active project path: `/home/paul/Downloads/resources-main/practical_wu`
+- Active project path: `C:\Users\paulg\OneDrive - Department for Education\VSCode programming\practical_wu`
 
 ## Resume Workflow
 
@@ -275,9 +275,80 @@ This file tracks session history and project changes so future sessions can resu
   - graph status message now only reports the base graph update/error state.
   - removed trendline-specific status text (trendline fit details remain displayed in-graph below the x-axis label).
 
+### 2026-04-03 22:05 ACDT
+
+- Resumed the project from the current Windows workspace.
+- Read `AGENTS.md`, `README.md`, top-level HTML/CSS files, and all JS modules to rebuild edit context before making changes.
+- Updated `AGENTS.md` metadata:
+  - corrected the active project path
+  - refreshed the current file list to match the actual workspace contents
+- No application files were changed in this session.
+
+### 2026-04-03 22:29 ACDT
+
+- User requested a new multi-graph workflow in section 9 first, followed by support for plotting multiple Y-axis columns on the same graph.
+- Updated analysis UI and state:
+  - replaced the single graph controls with dynamic graph cards
+  - added `Add graph` and delete support for extra graphs
+  - changed analysis graph config from single `xColumn` / `yColumn` fields to `analysis.graphs[]` with per-graph `graphType`, `trendlineType`, `xColumn`, and `yColumns`
+  - legacy single-graph data is normalised into the new structure during load/import
+- Updated chart rendering:
+  - added support for multiple charts on the page at once
+  - added support for multiple Y-axis datasets on one graph using distinct colours
+  - enabled chart legends when multiple series or a trendline are present
+  - excluded the chosen X-axis column from Y-axis choices
+  - limited trendlines to graphs with a single selected Y-axis column
+- Updated preview/export:
+  - live report preview now renders all analysis graphs
+  - Word export now includes all rendered graphs
+- Updated templates and user-facing docs:
+  - starter templates now use the new graph config structure
+  - `instructions.html` and `README.md` were updated for the new graph workflow
+- Verified all JS modules with a parse-only Node VM module syntax check.
+
+### 2026-04-03 22:35 ACDT
+
+- User requested an additional calculated standard deviation column option in section 8 alongside the existing average column.
+- Updated data table/state behavior:
+  - added `data.includeStandardDeviation`
+  - added a new section 8 checkbox for the calculated standard deviation column
+  - extended shared display-column logic so average and standard deviation can both appear in the data table and graph selectors
+- Updated output/rendering:
+  - live data table now renders computed columns through shared chart display helpers
+  - report preview and Word export now include the standard deviation column when enabled
+- Updated docs:
+  - `README.md` now mentions optional average and standard deviation columns
+  - `instructions.html` now documents the average / standard deviation checkboxes
+- Verified all JS modules again with a parse-only Node VM module syntax check.
+
+### 2026-04-03 22:41 ACDT
+
+- User requested a graph option checkbox in section 9 to force the graph to start at `0,0`.
+- Updated analysis graph config/state:
+  - added per-graph `startAtOrigin`
+  - graph cards now include a `Force graph to start at 0,0` checkbox
+- Updated chart rendering:
+  - when enabled, Y-axis is forced to start at `0`
+  - X-axis is also forced to start at `0` for scatter graphs, where the X scale is numeric
+  - graph status text now notes the X-axis limitation for non-scatter graphs
+- Updated docs:
+  - `README.md` and `instructions.html` now mention the new graph-origin option
+- Verified all JS modules again with a parse-only Node VM module syntax check.
+
+### 2026-04-03 22:44 ACDT
+
+- User reported that the Y-axis started at `0` but the X-axis still started at the minimum data value.
+- Updated `js/charts.js` so line graphs with numeric X values now use a linear X-axis instead of a category X-axis.
+- Result:
+  - `Force graph to start at 0,0` now forces X to `0` for:
+    - scatter graphs
+    - line graphs with numeric X values
+  - non-numeric/category X-axis graphs still only force Y to `0`
+- Updated wording in `README.md` and `instructions.html` to explain the numeric-X behaviour.
+- Verified all JS modules again with a parse-only Node VM module syntax check.
+
 ## Current File List
 
-- `.gitignore`
 - `AGENTS.md`
 - `README.md`
 - `css/print.css`

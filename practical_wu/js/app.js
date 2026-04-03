@@ -1,4 +1,5 @@
 import {
+  createBlankAnalysisGraph,
   createBlankControlledVariable,
   createBlankMaterial,
   createBlankRiskRow,
@@ -20,17 +21,17 @@ import {
 import { getTemplateById, getTemplateList } from "./templates.js";
 import { validateAllSections } from "./validation.js";
 import { buildReportHtml, generateConclusionParagraph } from "./report.js";
-import { renderChart } from "./charts.js";
+import { destroyCharts, renderChart } from "./charts.js";
 import { exportReportToWord } from "./word-export.js";
 import {
   createUI,
   initialiseMethodSortable,
+  renderAnalysisGraphs,
   renderBoundInputs,
   renderColumnDefinitions,
   renderControlledVariables,
   renderDataGrid,
   renderExportChecklist,
-  renderGraphAxisOptions,
   renderMaterials,
   renderMethodSteps,
   renderQuestionFeedback,
@@ -46,7 +47,7 @@ import {
 } from "./ui.js";
 
 const AUTO_SAVE_MS = 15000;
-const NUMBER_PATHS = new Set(["data.rowCount", "analysis.xColumn", "analysis.yColumn"]);
+const NUMBER_PATHS = new Set(["data.rowCount"]);
 
 const ui = createUI();
 let methodSortable = null;
@@ -165,6 +166,27 @@ function parseBoundValue(target) {
     }
 
     return path === "data.rowCount" ? 1 : 0;
+  }
+
+  return target.value;
+}
+
+function parseArrayFieldValue(target) {
+  const valueType = target.dataset.valueType;
+
+  if (target.type === "checkbox") {
+    return target.checked;
+  }
+
+  if (valueType === "number-list") {
+    return Array.from(target.selectedOptions)
+      .map((option) => Number.parseInt(option.value, 10))
+      .filter((value) => Number.isFinite(value));
+  }
+
+  if (valueType === "number") {
+    const parsed = Number.parseInt(target.value, 10);
+    return Number.isFinite(parsed) ? parsed : 0;
   }
 
   return target.value;
@@ -320,7 +342,7 @@ function handleArrayInput(target) {
       return;
     }
 
-    array[indexValue][field] = target.value;
+    array[indexValue][field] = parseArrayFieldValue(target);
   });
 
   return true;
@@ -441,13 +463,9 @@ async function handleAction(action, trigger) {
     case "export-word": {
       try {
         const state = getState();
-        const { chartResult, chartImageUrl } = buildChartSnapshot(state);
-        setGraphStatus(ui.graphStatus, chartResult.message, !chartResult.ok);
-
-        await exportReportToWord(state, {
-          chartImageUrl,
-          chartStatus: chartResult.message,
-        });
+        destroyCharts();
+        const graphSnapshots = buildGraphSnapshots(state);
+        await exportReportToWord(state, { graphs: graphSnapshots });
         updateStatus("Word export downloaded (.docx).");
       } catch (error) {
         console.error(error);
@@ -574,6 +592,25 @@ async function handleAction(action, trigger) {
       return;
     }
 
+    case "add-analysis-graph": {
+      updateStateAndMark((draft) => {
+        draft.analysis.graphs.push(createBlankAnalysisGraph());
+      });
+      return;
+    }
+
+    case "remove-analysis-graph": {
+      const index = Number.parseInt(trigger.dataset.index, 10);
+      updateStateAndMark((draft) => {
+        if (draft.analysis.graphs.length <= 1) {
+          return;
+        }
+
+        draft.analysis.graphs.splice(index, 1);
+      });
+      return;
+    }
+
     case "add-column": {
       updateStateAndMark((draft) => {
         draft.data.columns.push({ name: `Column ${draft.data.columns.length + 1}`, unit: "" });
@@ -691,6 +728,7 @@ function renderApp() {
   const focusSnapshot = captureActiveFieldSnapshot();
   const state = getState();
 
+  destroyCharts();
   renderBoundInputs(state);
   renderControlledVariables(ui.controlledRows, state.variables.controlled);
   renderRiskRows(ui.riskRows, state.risks);
@@ -698,7 +736,7 @@ function renderApp() {
   renderMethodSteps(ui.methodSteps, state.method.steps);
   renderColumnDefinitions(ui.columnDefinitions, state.data.columns);
   renderDataGrid(ui.dataGridContainer, ui.dataSummary, state.data);
-  renderGraphAxisOptions(ui.graphXSelect, ui.graphYSelect, state.data, state.analysis);
+  renderAnalysisGraphs(ui.analysisGraphs, state.analysis, state.data);
   renderQuestionFeedback(ui.questionFeedback, state.question.text);
 
   const validationResults = validateAllSections(state);
@@ -708,13 +746,11 @@ function renderApp() {
   const conclusionParagraph = generateConclusionParagraph(state.conclusion);
   setConclusionPreview(ui.conclusionPreview, conclusionParagraph);
 
-  const { chartResult, chartImageUrl } = buildChartSnapshot(state);
-  setGraphStatus(ui.graphStatus, chartResult.message, !chartResult.ok);
+  const graphSnapshots = buildGraphSnapshots(state);
   setReportPreview(
     ui.reportPreview,
     buildReportHtml(state, {
-      chartImageUrl,
-      chartStatus: chartResult.message,
+      graphs: graphSnapshots,
     }),
   );
 
@@ -728,19 +764,31 @@ function renderApp() {
   restoreActiveFieldSnapshot(focusSnapshot);
 }
 
-function buildChartSnapshot(state) {
-  const chartResult = renderChart(ui.chartCanvas, state);
-  const chartImageUrl =
-    chartResult.ok && chartResult.imageDataUrl
-      ? chartResult.imageDataUrl
-      : chartResult.ok && typeof ui.chartCanvas?.toDataURL === "function"
-      ? ui.chartCanvas.toDataURL("image/png")
-      : "";
+function buildGraphSnapshots(state) {
+  const graphs = Array.isArray(state.analysis?.graphs) ? state.analysis.graphs : [];
 
-  return {
-    chartResult,
-    chartImageUrl,
-  };
+  return graphs.map((graph, index) => {
+    const canvas = ui.analysisGraphs?.querySelector(`[data-graph-canvas="${index}"]`);
+    const statusElement = ui.analysisGraphs?.querySelector(`[data-graph-status="${index}"]`);
+    const chartResult = renderChart(canvas, state, graph, index);
+    const chartImageUrl =
+      chartResult.ok && chartResult.imageDataUrl
+        ? chartResult.imageDataUrl
+        : chartResult.ok && typeof canvas?.toDataURL === "function"
+        ? canvas.toDataURL("image/png")
+        : "";
+
+    if (statusElement) {
+      setGraphStatus(statusElement, chartResult.message, !chartResult.ok);
+    }
+
+    return {
+      title: `Graph ${index + 1}`,
+      ok: chartResult.ok,
+      message: chartResult.message,
+      imageDataUrl: chartImageUrl,
+    };
+  });
 }
 
 function initialiseTemplates() {

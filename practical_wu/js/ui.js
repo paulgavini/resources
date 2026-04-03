@@ -1,5 +1,5 @@
 import { validateResearchQuestion, SECTION_ORDER } from "./validation.js";
-import { getDisplayColumns } from "./charts.js";
+import { getDisplayCellValue, getDisplayColumns } from "./charts.js";
 
 function getByPath(source, path) {
   return path.split(".").reduce((value, key) => (value ? value[key] : undefined), source);
@@ -41,18 +41,8 @@ function setInputValue(input, value) {
   input.value = displayValue;
 }
 
-function averageFromRow(row) {
-  const numbers = row
-    .slice(1)
-    .map((cell) => Number.parseFloat(cell))
-    .filter((value) => Number.isFinite(value));
-
-  if (numbers.length === 0) {
-    return "";
-  }
-
-  const average = numbers.reduce((sum, value) => sum + value, 0) / numbers.length;
-  return average.toFixed(2);
+function formatColumnOptionLabel(column) {
+  return `${column.name}${column.unit ? ` (${column.unit})` : ""}`;
 }
 
 export function createUI() {
@@ -68,10 +58,7 @@ export function createUI() {
     columnDefinitions: document.getElementById("column-definitions"),
     dataGridContainer: document.getElementById("data-grid-container"),
     dataSummary: document.getElementById("data-summary"),
-    graphXSelect: document.getElementById("graph-x-select"),
-    graphYSelect: document.getElementById("graph-y-select"),
-    graphStatus: document.getElementById("graph-status"),
-    chartCanvas: document.getElementById("analysis-chart"),
+    analysisGraphs: document.getElementById("analysis-graphs"),
     questionFeedback: document.getElementById("question-feedback"),
     conclusionPreview: document.getElementById("conclusion-paragraph-preview"),
     reportPreview: document.getElementById("report-preview"),
@@ -235,18 +222,17 @@ export function renderDataGrid(container, summaryElement, data) {
 
   const bodyRows = rows
     .map((row, rowIndex) => {
-      const baseCells = columns
-        .map(
-          (_, columnIndex) =>
-            `<td><input type="text" data-table-cell="true" data-row="${rowIndex}" data-column="${columnIndex}" value="${escapeAttr(row[columnIndex])}" /></td>`,
-        )
+      const cells = displayColumns
+        .map((column) => {
+          if (column.source === "base") {
+            return `<td><input type="text" data-table-cell="true" data-row="${rowIndex}" data-column="${column.sourceIndex}" value="${escapeAttr(row[column.sourceIndex])}" /></td>`;
+          }
+
+          return `<td><output>${escapeHtml(getDisplayCellValue(data, row, column))}</output></td>`;
+        })
         .join("");
 
-      const averageCell = data.includeAverage
-        ? `<td><output>${averageFromRow(row)}</output></td>`
-        : "";
-
-      return `<tr><td><strong>${rowIndex + 1}</strong></td>${baseCells}${averageCell}</tr>`;
+      return `<tr><td><strong>${rowIndex + 1}</strong></td>${cells}</tr>`;
     })
     .join("");
 
@@ -270,24 +256,104 @@ export function renderDataGrid(container, summaryElement, data) {
   summaryElement.textContent = `Columns: ${columns.length}. Rows: ${rows.length}. Trial columns: ${trialCount}.`;
 }
 
-export function renderGraphAxisOptions(xSelect, ySelect, data, analysis) {
+export function renderAnalysisGraphs(container, analysis, data) {
   const displayColumns = getDisplayColumns(data);
+  const graphs = Array.isArray(analysis?.graphs) ? analysis.graphs : [];
 
-  const options = displayColumns
-    .map(
-      (column, index) =>
-        `<option value="${index}">${escapeHtml(column.name)}${column.unit ? ` (${escapeHtml(column.unit)})` : ""}</option>`,
-    )
+  container.innerHTML = graphs
+    .map((graph, index) => {
+      const xColumn = Number.parseInt(graph.xColumn, 10);
+      const selectedYColumns = new Set((graph.yColumns ?? []).map((value) => String(value)));
+      const xOptions = displayColumns
+        .map(
+          (column, columnIndex) =>
+            `<option value="${columnIndex}"${columnIndex === xColumn ? " selected" : ""}>${escapeHtml(formatColumnOptionLabel(column))}</option>`,
+        )
+        .join("");
+      const yOptions = displayColumns
+        .map((column, columnIndex) => ({ column, columnIndex }))
+        .filter(({ columnIndex }) => columnIndex !== xColumn)
+        .map(
+          ({ column, columnIndex }) =>
+            `<option value="${columnIndex}"${selectedYColumns.has(String(columnIndex)) ? " selected" : ""}>${escapeHtml(formatColumnOptionLabel(column))}</option>`,
+        )
+        .join("");
+      const multiSelectSize = Math.max(2, Math.min(6, displayColumns.length - 1));
+
+      return `
+        <div class="analysis-graph-card">
+          <div class="analysis-graph-header">
+            <h3>Graph ${index + 1}</h3>
+            ${
+              index > 0
+                ? `<button class="secondary" type="button" data-action="remove-analysis-graph" data-index="${index}">Delete graph</button>`
+                : ""
+            }
+          </div>
+          <div class="grid two-col analysis-graph-controls">
+            <label>
+              Graph type
+              <select data-array="analysis.graphs" data-index="${index}" data-field="graphType">
+                <option value="line"${graph.graphType === "line" ? " selected" : ""}>Line</option>
+                <option value="scatter"${graph.graphType === "scatter" ? " selected" : ""}>Scatter</option>
+                <option value="bar"${graph.graphType === "bar" ? " selected" : ""}>Bar</option>
+              </select>
+            </label>
+            <label>
+              Trendline
+              <select data-array="analysis.graphs" data-index="${index}" data-field="trendlineType">
+                <option value="none"${graph.trendlineType === "none" ? " selected" : ""}>None</option>
+                <option value="linear"${graph.trendlineType === "linear" ? " selected" : ""}>Linear</option>
+                <option value="quadratic"${graph.trendlineType === "quadratic" ? " selected" : ""}>Quadratic</option>
+                <option value="exponential"${graph.trendlineType === "exponential" ? " selected" : ""}>Exponential</option>
+                <option value="logarithmic"${graph.trendlineType === "logarithmic" ? " selected" : ""}>Logarithmic</option>
+                <option value="power"${graph.trendlineType === "power" ? " selected" : ""}>Power</option>
+                <option value="moving-average"${graph.trendlineType === "moving-average" ? " selected" : ""}>Moving average</option>
+              </select>
+            </label>
+            <label>
+              X-axis column
+              <select
+                data-array="analysis.graphs"
+                data-index="${index}"
+                data-field="xColumn"
+                data-value-type="number"
+              >${xOptions}</select>
+            </label>
+            <label>
+              Y-axis column(s)
+              <select
+                class="axis-multiselect"
+                multiple
+                size="${multiSelectSize}"
+                data-array="analysis.graphs"
+                data-index="${index}"
+                data-field="yColumns"
+                data-value-type="number-list"
+              >${yOptions}</select>
+            </label>
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                data-array="analysis.graphs"
+                data-index="${index}"
+                data-field="startAtOrigin"
+                ${graph.startAtOrigin ? "checked" : ""}
+              />
+              Force graph to start at 0,0
+            </label>
+          </div>
+          <p class="support-text">
+            Hold Ctrl (Windows) or Cmd (Mac) to select multiple Y-axis columns. The selected X-axis column is excluded from the Y-axis list. Trendlines apply when one Y-axis column is selected.
+          </p>
+          <div class="chart-wrap">
+            <canvas data-graph-canvas="${index}" aria-label="Investigation graph ${index + 1}"></canvas>
+          </div>
+          <p class="support-text" data-graph-status="${index}" aria-live="polite"></p>
+        </div>
+      `;
+    })
     .join("");
-
-  xSelect.innerHTML = options;
-  ySelect.innerHTML = options;
-
-  const xValue = String(analysis.xColumn ?? 0);
-  const yValue = String(analysis.yColumn ?? 1);
-
-  xSelect.value = xSelect.querySelector(`option[value="${xValue}"]`) ? xValue : "0";
-  ySelect.value = ySelect.querySelector(`option[value="${yValue}"]`) ? yValue : "1";
 }
 
 export function renderQuestionFeedback(container, questionText) {

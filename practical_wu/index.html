@@ -222,6 +222,10 @@
                 <input data-bind="data.includeAverage" type="checkbox" />
                 Include calculated average column
               </label>
+              <label class="checkbox-label">
+                <input data-bind="data.includeStandardDeviation" type="checkbox" />
+                Include calculated standard deviation column
+              </label>
             </div>
             <h3>Column settings</h3>
             <div id="column-definitions" class="stack-list"></div>
@@ -232,40 +236,11 @@
 
           <section class="section-card" id="section-analysis" data-section="analysis">
             <h2>9. Graph and analysis</h2>
-            <div class="grid three-col">
-              <label>
-                Graph type
-                <select data-bind="analysis.graphType">
-                  <option value="line">Line</option>
-                  <option value="scatter">Scatter</option>
-                  <option value="bar">Bar</option>
-                </select>
-              </label>
-              <label>
-                Trendline
-                <select data-bind="analysis.trendlineType">
-                  <option value="none">None</option>
-                  <option value="linear">Linear</option>
-                  <option value="quadratic">Quadratic</option>
-                  <option value="exponential">Exponential</option>
-                  <option value="logarithmic">Logarithmic</option>
-                  <option value="power">Power</option>
-                  <option value="moving-average">Moving average</option>
-                </select>
-              </label>
-              <label>
-                X-axis column
-                <select data-bind="analysis.xColumn" id="graph-x-select"></select>
-              </label>
-              <label>
-                Y-axis column
-                <select data-bind="analysis.yColumn" id="graph-y-select"></select>
-              </label>
-            </div>
-            <div class="chart-wrap">
-              <canvas id="analysis-chart" aria-label="Investigation graph"></canvas>
-            </div>
-            <p id="graph-status" class="support-text" aria-live="polite"></p>
+            <p class="support-text">
+              Build one or more graphs. Each graph can use a different setup, and each graph can also plot more than one Y-axis column.
+            </p>
+            <div id="analysis-graphs" class="stack-list"></div>
+            <button type="button" data-action="add-analysis-graph">Add graph</button>
             <label>
               Describe the trend
               <textarea data-bind="analysis.trend" rows="3" placeholder="Describe patterns in the data."></textarea>

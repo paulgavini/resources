@@ -95,9 +95,14 @@ const templates = [
         includeAverage: true,
       },
       analysis: {
-        graphType: "line",
-        xColumn: 0,
-        yColumn: 4,
+        graphs: [
+          {
+            graphType: "line",
+            trendlineType: "none",
+            xColumn: 0,
+            yColumns: [4],
+          },
+        ],
         trend: "As temperature increased, reaction time decreased, showing a faster reaction rate.",
         anomalies: "The value at 40 deg C trial 2 was slightly higher than nearby values.",
         hypothesisSupported: "Yes",
@@ -183,9 +188,14 @@ const templates = [
         includeAverage: true,
       },
       analysis: {
-        graphType: "bar",
-        xColumn: 0,
-        yColumn: 4,
+        graphs: [
+          {
+            graphType: "bar",
+            trendlineType: "none",
+            xColumn: 0,
+            yColumns: [4],
+          },
+        ],
         trend: "Average force increased from smooth to rough surfaces.",
         anomalies: "No major anomalies were observed.",
         hypothesisSupported: "Yes",
@@ -276,9 +286,14 @@ const templates = [
         includeAverage: true,
       },
       analysis: {
-        graphType: "line",
-        xColumn: 0,
-        yColumn: 4,
+        graphs: [
+          {
+            graphType: "line",
+            trendlineType: "none",
+            xColumn: 0,
+            yColumns: [4],
+          },
+        ],
         trend: "Temperature dropped over time, with a steeper drop early in the investigation.",
         anomalies: "Minute 4 in trial 2 was slightly lower than the overall pattern.",
         hypothesisSupported: "Yes",
