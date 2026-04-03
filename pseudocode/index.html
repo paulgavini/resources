@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pseudocode Builder</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="app-header-row">
+        <p class="eyebrow">Pseudocode Builder</p>
+        <div class="header-actions">
+          <button id="saveProjectBtn" class="primary-button" type="button">Save</button>
+          <button id="loadProjectBtn" class="ghost-button" type="button">Load</button>
+          <span id="saveStatus" class="save-status">Autosave ready</span>
+        </div>
+      </div>
+      <p class="header-note">Drag blocks from the library, drop them into the workspace, then double-click any block to edit its values.</p>
+    </header>
+
+    <div class="app-layout">
+      <aside class="panel library-panel" aria-labelledby="library-title">
+        <div class="panel-header">
+          <p class="eyebrow">Syntax Library</p>
+          <h2 id="library-title">Accordion categories</h2>
+          <p class="panel-copy">Expand a heading to reveal related syntax. Drag blocks into the workspace or use Add for quick insertion.</p>
+        </div>
+        <div id="libraryGroups" class="library-groups"></div>
+      </aside>
+
+      <main class="panel canvas-panel" aria-labelledby="canvas-title">
+        <div class="panel-header canvas-header">
+          <div>
+            <p class="eyebrow">Workspace</p>
+            <div class="workspace-title-row">
+              <h2 id="canvas-title">Ordered canvas</h2>
+              <span id="workspaceSummary" class="workspace-summary">0 blocks in workspace</span>
+            </div>
+            <p class="panel-copy">Sequence matters here. Containers such as IF and WHILE provide nested drop zones for child steps.</p>
+          </div>
+          <div class="canvas-actions">
+            <button id="copyOutputBtn" class="primary-button" type="button">Copy pseudocode</button>
+            <button id="clearCanvasBtn" class="ghost-button" type="button">Clear canvas</button>
+          </div>
+        </div>
+
+        <div class="canvas-board">
+          <div id="canvasRoot" class="canvas-root" aria-live="polite"></div>
+        </div>
+      </main>
+
+      <aside class="panel preview-panel" aria-labelledby="preview-title">
+        <div class="panel-header">
+          <p class="eyebrow">Preview</p>
+          <h2 id="preview-title">Generated pseudocode</h2>
+          <p class="panel-copy">This text view mirrors the current block structure and is ready to copy into classwork or planning notes.</p>
+        </div>
+        <pre id="outputPreview" class="preview-output"></pre>
+      </aside>
+    </div>
+  </div>
+
+  <div id="editorBackdrop" class="editor-backdrop is-hidden" aria-hidden="true">
+    <div class="editor-dialog" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
+      <div class="editor-header">
+        <div>
+          <p class="eyebrow">Block Editor</p>
+          <h2 id="editorTitle">Edit block</h2>
+        </div>
+        <button id="closeEditorBtn" class="ghost-button" type="button">Close</button>
+      </div>
+      <form id="editorForm" class="editor-form">
+        <div id="editorFields" class="editor-fields"></div>
+        <div class="editor-actions">
+          <button class="primary-button" type="submit">Save changes</button>
+          <button id="cancelEditorBtn" class="ghost-button" type="button">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <input id="loadProjectInput" type="file" accept=".json,application/json" hidden>
+
+  <script src="script.js"></script>
+</body>
+</html>
