@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Draw Editor</title>
+  <link rel="stylesheet" href="styles.css?v=16">
+</head>
+<body>
+  <div class="app-shell">
+    <main id="workspace" class="workspace">
+      <div class="stage-shell">
+        <div id="emptyState" class="empty-state">
+          <p class="empty-eyebrow">PDF Editor</p>
+          <h2>Drop a PDF, open one, or create a blank PDF</h2>
+          <p>Available features:</p>
+          <ul class="empty-features" aria-label="Application features">
+            <li>Draw with blue, green, or red pen colours.</li>
+            <li>Use highlighter mode with yellow, orange, or green.</li>
+            <li>Erase, undo, redo, or clear the current page.</li>
+            <li>Toggle a 1 cm grid overlay.</li>
+            <li>Zoom in/out and fit the page to full width.</li>
+            <li>Navigate pages with previous/next controls and page indicator.</li>
+            <li>Enter full screen and export an annotated PDF.</li>
+            <li>Record MP4 video of full page or visible view.</li>
+            <li>Select audio source and refresh input devices before recording.</li>
+          </ul>
+          <p>Home page: <a href="https://paulgavini.github.io/resources/" target="_blank" rel="noopener noreferrer">https://paulgavini.github.io/resources/</a></p>
+          <p>YouTube: <a href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener noreferrer">https://www.youtube.com/@paulgavini</a></p>
+        </div>
+
+        <div id="viewerShell" class="viewer-shell hidden">
+          <div class="canvas-frame">
+            <div class="canvas-stage">
+              <canvas id="pdfCanvas"></canvas>
+              <canvas id="gridCanvas"></canvas>
+              <canvas id="drawCanvas"></canvas>
+              <img id="penCursor" src="cursor-arrow-lime.svg" alt="" aria-hidden="true">
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="control-panel">
+      <div class="control-rail">
+        <div class="swatch-stack" aria-label="Brush colours">
+          <button class="swatch-button active" type="button" data-color="#2d4f83" aria-label="Blue ink"></button>
+          <button class="swatch-button" type="button" data-color="#8bff2f" aria-label="Green ink"></button>
+          <button class="swatch-button" type="button" data-color="#ff1021" aria-label="Red ink"></button>
+          <button id="highlighterModeBtn" class="tool-button icon-button highlighter-button" type="button" aria-label="Highlighter" title="Highlighter">&#128395;</button>
+          <select id="highlighterColorSelect" class="tool-select highlighter-color-select hidden" aria-label="Highlighter color">
+            <option value="yellow">Yellow</option>
+            <option value="orange">Orange</option>
+            <option value="green">Green</option>
+          </select>
+        </div>
+
+        <input id="pdfInput" class="visually-hidden" type="file" accept="application/pdf">
+        <input id="colorPicker" class="visually-hidden" type="color" value="#2d4f83">
+
+        <label class="tool-button file-button" for="pdfInput">Open PDF</label>
+        <button id="newBlankBtn" class="tool-button" type="button">New Blank PDF</button>
+        <button id="eraseModeBtn" class="tool-button icon-button" type="button" aria-label="Eraser" title="Eraser">&#9003;</button>
+        <button id="undoBtn" class="tool-button icon-button" type="button" aria-label="Undo" title="Undo" disabled>&#8630;</button>
+        <button id="redoBtn" class="tool-button icon-button" type="button" aria-label="Redo" title="Redo" disabled>&#8631;</button>
+        <button id="clearPageBtn" class="tool-button" type="button">Clear</button>
+        <button id="gridBtn" class="tool-button" type="button" disabled>1cm Grid</button>
+        <button id="zoomOutBtn" class="tool-button icon-button" type="button" aria-label="Zoom out">-</button>
+        <button id="zoomInBtn" class="tool-button icon-button" type="button" aria-label="Zoom in">+</button>
+        <button id="fitWidthBtn" class="tool-button" type="button" disabled>Fit Width</button>
+        <button id="fullscreenBtn" class="tool-button icon-button" type="button" aria-label="Enter full screen" title="Enter full screen">&#10530;</button>
+        <button id="downloadBtn" class="tool-button" type="button" disabled>Export PDF</button>
+        <button id="prevPageBtn" class="tool-button icon-button" type="button" aria-label="Previous page" title="Previous page" disabled>&#9664;</button>
+        <button id="nextPageBtn" class="tool-button icon-button" type="button" aria-label="Next page" title="Next page" disabled>&#9654;</button>
+
+        <div class="page-pill">
+          <span id="pageIndicator">0 / 0</span>
+        </div>
+
+        <div class="slider-block">
+          <div class="slider-labels">
+            <span>Brush</span>
+            <span id="brushSizeValue">4 px</span>
+          </div>
+          <input id="brushSize" type="range" min="1" max="24" value="4">
+        </div>
+
+        <select id="audioSourceSelect" class="tool-select" aria-label="Recording audio source">
+          <option value="none">Audio: None</option>
+        </select>
+        <select id="recordingScopeSelect" class="tool-select recording-scope-select" aria-label="Recording area">
+          <option value="full">Area: Full Page</option>
+          <option value="visible">Area: Visible View</option>
+        </select>
+        <button id="refreshAudioBtn" class="tool-button icon-button" type="button" aria-label="Refresh audio sources" title="Refresh audio sources">&#10227;</button>
+        <button id="recordBtn" class="tool-button icon-button" type="button" aria-label="Start recording" title="Start recording" disabled>&#9679;</button>
+        <button id="stopRecordBtn" class="tool-button icon-button" type="button" aria-label="Stop recording" title="Stop recording" disabled>&#9632;</button>
+
+        <p id="statusText" class="status-text"></p>
+      </div>
+    </aside>
+  </div>
+
+  <script src="vendor/pdf.min.js"></script>
+  <script src="vendor/pdf-lib.min.js"></script>
+  <script src="script.js?v=17"></script>
+</body>
+</html>
