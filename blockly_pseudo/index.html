@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blockly Pseudocode Builder</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="app-header-row">
+        <div>
+          <p class="eyebrow">Blockly Pseudocode Builder</p>
+          <h1>Build structured pseudocode with local Blockly blocks</h1>
+        </div>
+        <div class="header-actions">
+          <button id="saveProjectBtn" class="primary-button" type="button">Save</button>
+          <button id="loadProjectBtn" class="ghost-button" type="button">Load</button>
+          <button id="copyOutputBtn" class="primary-button" type="button">Copy pseudocode</button>
+          <button id="clearWorkspaceBtn" class="ghost-button" type="button">Clear workspace</button>
+          <span id="saveStatus" class="save-status" data-tone="neutral">Autosave ready</span>
+        </div>
+      </div>
+      <div class="header-meta">
+        <p class="header-note">Use the Blockly toolbox on the left to add structured pseudocode blocks. Field editing happens inline on each block.</p>
+        <div id="validationBanner" class="validation-banner" data-tone="warning">Add one Program block to define the main flow.</div>
+      </div>
+    </header>
+
+    <main class="app-layout">
+      <section class="panel workspace-panel" aria-labelledby="workspace-title">
+        <div class="panel-header workspace-header">
+          <div>
+            <p class="eyebrow">Workspace</p>
+            <div class="workspace-title-row">
+              <h2 id="workspace-title">Blockly canvas</h2>
+              <span id="workspaceSummary" class="workspace-summary">0 blocks in workspace</span>
+            </div>
+            <p class="panel-copy">The workspace stays browser-only and loads Blockly entirely from the vendored local runtime.</p>
+          </div>
+        </div>
+        <div class="workspace-board">
+          <div id="blocklyHost" class="blockly-host"></div>
+        </div>
+      </section>
+
+      <aside class="panel preview-panel" aria-labelledby="preview-title">
+        <div class="panel-header">
+          <p class="eyebrow">Preview</p>
+          <h2 id="preview-title">Generated pseudocode</h2>
+          <p class="panel-copy">This panel mirrors the current block structure using the custom `PSEUDO` generator.</p>
+        </div>
+        <pre id="outputPreview" class="preview-output"></pre>
+      </aside>
+    </main>
+  </div>
+
+  <input id="loadProjectInput" type="file" accept=".json,application/json" hidden>
+
+  <script src="vendor/blockly/blockly_compressed.js"></script>
+  <script src="vendor/blockly/blocks_compressed.js"></script>
+  <script src="vendor/blockly/msg/en.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
