@@ -1,8 +1,0 @@
-﻿Package: Blockly
-Version: 12.5.1
-Source: official GitHub release asset
-Release tag: blockly-v12.5.1
-Release date: 2026-03-20
-Download URL: https://github.com/RaspberryPiFoundation/blockly/releases/download/blockly-v12.5.1/blockly-12.5.1.tgz
-SHA256: 94D5637DE31DD262BE56A5F3FE6874B2365DF1DFC6667B63AD10EBD93EA50783
-Downloaded UTC: 2026-04-05T00:43:49.0408499Z
