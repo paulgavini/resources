@@ -49,6 +49,9 @@
         role="separator"
         aria-orientation="vertical"
         aria-label="Resize workspace and generated views"
+        aria-valuemin="280"
+        aria-valuemax="720"
+        aria-valuenow="380"
         tabindex="0"
       ></div>
 
@@ -78,7 +81,27 @@
                     <rect x="5" y="5" width="10" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"></rect>
                   </svg>
                 </button>
-                <span id="diagramStatus" class="save-status diagram-status" data-tone="neutral">Waiting for blocks</span>
+                <button
+                  id="exportDiagramBtn"
+                  class="ghost-button preview-action-button preview-icon-button"
+                  type="button"
+                  aria-label="Export diagram image"
+                  title="Export diagram image"
+                >
+                  <svg viewBox="0 0 24 24" class="button-icon" aria-hidden="true" focusable="false">
+                    <path d="M12 4v10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+                    <path d="M8.5 10.5 12 14l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M5 16.5v2a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+                  </svg>
+                </button>
+                <span
+                  id="diagramStatus"
+                  class="save-status diagram-status"
+                  data-tone="neutral"
+                  aria-live="polite"
+                >
+                  Waiting for blocks
+                </span>
               </div>
             </div>
             <div id="diagramPreview" class="diagram-preview">
@@ -92,6 +115,9 @@
             role="separator"
             aria-orientation="horizontal"
             aria-label="Resize flow diagram and pseudocode panels"
+            aria-valuemin="220"
+            aria-valuemax="640"
+            aria-valuenow="340"
             tabindex="0"
           ></div>
 

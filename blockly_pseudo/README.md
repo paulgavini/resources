@@ -31,6 +31,28 @@ Quick check:
 node --check .\script.js
 ```
 
+## GitHub Pages
+
+This app is already a no-build static site, so it can be hosted directly on GitHub Pages.
+
+Files added for Pages hosting:
+
+- [`.github/workflows/deploy-pages.yml`](./.github/workflows/deploy-pages.yml)
+- [`.nojekyll`](./.nojekyll)
+
+Recommended publish steps:
+
+1. Create a GitHub repository and upload the full project root.
+2. Push to the `main` branch.
+3. In GitHub, open `Settings -> Pages` and set `Source` to `GitHub Actions`.
+4. Wait for the `Deploy GitHub Pages` workflow to finish.
+5. Open the published HTTPS URL, usually `https://<username>.github.io/<repo>/`.
+
+Why this matters for image copy:
+
+- `Copy diagram image` is more reliable from an HTTPS site than from a local `file://` page.
+- GitHub Pages gives the app a secure origin, which improves browser clipboard support.
+
 ## Save Format
 
 Project files use this wrapper:

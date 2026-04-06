@@ -71,6 +71,7 @@ const dom = {
   diagramStatus: document.querySelector("#diagramStatus"),
   fitDiagramBtn: document.querySelector("#fitDiagramBtn"),
   copyDiagramBtn: document.querySelector("#copyDiagramBtn"),
+  exportDiagramBtn: document.querySelector("#exportDiagramBtn"),
   workspaceSummary: document.querySelector("#workspaceSummary"),
   validationBanner: document.querySelector("#validationBanner"),
   saveStatus: document.querySelector("#saveStatus"),
@@ -176,17 +177,11 @@ function escapeHtml(text) {
 }
 
 function escapeMermaidLabel(text) {
-  return escapeHtml(String(text || ""))
-    .replace(/\|/g, "&#124;")
-    .replace(/\[/g, "&#91;")
-    .replace(/\]/g, "&#93;")
-    .replace(/\{/g, "&#123;")
-    .replace(/\}/g, "&#125;")
-    .replace(/\(/g, "&#40;")
-    .replace(/\)/g, "&#41;")
+  const normalizedText = String(text || "")
     .replace(/\r\n?/g, "\n")
-    .replace(/\n/g, "<br/>")
-    .trim() || " ";
+    .replace(/\n/g, " ");
+
+  return JSON.stringify(normalizedText).slice(1, -1).trim() || " ";
 }
 
 function defineCustomBlocks() {
@@ -723,12 +718,23 @@ function updateDiagramStatus(message, tone = "neutral") {
     visualStatus = "✓";
   } else if (tone === "warning") {
     visualStatus = "✕";
+  } else if (message === "Updating diagram") {
+    visualStatus = "…";
   }
 
   dom.diagramStatus.textContent = visualStatus;
   dom.diagramStatus.dataset.tone = tone;
   dom.diagramStatus.setAttribute("aria-label", message);
   dom.diagramStatus.title = message;
+}
+
+function updateDiagramActionAvailability(isRendering = false) {
+  const hasRenderedDiagram = Boolean(latestRenderedDiagramSvg);
+  const shouldEnableDiagramActions = !isRendering && hasRenderedDiagram;
+
+  dom.copyDiagramBtn.disabled = !shouldEnableDiagramActions;
+  dom.exportDiagramBtn.disabled = !shouldEnableDiagramActions;
+  dom.fitDiagramBtn.disabled = !shouldEnableDiagramActions;
 }
 
 function resizeWorkspaceSurface() {
@@ -1106,6 +1112,7 @@ function initializeMermaid() {
   window.mermaid.initialize({
     startOnLoad: false,
     securityLevel: "strict",
+    htmlLabels: false,
     theme: "base",
     themeVariables: {
       background: "#fbfcff",
@@ -1122,7 +1129,6 @@ function initializeMermaid() {
     },
     flowchart: {
       useMaxWidth: true,
-      htmlLabels: false,
       curve: "basis"
     }
   });
@@ -1452,14 +1458,21 @@ async function renderFlowchartPreview() {
     latestRenderedDiagramSvg = "";
     renderDiagramPlaceholder(EMPTY_FLOWCHART_MESSAGE);
     updateDiagramStatus("Waiting for blocks", "neutral");
+    updateDiagramActionAvailability();
     return;
   }
 
   if (!initializeMermaid()) {
+    latestRenderedDiagramSvg = "";
     renderDiagramPlaceholder("Local Mermaid preview is unavailable.");
     updateDiagramStatus("Diagram library unavailable", "warning");
+    updateDiagramActionAvailability();
     return;
   }
+
+  latestRenderedDiagramSvg = "";
+  updateDiagramStatus("Updating diagram", "neutral");
+  updateDiagramActionAvailability(true);
 
   try {
     if (typeof window.mermaid.parse === "function") {
@@ -1484,7 +1497,8 @@ async function renderFlowchartPreview() {
       bindFunctions(dom.diagramPreview);
     }
 
-    updateDiagramStatus("Flow diagram updated", "good");
+    updateDiagramStatus("Diagram ready", "good");
+    updateDiagramActionAvailability();
   } catch (error) {
     if (renderToken !== mermaidRenderToken) {
       return;
@@ -1493,6 +1507,7 @@ async function renderFlowchartPreview() {
     latestRenderedDiagramSvg = "";
     renderDiagramPlaceholder("Flow diagram could not be generated from the current blocks.");
     updateDiagramStatus("Diagram render failed", "warning");
+    updateDiagramActionAvailability();
   }
 }
 
@@ -1500,8 +1515,6 @@ function updateWorkspaceSummary() {
   const count = countAllBlocks();
   dom.workspaceSummary.textContent = `${count} block${count === 1 ? "" : "s"} in workspace`;
   dom.copyOutputBtn.disabled = count === 0;
-  dom.copyDiagramBtn.disabled = count === 0;
-  dom.fitDiagramBtn.disabled = count === 0;
   dom.clearWorkspaceBtn.disabled = count === 0;
 }
 
@@ -1600,6 +1613,13 @@ function buildProjectFileName() {
   const programBlock = getProgramBlocks()[0];
   const programName = programBlock ? programBlock.getFieldValue("NAME") : "";
   return `${sanitizeProjectFileName(programName)}.json`;
+}
+
+function buildDiagramImageFileName() {
+  const programBlock = getProgramBlocks()[0];
+  const programName = programBlock ? programBlock.getFieldValue("NAME") : "";
+  const baseName = sanitizeProjectFileName(programName || "blockly-pseudo");
+  return `${baseName}-flow-diagram.png`;
 }
 
 function copyTextFallback(text) {
@@ -1739,19 +1759,27 @@ async function exportDiagramPngBlob() {
   context.fillRect(0, 0, exportSpec.width, exportSpec.height);
 
   const svgBlob = new Blob([exportSpec.markup], {type: "image/svg+xml;charset=utf-8"});
-  const objectUrl = URL.createObjectURL(svgBlob);
+  const svgDataUrl = await blobToDataUrl(svgBlob);
+  const image = new Image();
 
   try {
-    const image = await new Promise((resolve, reject) => {
-      const nextImage = new Image();
-      nextImage.onload = () => resolve(nextImage);
-      nextImage.onerror = () => reject(new Error("SVG rasterization failed"));
-      nextImage.src = objectUrl;
+    const loadedImage = await new Promise((resolve, reject) => {
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("SVG rasterization failed"));
+      image.src = svgDataUrl;
     });
 
-    context.drawImage(image, 0, 0, exportSpec.width, exportSpec.height);
+    if (typeof loadedImage.decode === "function") {
+      try {
+        await loadedImage.decode();
+      } catch (error) {
+        // Continue after the load event if decode is unsupported for this source.
+      }
+    }
 
-    return await new Promise((resolve, reject) => {
+    context.drawImage(loadedImage, 0, 0, exportSpec.width, exportSpec.height);
+
+    const pngBlob = await new Promise((resolve, reject) => {
       canvas.toBlob((blob) => {
         if (blob) {
           resolve(blob);
@@ -1761,8 +1789,16 @@ async function exportDiagramPngBlob() {
         reject(new Error("PNG export failed"));
       }, "image/png");
     });
-  } finally {
-    URL.revokeObjectURL(objectUrl);
+
+    return pngBlob;
+  } catch (error) {
+    const dataUrl = canvas.toDataURL("image/png");
+    const response = await fetch(dataUrl);
+    if (!response.ok) {
+      throw error;
+    }
+
+    return await response.blob();
   }
 }
 
@@ -1844,7 +1880,19 @@ function copyImageElementFallback(dataUrl, width, height) {
   }
 }
 
-async function copyFlowDiagramToClipboard() {
+function downloadBlob(blob, fileName) {
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+async function copyFlowDiagramImage() {
   if (!latestFlowchartText) {
     updateSaveStatus("No flow diagram to copy", "warning");
     resetStatusLater();
@@ -1887,9 +1935,27 @@ async function copyFlowDiagramToClipboard() {
       throw new Error("Clipboard image copy unavailable");
     }
 
-    updateSaveStatus("Copied flow diagram image", "good");
+    updateSaveStatus("Copied diagram image", "good");
   } catch (error) {
     updateSaveStatus("Image copy failed", "warning");
+  }
+
+  resetStatusLater();
+}
+
+async function exportFlowDiagramImage() {
+  if (!latestFlowchartText) {
+    updateSaveStatus("No flow diagram to export", "warning");
+    resetStatusLater();
+    return;
+  }
+
+  try {
+    const pngBlob = await exportDiagramPngBlob();
+    downloadBlob(pngBlob, buildDiagramImageFileName());
+    updateSaveStatus("Exported diagram image", "good");
+  } catch (error) {
+    updateSaveStatus("Image export failed", "warning");
   }
 
   resetStatusLater();
@@ -2056,7 +2122,11 @@ function wireUi() {
   });
 
   dom.copyDiagramBtn.addEventListener("click", () => {
-    copyFlowDiagramToClipboard();
+    copyFlowDiagramImage();
+  });
+
+  dom.exportDiagramBtn.addEventListener("click", () => {
+    exportFlowDiagramImage();
   });
 
   dom.saveProjectBtn.addEventListener("click", () => {
@@ -2099,6 +2169,7 @@ function initializeApp() {
   restoreDiagramFitMode();
   updateDividerAriaValues();
   updatePreviewDividerAriaValues();
+  updateDiagramActionAvailability();
   injectWorkspace();
   wireLayoutDivider();
   wirePreviewDivider();
