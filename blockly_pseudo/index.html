@@ -10,9 +10,9 @@
   <div class="app-shell">
     <header class="app-header">
       <div class="app-header-row">
-        <div>
+        <div class="header-brand">
           <p class="eyebrow">Blockly Pseudocode Builder</p>
-          <h1>Build structured pseudocode with local Blockly blocks</h1>
+          <div id="validationBanner" class="validation-banner" data-tone="warning">Not ready</div>
         </div>
         <div class="header-actions">
           <button id="saveProjectBtn" class="primary-button" type="button">Save</button>
@@ -24,7 +24,6 @@
       </div>
       <div class="header-meta">
         <p class="header-note">Use the Blockly toolbox on the left to add structured pseudocode blocks. Field editing happens inline on each block.</p>
-        <div id="validationBanner" class="validation-banner" data-tone="warning">Add one Program block to define the main flow.</div>
       </div>
     </header>
 
@@ -37,7 +36,6 @@
               <h2 id="workspace-title">Blockly canvas</h2>
               <span id="workspaceSummary" class="workspace-summary">0 blocks in workspace</span>
             </div>
-            <p class="panel-copy">The workspace stays browser-only and loads Blockly entirely from the vendored local runtime.</p>
           </div>
         </div>
         <div class="workspace-board">
@@ -45,13 +43,65 @@
         </div>
       </section>
 
-      <aside class="panel preview-panel" aria-labelledby="preview-title">
-        <div class="panel-header">
-          <p class="eyebrow">Preview</p>
-          <h2 id="preview-title">Generated pseudocode</h2>
-          <p class="panel-copy">This panel mirrors the current block structure using the custom `PSEUDO` generator.</p>
+      <div
+        id="layoutDivider"
+        class="layout-divider"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize workspace and generated views"
+        tabindex="0"
+      ></div>
+
+      <aside class="panel preview-panel" aria-label="Generated outputs">
+        <div id="previewStack" class="preview-stack">
+          <section class="preview-section diagram-section" aria-labelledby="diagram-title">
+            <div class="preview-section-header">
+              <h3 id="diagram-title">Flow diagram</h3>
+              <div class="preview-section-actions">
+                <button
+                  id="fitDiagramBtn"
+                  class="ghost-button preview-action-button"
+                  type="button"
+                  aria-pressed="true"
+                >
+                  Fit: On
+                </button>
+                <button
+                  id="copyDiagramBtn"
+                  class="ghost-button preview-action-button preview-icon-button"
+                  type="button"
+                  aria-label="Copy diagram image"
+                  title="Copy diagram image"
+                >
+                  <svg viewBox="0 0 24 24" class="button-icon" aria-hidden="true" focusable="false">
+                    <rect x="9" y="9" width="10" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"></rect>
+                    <rect x="5" y="5" width="10" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"></rect>
+                  </svg>
+                </button>
+                <span id="diagramStatus" class="save-status diagram-status" data-tone="neutral">Waiting for blocks</span>
+              </div>
+            </div>
+            <div id="diagramPreview" class="diagram-preview">
+              <p class="empty-preview-note">Flow diagram will appear here when the workspace contains blocks.</p>
+            </div>
+          </section>
+
+          <div
+            id="previewDivider"
+            class="preview-divider"
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label="Resize flow diagram and pseudocode panels"
+            tabindex="0"
+          ></div>
+
+          <section class="preview-section" aria-labelledby="pseudocode-title">
+            <div class="preview-section-header">
+              <h3 id="pseudocode-title">Pseudocode</h3>
+            </div>
+            <pre id="outputPreview" class="preview-output"></pre>
+          </section>
         </div>
-        <pre id="outputPreview" class="preview-output"></pre>
       </aside>
     </main>
   </div>
@@ -61,6 +111,7 @@
   <script src="vendor/blockly/blockly_compressed.js"></script>
   <script src="vendor/blockly/blocks_compressed.js"></script>
   <script src="vendor/blockly/msg/en.js"></script>
+  <script src="vendor/mermaid/dist/mermaid.tiny.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

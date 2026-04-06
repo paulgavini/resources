@@ -1,7 +1,19 @@
 const LOCAL_STORAGE_KEY = "blockly-pseudo-autosave-v1";
+const LAYOUT_SPLIT_STORAGE_KEY = "blockly-pseudo-layout-split-v1";
+const PREVIEW_SPLIT_STORAGE_KEY = "blockly-pseudo-preview-split-v1";
+const DIAGRAM_FIT_STORAGE_KEY = "blockly-pseudo-diagram-fit-v1";
 const PROJECT_VERSION = 1;
 const PROJECT_FORMAT = "blockly-pseudo";
 const INFO_GLYPH = " ⓘ";
+const EMPTY_FLOWCHART_MESSAGE = "Flow diagram will appear here when the workspace contains blocks.";
+const DEFAULT_PREVIEW_PANEL_WIDTH = 380;
+const MIN_PREVIEW_PANEL_WIDTH = 280;
+const MAX_PREVIEW_PANEL_WIDTH = 720;
+const DEFAULT_DIAGRAM_PANEL_HEIGHT = 340;
+const MIN_DIAGRAM_PANEL_HEIGHT = 220;
+const MIN_PSEUDOCODE_PANEL_HEIGHT = 220;
+const MIN_WORKSPACE_PANEL_WIDTH = 320;
+const DESKTOP_LAYOUT_MEDIA_QUERY = "(max-width: 1100px)";
 
 const EMPTY_PREVIEW_MESSAGE = [
   "// Start by adding a block from the toolbox.",
@@ -49,8 +61,16 @@ const BLOCK_TOOLTIPS = {
 };
 
 const dom = {
+  appLayout: document.querySelector(".app-layout"),
   blocklyHost: document.querySelector("#blocklyHost"),
+  layoutDivider: document.querySelector("#layoutDivider"),
+  previewStack: document.querySelector("#previewStack"),
+  previewDivider: document.querySelector("#previewDivider"),
   outputPreview: document.querySelector("#outputPreview"),
+  diagramPreview: document.querySelector("#diagramPreview"),
+  diagramStatus: document.querySelector("#diagramStatus"),
+  fitDiagramBtn: document.querySelector("#fitDiagramBtn"),
+  copyDiagramBtn: document.querySelector("#copyDiagramBtn"),
   workspaceSummary: document.querySelector("#workspaceSummary"),
   validationBanner: document.querySelector("#validationBanner"),
   saveStatus: document.querySelector("#saveStatus"),
@@ -65,6 +85,15 @@ let workspace = null;
 let autosaveTimer = 0;
 let isApplyingWorkspaceState = false;
 let statusResetTimer = 0;
+let mermaidConfigured = false;
+let mermaidRenderToken = 0;
+let layoutDividerDragState = null;
+let previewDividerDragState = null;
+let diagramFitEnabled = true;
+let latestFlowchartText = "";
+let latestRenderedDiagramSvg = "";
+
+const desktopLayoutMedia = window.matchMedia(DESKTOP_LAYOUT_MEDIA_QUERY);
 
 function defineBlocklyTheme() {
   return Blockly.Theme.defineTheme("blocklyPseudoTheme", {
@@ -136,6 +165,28 @@ function withInfoGlyph(message) {
 
 function getFieldValue(block, fieldName) {
   return String(block.getFieldValue(fieldName) || "").trim();
+}
+
+function escapeHtml(text) {
+  return String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function escapeMermaidLabel(text) {
+  return escapeHtml(String(text || ""))
+    .replace(/\|/g, "&#124;")
+    .replace(/\[/g, "&#91;")
+    .replace(/\]/g, "&#93;")
+    .replace(/\{/g, "&#123;")
+    .replace(/\}/g, "&#125;")
+    .replace(/\(/g, "&#40;")
+    .replace(/\)/g, "&#41;")
+    .replace(/\r\n?/g, "\n")
+    .replace(/\n/g, "<br/>")
+    .trim() || " ";
 }
 
 function defineCustomBlocks() {
@@ -665,6 +716,27 @@ function updateSaveStatus(message, tone = "neutral") {
   dom.saveStatus.dataset.tone = tone;
 }
 
+function updateDiagramStatus(message, tone = "neutral") {
+  let visualStatus = message;
+
+  if (tone === "good") {
+    visualStatus = "✓";
+  } else if (tone === "warning") {
+    visualStatus = "✕";
+  }
+
+  dom.diagramStatus.textContent = visualStatus;
+  dom.diagramStatus.dataset.tone = tone;
+  dom.diagramStatus.setAttribute("aria-label", message);
+  dom.diagramStatus.title = message;
+}
+
+function resizeWorkspaceSurface() {
+  if (workspace) {
+    Blockly.svgResize(workspace);
+  }
+}
+
 function updateValidationBanner(message, tone) {
   dom.validationBanner.textContent = message;
   dom.validationBanner.dataset.tone = tone;
@@ -695,10 +767,741 @@ function buildPreviewText() {
     .join("\n");
 }
 
+function createFlowchartBuilder() {
+  return {
+    nextNodeId: 1,
+    nodes: [],
+    edges: [],
+    classMembers: {
+      terminal: [],
+      process: [],
+      decision: [],
+      io: [],
+      comment: []
+    }
+  };
+}
+
+function addFlowNode(builder, kind, label) {
+  const nodeId = `n${builder.nextNodeId++}`;
+  const safeLabel = escapeMermaidLabel(label);
+  let declaration = `${nodeId}["${safeLabel}"]`;
+
+  if (kind === "terminal") {
+    declaration = `${nodeId}(["${safeLabel}"])`;
+  } else if (kind === "io") {
+    declaration = `${nodeId}@{ shape: lean-r, label: "${safeLabel}" }`;
+  } else if (kind === "decision") {
+    declaration = `${nodeId}{"${safeLabel}"}`;
+  }
+
+  builder.nodes.push(declaration);
+  builder.classMembers[kind].push(nodeId);
+  return nodeId;
+}
+
+function addFlowEdge(builder, fromId, toId, label = "") {
+  if (!fromId || !toId) {
+    return;
+  }
+
+  if (label) {
+    builder.edges.push(`${fromId} -->|${escapeMermaidLabel(label)}| ${toId}`);
+    return;
+  }
+
+  builder.edges.push(`${fromId} --> ${toId}`);
+}
+
+function connectFlowExits(builder, exits, targetId) {
+  exits.forEach((exit) => {
+    addFlowEdge(builder, exit.fromId, targetId, exit.label);
+  });
+}
+
+function createLinearSegment(builder, label, kind = "process") {
+  const nodeId = addFlowNode(builder, kind, label);
+  return {
+    entryId: nodeId,
+    exitLinks: [{fromId: nodeId}]
+  };
+}
+
+function buildRoutineFlow(builder, block, startLabel, endLabel) {
+  const startId = addFlowNode(builder, "terminal", startLabel);
+  const endId = addFlowNode(builder, "terminal", endLabel);
+  const bodySegment = buildStatementSequence(builder, block.getInputTargetBlock("BODY"));
+
+  if (bodySegment) {
+    addFlowEdge(builder, startId, bodySegment.entryId);
+    connectFlowExits(builder, bodySegment.exitLinks, endId);
+  } else {
+    addFlowEdge(builder, startId, endId);
+  }
+}
+
+function buildDetachedFlow(builder, block, index) {
+  const startId = addFlowNode(builder, "terminal", `Workspace segment ${index}`);
+  const endId = addFlowNode(builder, "terminal", `End segment ${index}`);
+  const segment = buildStatementSequence(builder, block);
+
+  if (segment) {
+    addFlowEdge(builder, startId, segment.entryId);
+    connectFlowExits(builder, segment.exitLinks, endId);
+  } else {
+    addFlowEdge(builder, startId, endId);
+  }
+}
+
+function buildStatementSequence(builder, startBlock) {
+  let entryId = "";
+  let openExits = [];
+  let block = startBlock;
+
+  while (block) {
+    const segment = buildStatementFlow(builder, block);
+
+    if (segment) {
+      if (!entryId) {
+        entryId = segment.entryId;
+      }
+
+      if (openExits.length > 0) {
+        connectFlowExits(builder, openExits, segment.entryId);
+      }
+
+      openExits = segment.exitLinks;
+    }
+
+    block = block.getNextBlock();
+  }
+
+  if (!entryId) {
+    return null;
+  }
+
+  return {
+    entryId,
+    exitLinks: openExits
+  };
+}
+
+function buildStatementFlow(builder, block) {
+  switch (block.type) {
+    case "pseudo_step":
+      return createLinearSegment(builder, getFieldValue(block, "TEXT"), "process");
+
+    case "pseudo_comment":
+      return createLinearSegment(builder, `Comment: ${getFieldValue(block, "TEXT")}`, "comment");
+
+    case "pseudo_declare":
+      return createLinearSegment(
+        builder,
+        `DECLARE ${getFieldValue(block, "NAME")} AS ${getFieldValue(block, "DATA_TYPE")}`,
+        "process"
+      );
+
+    case "pseudo_set":
+      return createLinearSegment(
+        builder,
+        `SET ${getFieldValue(block, "NAME")} = ${getFieldValue(block, "EXPRESSION")}`,
+        "process"
+      );
+
+    case "pseudo_input":
+      return createLinearSegment(builder, `INPUT ${getFieldValue(block, "NAME")}`, "io");
+
+    case "pseudo_output":
+      return createLinearSegment(builder, `OUTPUT ${getFieldValue(block, "VALUE")}`, "io");
+
+    case "pseudo_call":
+      return createLinearSegment(
+        builder,
+        `CALL ${getFieldValue(block, "NAME")}(${getFieldValue(block, "ARGUMENTS")})`,
+        "process"
+      );
+
+    case "pseudo_return":
+      return createLinearSegment(builder, `RETURN ${getFieldValue(block, "VALUE")}`, "process");
+
+    case "pseudo_if": {
+      const decisionId = addFlowNode(builder, "decision", `IF ${getFieldValue(block, "CONDITION")}?`);
+      const thenSegment = buildStatementSequence(builder, block.getInputTargetBlock("THEN"));
+      const exitLinks = [];
+
+      if (thenSegment) {
+        addFlowEdge(builder, decisionId, thenSegment.entryId, "Yes");
+        exitLinks.push(...thenSegment.exitLinks);
+      } else {
+        exitLinks.push({fromId: decisionId, label: "Yes"});
+      }
+
+      exitLinks.push({fromId: decisionId, label: "No"});
+
+      return {
+        entryId: decisionId,
+        exitLinks
+      };
+    }
+
+    case "pseudo_if_else": {
+      const decisionId = addFlowNode(builder, "decision", `IF ${getFieldValue(block, "CONDITION")}?`);
+      const thenSegment = buildStatementSequence(builder, block.getInputTargetBlock("THEN"));
+      const elseSegment = buildStatementSequence(builder, block.getInputTargetBlock("ELSE"));
+      const exitLinks = [];
+
+      if (thenSegment) {
+        addFlowEdge(builder, decisionId, thenSegment.entryId, "Yes");
+        exitLinks.push(...thenSegment.exitLinks);
+      } else {
+        exitLinks.push({fromId: decisionId, label: "Yes"});
+      }
+
+      if (elseSegment) {
+        addFlowEdge(builder, decisionId, elseSegment.entryId, "No");
+        exitLinks.push(...elseSegment.exitLinks);
+      } else {
+        exitLinks.push({fromId: decisionId, label: "No"});
+      }
+
+      return {
+        entryId: decisionId,
+        exitLinks
+      };
+    }
+
+    case "pseudo_while": {
+      const decisionId = addFlowNode(builder, "decision", `WHILE ${getFieldValue(block, "CONDITION")}?`);
+      const bodySegment = buildStatementSequence(builder, block.getInputTargetBlock("BODY"));
+
+      if (bodySegment) {
+        addFlowEdge(builder, decisionId, bodySegment.entryId, "Yes");
+        connectFlowExits(builder, bodySegment.exitLinks, decisionId);
+      } else {
+        addFlowEdge(builder, decisionId, decisionId, "Yes");
+      }
+
+      return {
+        entryId: decisionId,
+        exitLinks: [{fromId: decisionId, label: "No"}]
+      };
+    }
+
+    case "pseudo_for": {
+      const counter = getFieldValue(block, "COUNTER");
+      const start = getFieldValue(block, "START");
+      const end = getFieldValue(block, "END");
+      const step = getFieldValue(block, "STEP");
+      const decisionId = addFlowNode(builder, "decision", `FOR ${counter} = ${start} TO ${end}${step ? ` STEP ${step}` : ""}`);
+      const bodySegment = buildStatementSequence(builder, block.getInputTargetBlock("BODY"));
+
+      if (bodySegment) {
+        addFlowEdge(builder, decisionId, bodySegment.entryId, "Next");
+        connectFlowExits(builder, bodySegment.exitLinks, decisionId);
+      } else {
+        addFlowEdge(builder, decisionId, decisionId, "Next");
+      }
+
+      return {
+        entryId: decisionId,
+        exitLinks: [{fromId: decisionId, label: "Done"}]
+      };
+    }
+
+    case "pseudo_repeat_until": {
+      const repeatId = addFlowNode(builder, "process", "REPEAT");
+      const decisionId = addFlowNode(builder, "decision", `UNTIL ${getFieldValue(block, "CONDITION")}?`);
+      const bodySegment = buildStatementSequence(builder, block.getInputTargetBlock("BODY"));
+
+      if (bodySegment) {
+        addFlowEdge(builder, repeatId, bodySegment.entryId);
+        connectFlowExits(builder, bodySegment.exitLinks, decisionId);
+      } else {
+        addFlowEdge(builder, repeatId, decisionId);
+      }
+
+      addFlowEdge(builder, decisionId, repeatId, "No");
+
+      return {
+        entryId: repeatId,
+        exitLinks: [{fromId: decisionId, label: "Yes"}]
+      };
+    }
+
+    default:
+      return createLinearSegment(builder, block.type, "process");
+  }
+}
+
+function buildFlowchartText() {
+  const topBlocks = getTopBlocks();
+  if (topBlocks.length === 0) {
+    return "";
+  }
+
+  const builder = createFlowchartBuilder();
+  let detachedIndex = 0;
+
+  topBlocks.forEach((block) => {
+    if (block.type === "pseudo_program") {
+      buildRoutineFlow(
+        builder,
+        block,
+        `PROGRAM ${getFieldValue(block, "NAME")}`,
+        "ENDPROGRAM"
+      );
+      return;
+    }
+
+    if (block.type === "pseudo_function") {
+      buildRoutineFlow(
+        builder,
+        block,
+        `FUNCTION ${getFieldValue(block, "NAME")}(${getFieldValue(block, "PARAMETERS")})`,
+        "ENDFUNCTION"
+      );
+      return;
+    }
+
+    if (block.type === "pseudo_procedure") {
+      buildRoutineFlow(
+        builder,
+        block,
+        `PROCEDURE ${getFieldValue(block, "NAME")}(${getFieldValue(block, "PARAMETERS")})`,
+        "ENDPROCEDURE"
+      );
+      return;
+    }
+
+    detachedIndex += 1;
+    buildDetachedFlow(builder, block, detachedIndex);
+  });
+
+  const classAssignments = Object.entries(builder.classMembers)
+    .filter(([, nodeIds]) => nodeIds.length > 0)
+    .map(([className, nodeIds]) => `class ${nodeIds.join(",")} ${className};`);
+
+  return [
+    "flowchart TD",
+    "classDef terminal fill:#e8f4ec,stroke:#29683a,stroke-width:2px,color:#152033;",
+    "classDef process fill:#edf3ff,stroke:#2d5ecf,stroke-width:1.5px,color:#152033;",
+    "classDef decision fill:#fff5da,stroke:#c06a1c,stroke-width:2px,color:#152033;",
+    "classDef io fill:#f2ecff,stroke:#8956bc,stroke-width:1.5px,color:#152033;",
+    "classDef comment fill:#f7f9fc,stroke:#92a0b8,stroke-width:1.5px,color:#425067;",
+    ...builder.nodes,
+    ...builder.edges,
+    ...classAssignments
+  ].join("\n");
+}
+
+function initializeMermaid() {
+  if (mermaidConfigured) {
+    return true;
+  }
+
+  if (!window.mermaid || typeof window.mermaid.initialize !== "function") {
+    return false;
+  }
+
+  window.mermaid.initialize({
+    startOnLoad: false,
+    securityLevel: "strict",
+    theme: "base",
+    themeVariables: {
+      background: "#fbfcff",
+      fontFamily: "Trebuchet MS, Segoe UI, sans-serif",
+      primaryColor: "#edf3ff",
+      primaryTextColor: "#152033",
+      primaryBorderColor: "#2d5ecf",
+      secondaryColor: "#f2ecff",
+      tertiaryColor: "#fff5da",
+      lineColor: "#51617e",
+      clusterBkg: "#f8fbff",
+      clusterBorder: "#d8dfef",
+      edgeLabelBackground: "#ffffff"
+    },
+    flowchart: {
+      useMaxWidth: true,
+      htmlLabels: false,
+      curve: "basis"
+    }
+  });
+
+  mermaidConfigured = true;
+  return true;
+}
+
+function renderDiagramPlaceholder(message) {
+  dom.diagramPreview.innerHTML = `<p class="empty-preview-note">${escapeHtml(message)}</p>`;
+}
+
+function clampDiagramPanelHeight(height) {
+  if (!dom.previewStack) {
+    return Math.round(Math.max(MIN_DIAGRAM_PANEL_HEIGHT, height || DEFAULT_DIAGRAM_PANEL_HEIGHT));
+  }
+
+  const stackRect = dom.previewStack.getBoundingClientRect();
+  const dividerHeight = dom.previewDivider ? dom.previewDivider.getBoundingClientRect().height : 0;
+  const proposedHeight = Number.isFinite(height) ? height : DEFAULT_DIAGRAM_PANEL_HEIGHT;
+
+  if (stackRect.height <= 0) {
+    return Math.round(Math.max(MIN_DIAGRAM_PANEL_HEIGHT, proposedHeight));
+  }
+
+  const maxFromLayout = Math.max(
+    MIN_DIAGRAM_PANEL_HEIGHT,
+    stackRect.height - dividerHeight - MIN_PSEUDOCODE_PANEL_HEIGHT
+  );
+
+  return Math.round(
+    Math.min(maxFromLayout, Math.max(MIN_DIAGRAM_PANEL_HEIGHT, proposedHeight))
+  );
+}
+
+function applyDiagramPanelHeight(height, persist = true) {
+  const clampedHeight = clampDiagramPanelHeight(height);
+  document.documentElement.style.setProperty("--diagram-panel-height", `${clampedHeight}px`);
+
+  if (persist) {
+    try {
+      localStorage.setItem(PREVIEW_SPLIT_STORAGE_KEY, String(clampedHeight));
+    } catch (error) {
+      // Ignore layout persistence failures.
+    }
+  }
+}
+
+function restoreDiagramPanelHeight() {
+  let preferredHeight = DEFAULT_DIAGRAM_PANEL_HEIGHT;
+
+  try {
+    const savedHeight = Number(localStorage.getItem(PREVIEW_SPLIT_STORAGE_KEY));
+    if (Number.isFinite(savedHeight)) {
+      preferredHeight = savedHeight;
+    }
+  } catch (error) {
+    // Ignore layout persistence failures.
+  }
+
+  applyDiagramPanelHeight(preferredHeight, false);
+}
+
+function getCurrentDiagramPanelHeight() {
+  return Math.round(
+    parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--diagram-panel-height")) ||
+      DEFAULT_DIAGRAM_PANEL_HEIGHT
+  );
+}
+
+function updatePreviewDividerAriaValues() {
+  if (!dom.previewDivider) {
+    return;
+  }
+
+  const stackRect = dom.previewStack ? dom.previewStack.getBoundingClientRect() : {height: 0};
+  const dividerHeight = dom.previewDivider.getBoundingClientRect().height;
+  const maxFromLayout = stackRect.height > 0
+    ? Math.max(MIN_DIAGRAM_PANEL_HEIGHT, stackRect.height - dividerHeight - MIN_PSEUDOCODE_PANEL_HEIGHT)
+    : DEFAULT_DIAGRAM_PANEL_HEIGHT;
+
+  dom.previewDivider.setAttribute("aria-valuemin", String(MIN_DIAGRAM_PANEL_HEIGHT));
+  dom.previewDivider.setAttribute("aria-valuemax", String(Math.round(maxFromLayout)));
+  dom.previewDivider.setAttribute("aria-valuenow", String(getCurrentDiagramPanelHeight()));
+}
+
+function applyDiagramFitMode(enabled, persist = true) {
+  diagramFitEnabled = Boolean(enabled);
+
+  if (dom.diagramPreview) {
+    dom.diagramPreview.dataset.fitMode = diagramFitEnabled ? "panel" : "free";
+  }
+
+  if (dom.fitDiagramBtn) {
+    dom.fitDiagramBtn.textContent = diagramFitEnabled ? "Fit: On" : "Fit: Off";
+    dom.fitDiagramBtn.setAttribute("aria-pressed", String(diagramFitEnabled));
+  }
+
+  if (persist) {
+    try {
+      localStorage.setItem(DIAGRAM_FIT_STORAGE_KEY, diagramFitEnabled ? "on" : "off");
+    } catch (error) {
+      // Ignore layout persistence failures.
+    }
+  }
+}
+
+function restoreDiagramFitMode() {
+  let preferredMode = true;
+
+  try {
+    preferredMode = localStorage.getItem(DIAGRAM_FIT_STORAGE_KEY) !== "off";
+  } catch (error) {
+    // Ignore layout persistence failures.
+  }
+
+  applyDiagramFitMode(preferredMode, false);
+}
+
+function clampPreviewPanelWidth(width) {
+  const layoutRect = dom.appLayout.getBoundingClientRect();
+  const dividerWidth = dom.layoutDivider ? dom.layoutDivider.getBoundingClientRect().width : 0;
+  const maxFromLayout = Math.max(
+    MIN_PREVIEW_PANEL_WIDTH,
+    layoutRect.width - MIN_WORKSPACE_PANEL_WIDTH - dividerWidth
+  );
+
+  return Math.round(
+    Math.min(
+      maxFromLayout,
+      Math.max(MIN_PREVIEW_PANEL_WIDTH, Math.min(MAX_PREVIEW_PANEL_WIDTH, width))
+    )
+  );
+}
+
+function applyPreviewPanelWidth(width, persist = true) {
+  const clampedWidth = clampPreviewPanelWidth(width);
+  document.documentElement.style.setProperty("--preview-panel-width", `${clampedWidth}px`);
+
+  if (persist) {
+    try {
+      localStorage.setItem(LAYOUT_SPLIT_STORAGE_KEY, String(clampedWidth));
+    } catch (error) {
+      // Ignore layout persistence failures.
+    }
+  }
+
+  resizeWorkspaceSurface();
+}
+
+function restorePreviewPanelWidth() {
+  let preferredWidth = DEFAULT_PREVIEW_PANEL_WIDTH;
+
+  try {
+    const savedWidth = Number(localStorage.getItem(LAYOUT_SPLIT_STORAGE_KEY));
+    if (Number.isFinite(savedWidth)) {
+      preferredWidth = savedWidth;
+    }
+  } catch (error) {
+    // Ignore layout persistence failures.
+  }
+
+  applyPreviewPanelWidth(preferredWidth, false);
+}
+
+function updateDividerAriaValues() {
+  if (!dom.layoutDivider) {
+    return;
+  }
+
+  const currentWidth = Math.round(
+    parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--preview-panel-width")) ||
+      DEFAULT_PREVIEW_PANEL_WIDTH
+  );
+
+  dom.layoutDivider.setAttribute("aria-valuemin", String(MIN_PREVIEW_PANEL_WIDTH));
+  dom.layoutDivider.setAttribute("aria-valuemax", String(MAX_PREVIEW_PANEL_WIDTH));
+  dom.layoutDivider.setAttribute("aria-valuenow", String(currentWidth));
+}
+
+function endDividerDrag() {
+  if (!layoutDividerDragState) {
+    return;
+  }
+
+  if (document.body.dataset.isResizing === "layout") {
+    delete document.body.dataset.isResizing;
+  }
+
+  layoutDividerDragState = null;
+}
+
+function setPreviewWidthFromPointer(clientX) {
+  const layoutRect = dom.appLayout.getBoundingClientRect();
+  const nextWidth = layoutRect.right - clientX;
+
+  applyPreviewPanelWidth(nextWidth);
+  updateDividerAriaValues();
+}
+
+function handleDividerPointerMove(event) {
+  if (!layoutDividerDragState) {
+    return;
+  }
+
+  setPreviewWidthFromPointer(event.clientX);
+}
+
+function handleDividerPointerUp() {
+  endDividerDrag();
+}
+
+function handleDividerPointerDown(event) {
+  if (desktopLayoutMedia.matches) {
+    return;
+  }
+
+  layoutDividerDragState = {pointerId: event.pointerId};
+  document.body.dataset.isResizing = "layout";
+  dom.layoutDivider.setPointerCapture(event.pointerId);
+  setPreviewWidthFromPointer(event.clientX);
+}
+
+function handleDividerKeyDown(event) {
+  if (desktopLayoutMedia.matches) {
+    return;
+  }
+
+  const currentWidth = Math.round(
+    parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--preview-panel-width")) ||
+      DEFAULT_PREVIEW_PANEL_WIDTH
+  );
+
+  let nextWidth = currentWidth;
+
+  if (event.key === "ArrowLeft") {
+    nextWidth = currentWidth + 24;
+  } else if (event.key === "ArrowRight") {
+    nextWidth = currentWidth - 24;
+  } else if (event.key === "Home") {
+    nextWidth = MIN_PREVIEW_PANEL_WIDTH;
+  } else if (event.key === "End") {
+    nextWidth = MAX_PREVIEW_PANEL_WIDTH;
+  } else {
+    return;
+  }
+
+  event.preventDefault();
+  applyPreviewPanelWidth(nextWidth);
+  updateDividerAriaValues();
+}
+
+function endPreviewDividerDrag() {
+  if (!previewDividerDragState) {
+    return;
+  }
+
+  if (document.body.dataset.isResizing === "preview") {
+    delete document.body.dataset.isResizing;
+  }
+
+  previewDividerDragState = null;
+}
+
+function setDiagramHeightFromPointer(clientY) {
+  if (!dom.previewStack) {
+    return;
+  }
+
+  const stackRect = dom.previewStack.getBoundingClientRect();
+  const nextHeight = clientY - stackRect.top;
+
+  applyDiagramPanelHeight(nextHeight);
+  updatePreviewDividerAriaValues();
+}
+
+function handlePreviewDividerPointerMove(event) {
+  if (!previewDividerDragState) {
+    return;
+  }
+
+  setDiagramHeightFromPointer(event.clientY);
+}
+
+function handlePreviewDividerPointerUp() {
+  endPreviewDividerDrag();
+}
+
+function handlePreviewDividerPointerDown(event) {
+  if (!dom.previewDivider || !dom.previewStack) {
+    return;
+  }
+
+  previewDividerDragState = {pointerId: event.pointerId};
+  document.body.dataset.isResizing = "preview";
+  dom.previewDivider.setPointerCapture(event.pointerId);
+  setDiagramHeightFromPointer(event.clientY);
+}
+
+function handlePreviewDividerKeyDown(event) {
+  const currentHeight = getCurrentDiagramPanelHeight();
+  let nextHeight = currentHeight;
+
+  if (event.key === "ArrowUp") {
+    nextHeight = currentHeight - 24;
+  } else if (event.key === "ArrowDown") {
+    nextHeight = currentHeight + 24;
+  } else if (event.key === "Home") {
+    nextHeight = MIN_DIAGRAM_PANEL_HEIGHT;
+  } else if (event.key === "End") {
+    nextHeight = Number(dom.previewDivider.getAttribute("aria-valuemax")) || DEFAULT_DIAGRAM_PANEL_HEIGHT;
+  } else {
+    return;
+  }
+
+  event.preventDefault();
+  applyDiagramPanelHeight(nextHeight);
+  updatePreviewDividerAriaValues();
+}
+
+async function renderFlowchartPreview() {
+  const flowchartText = buildFlowchartText();
+  const renderToken = ++mermaidRenderToken;
+  latestFlowchartText = flowchartText;
+
+  if (!flowchartText) {
+    latestRenderedDiagramSvg = "";
+    renderDiagramPlaceholder(EMPTY_FLOWCHART_MESSAGE);
+    updateDiagramStatus("Waiting for blocks", "neutral");
+    return;
+  }
+
+  if (!initializeMermaid()) {
+    renderDiagramPlaceholder("Local Mermaid preview is unavailable.");
+    updateDiagramStatus("Diagram library unavailable", "warning");
+    return;
+  }
+
+  try {
+    if (typeof window.mermaid.parse === "function") {
+      await window.mermaid.parse(flowchartText);
+    }
+
+    const renderResult = await window.mermaid.render(`flowchart-preview-${renderToken}`, flowchartText);
+    const svg = typeof renderResult === "string" ? renderResult : renderResult.svg;
+    const bindFunctions = renderResult && typeof renderResult === "object" ? renderResult.bindFunctions : null;
+
+    if (renderToken !== mermaidRenderToken) {
+      return;
+    }
+
+    latestRenderedDiagramSvg = svg;
+    dom.diagramPreview.innerHTML = svg;
+    const renderedSvg = dom.diagramPreview.querySelector("svg");
+    if (renderedSvg) {
+      renderedSvg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    }
+    if (typeof bindFunctions === "function") {
+      bindFunctions(dom.diagramPreview);
+    }
+
+    updateDiagramStatus("Flow diagram updated", "good");
+  } catch (error) {
+    if (renderToken !== mermaidRenderToken) {
+      return;
+    }
+
+    latestRenderedDiagramSvg = "";
+    renderDiagramPlaceholder("Flow diagram could not be generated from the current blocks.");
+    updateDiagramStatus("Diagram render failed", "warning");
+  }
+}
+
 function updateWorkspaceSummary() {
   const count = countAllBlocks();
   dom.workspaceSummary.textContent = `${count} block${count === 1 ? "" : "s"} in workspace`;
   dom.copyOutputBtn.disabled = count === 0;
+  dom.copyDiagramBtn.disabled = count === 0;
+  dom.fitDiagramBtn.disabled = count === 0;
   dom.clearWorkspaceBtn.disabled = count === 0;
 }
 
@@ -706,20 +1509,21 @@ function updateValidationState() {
   const programCount = getProgramBlocks().length;
 
   if (programCount === 0) {
-    updateValidationBanner("Add one Program block to define the main routine.", "warning");
+    updateValidationBanner("Not ready", "warning");
     return;
   }
 
   if (programCount > 1) {
-    updateValidationBanner("Use one top-level Program block for the main flow. Multiple Program blocks are currently present.", "warning");
+    updateValidationBanner("Not ready", "warning");
     return;
   }
 
-  updateValidationBanner("Single Program block ready. The preview will follow top-level block order from top to bottom.", "good");
+  updateValidationBanner("Ready", "good");
 }
 
 function renderDerivedState() {
   dom.outputPreview.textContent = buildPreviewText();
+  void renderFlowchartPreview();
   updateWorkspaceSummary();
   updateValidationState();
 }
@@ -798,12 +1602,294 @@ function buildProjectFileName() {
   return `${sanitizeProjectFileName(programName)}.json`;
 }
 
+function copyTextFallback(text) {
+  if (typeof document.execCommand !== "function") {
+    return false;
+  }
+
+  const textarea = document.createElement("textarea");
+  const selection = document.getSelection();
+  const previousRange = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.top = "0";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+
+  try {
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+    return document.execCommand("copy");
+  } finally {
+    document.body.removeChild(textarea);
+
+    if (selection) {
+      selection.removeAllRanges();
+      if (previousRange) {
+        selection.addRange(previousRange);
+      }
+    }
+  }
+}
+
 async function copyPreviewToClipboard() {
   try {
-    await navigator.clipboard.writeText(dom.outputPreview.textContent);
+    const text = dom.outputPreview.textContent;
+
+    if (window.isSecureContext && navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      await navigator.clipboard.writeText(text);
+    } else if (!copyTextFallback(text)) {
+      throw new Error("Clipboard unavailable");
+    }
+
     updateSaveStatus("Copied pseudocode", "good");
   } catch (error) {
     updateSaveStatus("Copy failed", "warning");
+  }
+
+  resetStatusLater();
+}
+
+function parseSvgViewBox(rawViewBox) {
+  const values = String(rawViewBox || "")
+    .trim()
+    .split(/[\s,]+/)
+    .map((value) => Number(value));
+
+  if (values.length !== 4 || values.some((value) => !Number.isFinite(value))) {
+    return null;
+  }
+
+  return {
+    minX: values[0],
+    minY: values[1],
+    width: values[2],
+    height: values[3]
+  };
+}
+
+function getDiagramExportSpec() {
+  const renderedSvg = dom.diagramPreview.querySelector("svg");
+  if (!renderedSvg) {
+    return null;
+  }
+
+  const clone = renderedSvg.cloneNode(true);
+  const viewBox = parseSvgViewBox(clone.getAttribute("viewBox"));
+  const widthAttr = Number.parseFloat(clone.getAttribute("width"));
+  const heightAttr = Number.parseFloat(clone.getAttribute("height"));
+  const rect = renderedSvg.getBoundingClientRect();
+  const width = Math.max(
+    1,
+    Math.round(
+      viewBox && viewBox.width > 0
+        ? viewBox.width
+        : Number.isFinite(widthAttr) && widthAttr > 0
+          ? widthAttr
+          : rect.width
+    )
+  );
+  const height = Math.max(
+    1,
+    Math.round(
+      viewBox && viewBox.height > 0
+        ? viewBox.height
+        : Number.isFinite(heightAttr) && heightAttr > 0
+          ? heightAttr
+          : rect.height
+    )
+  );
+
+  clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+  clone.setAttribute("width", String(width));
+  clone.setAttribute("height", String(height));
+  clone.setAttribute("style", "background:#fbfcff;");
+  clone.removeAttribute("class");
+
+  return {
+    markup: new XMLSerializer().serializeToString(clone),
+    width,
+    height
+  };
+}
+
+async function exportDiagramPngBlob() {
+  const exportSpec = getDiagramExportSpec();
+  if (!exportSpec) {
+    throw new Error("Diagram unavailable");
+  }
+
+  const scale = Math.max(2, Math.ceil(window.devicePixelRatio || 1));
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error("Canvas unavailable");
+  }
+
+  canvas.width = Math.max(1, exportSpec.width * scale);
+  canvas.height = Math.max(1, exportSpec.height * scale);
+  context.setTransform(scale, 0, 0, scale, 0, 0);
+  context.clearRect(0, 0, exportSpec.width, exportSpec.height);
+  context.fillStyle = "#fbfcff";
+  context.fillRect(0, 0, exportSpec.width, exportSpec.height);
+
+  const svgBlob = new Blob([exportSpec.markup], {type: "image/svg+xml;charset=utf-8"});
+  const objectUrl = URL.createObjectURL(svgBlob);
+
+  try {
+    const image = await new Promise((resolve, reject) => {
+      const nextImage = new Image();
+      nextImage.onload = () => resolve(nextImage);
+      nextImage.onerror = () => reject(new Error("SVG rasterization failed"));
+      nextImage.src = objectUrl;
+    });
+
+    context.drawImage(image, 0, 0, exportSpec.width, exportSpec.height);
+
+    return await new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+          return;
+        }
+
+        reject(new Error("PNG export failed"));
+      }, "image/png");
+    });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+function restoreSelection(selection, previousRanges) {
+  if (!selection) {
+    return;
+  }
+
+  selection.removeAllRanges();
+  previousRanges.forEach((range) => {
+    selection.addRange(range);
+  });
+}
+
+async function blobToDataUrl(blob) {
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Data URL conversion failed"));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function copyImageElementFallback(dataUrl, width, height) {
+  if (typeof document.execCommand !== "function") {
+    return false;
+  }
+
+  const selection = document.getSelection();
+  const previousRanges = selection
+    ? Array.from({length: selection.rangeCount}, (_, index) => selection.getRangeAt(index).cloneRange())
+    : [];
+  const wrapper = document.createElement("div");
+  const image = document.createElement("img");
+
+  wrapper.contentEditable = "true";
+  wrapper.style.position = "fixed";
+  wrapper.style.top = "0";
+  wrapper.style.left = "-9999px";
+  wrapper.style.opacity = "0";
+  wrapper.style.pointerEvents = "none";
+  wrapper.style.userSelect = "text";
+
+  image.src = dataUrl;
+  image.alt = "Flow diagram";
+  image.width = Math.max(1, Math.round(width));
+  image.height = Math.max(1, Math.round(height));
+  wrapper.appendChild(image);
+  document.body.appendChild(wrapper);
+
+  try {
+    const copyHandler = (event) => {
+      if (!event.clipboardData) {
+        return;
+      }
+
+      event.clipboardData.setData("text/html", wrapper.innerHTML);
+      event.clipboardData.setData("text/plain", "Flow diagram image");
+      event.preventDefault();
+    };
+    const range = document.createRange();
+    range.selectNode(image);
+
+    if (selection) {
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    document.addEventListener("copy", copyHandler);
+    wrapper.focus();
+    try {
+      return document.execCommand("copy");
+    } finally {
+      document.removeEventListener("copy", copyHandler);
+    }
+  } finally {
+    document.body.removeChild(wrapper);
+    restoreSelection(selection, previousRanges);
+  }
+}
+
+async function copyFlowDiagramToClipboard() {
+  if (!latestFlowchartText) {
+    updateSaveStatus("No flow diagram to copy", "warning");
+    resetStatusLater();
+    return;
+  }
+
+  try {
+    const exportSpec = getDiagramExportSpec();
+    if (!exportSpec) {
+      throw new Error("Diagram unavailable");
+    }
+
+    const pngBlob = await exportDiagramPngBlob();
+    let copied = false;
+
+    if (
+      window.isSecureContext &&
+      navigator.clipboard &&
+      typeof navigator.clipboard.write === "function" &&
+      typeof window.ClipboardItem === "function"
+    ) {
+      try {
+        await navigator.clipboard.write([
+          new window.ClipboardItem({
+            "image/png": pngBlob
+          })
+        ]);
+        copied = true;
+      } catch (error) {
+        copied = false;
+      }
+    }
+
+    if (!copied) {
+      const dataUrl = await blobToDataUrl(pngBlob);
+      copied = copyImageElementFallback(dataUrl, exportSpec.width, exportSpec.height);
+    }
+
+    if (!copied) {
+      throw new Error("Clipboard image copy unavailable");
+    }
+
+    updateSaveStatus("Copied flow diagram image", "good");
+  } catch (error) {
+    updateSaveStatus("Image copy failed", "warning");
   }
 
   resetStatusLater();
@@ -912,13 +1998,65 @@ function injectWorkspace() {
   }
 
   window.addEventListener("resize", () => {
-    Blockly.svgResize(workspace);
+    if (!desktopLayoutMedia.matches) {
+      restorePreviewPanelWidth();
+      updateDividerAriaValues();
+    }
+
+    restoreDiagramPanelHeight();
+    updatePreviewDividerAriaValues();
+    resizeWorkspaceSurface();
   });
+}
+
+function wireLayoutDivider() {
+  if (!dom.layoutDivider) {
+    return;
+  }
+
+  dom.layoutDivider.addEventListener("pointerdown", handleDividerPointerDown);
+  dom.layoutDivider.addEventListener("pointermove", handleDividerPointerMove);
+  dom.layoutDivider.addEventListener("pointerup", handleDividerPointerUp);
+  dom.layoutDivider.addEventListener("pointercancel", handleDividerPointerUp);
+  dom.layoutDivider.addEventListener("keydown", handleDividerKeyDown);
+
+  desktopLayoutMedia.addEventListener("change", () => {
+    endDividerDrag();
+    endPreviewDividerDrag();
+
+    if (!desktopLayoutMedia.matches) {
+      restorePreviewPanelWidth();
+      updateDividerAriaValues();
+    }
+
+    restoreDiagramPanelHeight();
+    updatePreviewDividerAriaValues();
+  });
+}
+
+function wirePreviewDivider() {
+  if (!dom.previewDivider) {
+    return;
+  }
+
+  dom.previewDivider.addEventListener("pointerdown", handlePreviewDividerPointerDown);
+  dom.previewDivider.addEventListener("pointermove", handlePreviewDividerPointerMove);
+  dom.previewDivider.addEventListener("pointerup", handlePreviewDividerPointerUp);
+  dom.previewDivider.addEventListener("pointercancel", handlePreviewDividerPointerUp);
+  dom.previewDivider.addEventListener("keydown", handlePreviewDividerKeyDown);
 }
 
 function wireUi() {
   dom.copyOutputBtn.addEventListener("click", () => {
     copyPreviewToClipboard();
+  });
+
+  dom.fitDiagramBtn.addEventListener("click", () => {
+    applyDiagramFitMode(!diagramFitEnabled);
+  });
+
+  dom.copyDiagramBtn.addEventListener("click", () => {
+    copyFlowDiagramToClipboard();
   });
 
   dom.saveProjectBtn.addEventListener("click", () => {
@@ -955,7 +2093,15 @@ function wireUi() {
 
 function initializeApp() {
   defineCustomBlocks();
+  initializeMermaid();
+  restorePreviewPanelWidth();
+  restoreDiagramPanelHeight();
+  restoreDiagramFitMode();
+  updateDividerAriaValues();
+  updatePreviewDividerAriaValues();
   injectWorkspace();
+  wireLayoutDivider();
+  wirePreviewDivider();
   wireUi();
   renderDerivedState();
 
