@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mathematics Investigation Builder - Instructions</title>
+    <style>
+      :root {
+        --bg: #ffffff;
+        --surface: #ffffff;
+        --surface-alt: #f8fbfd;
+        --surface-accent: #eaf4fb;
+        --text: #111111;
+        --muted: #58636d;
+        --line: #111111;
+        --border: #c8d6df;
+        --radius: 2px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+        color: var(--text);
+        background: var(--bg);
+        line-height: 1.45;
+      }
+
+      .page {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 0.5rem 0.75rem;
+      }
+
+      .top {
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 0.55rem 0.65rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .top h1 {
+        margin: 0 0 0.15rem;
+        font-size: 1.1rem;
+      }
+
+      .top p {
+        margin: 0.15rem 0;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.55rem 0.65rem;
+        margin-bottom: 0.5rem;
+      }
+
+      h2,
+      h3 {
+        margin: 0 0 0.35rem;
+        font-family: "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+        color: var(--text);
+      }
+
+      p {
+        margin: 0 0 0.45rem;
+        font-size: 0.82rem;
+      }
+
+      ol,
+      ul {
+        margin: 0.05rem 0 0.45rem 1rem;
+        padding-left: 0.85rem;
+        font-size: 0.82rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 0.25rem;
+        background: var(--surface);
+      }
+
+      th,
+      td {
+        border: 1px solid var(--border);
+        padding: 0.32rem 0.4rem;
+        text-align: left;
+        vertical-align: top;
+        font-size: 0.8rem;
+      }
+
+      th {
+        background: var(--surface-accent);
+        color: var(--text);
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .tip {
+        background: var(--surface-alt);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.42rem 0.48rem;
+        margin-top: 0.35rem;
+        font-size: 0.8rem;
+      }
+
+      .grid {
+        display: grid;
+        gap: 0.5rem;
+      }
+
+      .two-col {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      code {
+        font-family: "Consolas", "Menlo", "Monaco", monospace;
+        background: var(--surface-accent);
+        padding: 0.02rem 0.22rem;
+        border-radius: var(--radius);
+      }
+
+      @media (max-width: 760px) {
+        .page {
+          padding: 0.4rem 0.5rem;
+        }
+
+        .top,
+        .panel {
+          padding: 0.45rem 0.5rem;
+        }
+
+        .two-col {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="top">
+        <h1>Mathematics Investigation Builder - User Guide</h1>
+        <p>Use this guide to learn the app layout, the writing expectations, and the export options before starting your investigation.</p>
+      </header>
+
+      <section class="panel">
+        <h2>1. What this project does</h2>
+        <p>
+          Mathematics Investigation Builder helps students in Years 7 to 12 plan, draft, and export a mathematics investigation report from start to finish.
+        </p>
+        <ul>
+          <li>Build the report in the order: setup, introduction, investigation, data, graphs, analysis, conclusion, export.</li>
+          <li>If this is your first time using the app, work from top to bottom and use <strong>Apply template</strong> to start with an example.</li>
+          <li>Use a Tabulator data table and Chart.js graphs from local vendor files inside <code>math_inv/vendor</code>.</li>
+          <li>See a live continuous-prose report preview as you work, and use the preview icon to hide or re-enable it when you need more editing space.</li>
+          <li>Work autosaves to the browser database every 15 seconds and loads automatically when the app opens or refreshes.</li>
+          <li>Export the report as JSON, Word, or PDF. Word exports use Calibri 10 with 1.27 cm page margins.</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>2. Toolbar Icons</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Control</th>
+              <th>What it does</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Instructions</strong> / <strong>Apply template</strong></td>
+              <td>These remain text buttons because they are used less often and benefit from a visible label.</td>
+            </tr>
+            <tr>
+              <td><strong>Save icon</strong></td>
+              <td>Saves immediately instead of waiting for the next autosave cycle.</td>
+            </tr>
+            <tr>
+              <td><strong>Load icon</strong></td>
+              <td>Reloads the most recent saved version from the browser database while the builder is already open.</td>
+            </tr>
+            <tr>
+              <td><strong>Export icon</strong> / <strong>Import icon</strong></td>
+              <td>Exports the current work as JSON or imports a JSON file.</td>
+            </tr>
+            <tr>
+              <td><strong>Print icon</strong></td>
+              <td>Prints the report or saves it as PDF.</td>
+            </tr>
+            <tr>
+              <td><strong>Eye icon</strong></td>
+              <td>Disables or re-enables the live report preview. When the preview is hidden, the middle editing area expands.</td>
+            </tr>
+            <tr>
+              <td><strong>Word icon</strong></td>
+              <td>Exports the report as a Word document using Calibri 10 with 1.27 cm page margins.</td>
+            </tr>
+            <tr>
+              <td><strong>Clear all</strong></td>
+              <td>Resets the current investigation and clears saved browser data.</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="tip">
+          Every icon button in the toolbar also has a tooltip. Hover over an icon if you are unsure what it does.
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>3. Report Structure Guide</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Report part</th>
+              <th>Tense</th>
+              <th>What it must do</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Introduction</strong></td>
+              <td>Future tense</td>
+              <td>Hook the reader, explain the problem, identify the field of mathematics, describe that field, and connect the mathematics to the problem.</td>
+            </tr>
+            <tr>
+              <td><strong>Mathematical investigation</strong></td>
+              <td>Present tense</td>
+              <td>Introduce each piece of mathematics, complete the mathematics, then explain what it shows. Repeat this cycle until the investigation is complete.</td>
+            </tr>
+            <tr>
+              <td><strong>Analysis</strong></td>
+              <td>Past tense</td>
+              <td>Analyse patterns, written evidence, assumptions, reasonableness, strengths, limitations, and improvements.</td>
+            </tr>
+            <tr>
+              <td><strong>Conclusion</strong></td>
+              <td>Past tense</td>
+              <td>Link back to the introduction, restate the major findings, and clearly state whether the problem was solved.</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="tip">
+          A strong mathematics report should read as continuous prose. Use the writing fields to explain the mathematics, and use tables and graphs as supporting evidence rather than the whole report.
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>4. How the app maps to the report</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>App section</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Investigation setup</strong></td>
+              <td>Stores the title, class details, task type, and the problem focus.</td>
+            </tr>
+            <tr>
+              <td><strong>Introduction</strong></td>
+              <td>Captures the hook, problem context, field of mathematics, explanation of the field, and the connection to the task.</td>
+            </tr>
+            <tr>
+              <td><strong>Mathematical investigation</strong></td>
+              <td>Uses repeatable investigation cycles so each stage can be introduced, shown, and explained.</td>
+            </tr>
+            <tr>
+              <td><strong>Data tables</strong></td>
+              <td>Builds and edits the main data table with local Tabulator.</td>
+            </tr>
+            <tr>
+              <td><strong>Graphs</strong></td>
+              <td>Builds one or more graphs from the table and records what the graphs show.</td>
+            </tr>
+            <tr>
+              <td><strong>Analysis</strong></td>
+              <td>Collects the pattern of results, evidence, assumptions, reasonableness, strengths, limitations, and improvements.</td>
+            </tr>
+            <tr>
+              <td><strong>Conclusion</strong></td>
+              <td>Combines the retrospective link back, major findings, and final solution statement.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2>5. Data and graph tools</h2>
+        <div class="grid two-col">
+          <div>
+            <h3>Data tables</h3>
+            <ul>
+              <li>Edit the column settings first, then drag the column rows when you want to change the order of the data-entry headings.</li>
+              <li>Use <strong>Add column</strong> or <strong>Add trial column</strong> underneath the column list when needed.</li>
+              <li>The data table starts with 3 rows, and you can use <strong>Add row</strong> underneath the table when more rows are needed.</li>
+              <li>Edit values directly inside the Tabulator table.</li>
+              <li>Use the average and standard deviation checkboxes at the top of the data section when those summary columns help the investigation.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Graphs</h3>
+            <ul>
+              <li>Add one or more graph cards.</li>
+              <li>Select the X-axis column and one or more Y-axis columns.</li>
+              <li>Choose from all built-in Chart.js graph types: line, scatter, bar, bubble, pie, doughnut, polar area, and radar.</li>
+              <li>Use a separate radius column for bubble charts.</li>
+              <li>Use a trendline when one Y-axis series is selected on a line or scatter graph.</li>
+              <li>Use the graph commentary box to state what the graph demonstrates before the deeper analysis.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>6. Writing reminders</h2>
+        <div class="grid two-col">
+          <div>
+            <h3>Do</h3>
+            <ul>
+              <li>Describe exactly what you did in the investigation.</li>
+              <li>Let the language of mathematics speak through the workings.</li>
+              <li>Explain what each mathematical step, table, or graph showed.</li>
+              <li>Use paragraph-style analysis for strengths, limitations, and improvements.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Do not</h3>
+            <ul>
+              <li>Write the report like a task sheet summary.</li>
+              <li>Explain basic procedures such as "multiply the length by the width" instead of just doing the mathematics.</li>
+              <li>Leave the conclusion as a repeat of the introduction without a solved/not solved statement.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="tip">
+          Mathematical notation input: type <code>x^2</code> for a superscript and <code>x_1</code> for a subscript. For longer exponents or indices, use grouped forms such as <code>x^{n+1}</code> or <code>x_(i+1)</code>. These forms render automatically in the live report preview and the Word export.
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>7. Useful sentence starters</h2>
+        <div class="grid two-col">
+          <div>
+            <h3>To introduce</h3>
+            <ul>
+              <li>The issue focussed on...</li>
+              <li>The key aspect investigated...</li>
+              <li>...is explored...</li>
+              <li>...is demonstrated...</li>
+              <li>...is explained...</li>
+              <li>...are presented...</li>
+            </ul>
+
+            <h3>To compare and contrast</h3>
+            <ul>
+              <li>Similarly...</li>
+              <li>However...</li>
+              <li>Whereas...</li>
+              <li>In contrast...</li>
+              <li>Conversely...</li>
+              <li>Despite this...</li>
+            </ul>
+          </div>
+          <div>
+            <h3>To show relationships or outcomes</h3>
+            <ul>
+              <li>Therefore...</li>
+              <li>Hence...</li>
+              <li>The evidence suggests...</li>
+              <li>As a result...</li>
+              <li>It is apparent that...</li>
+              <li>...affects...</li>
+              <li>...demonstrates...</li>
+            </ul>
+
+            <h3>To conclude</h3>
+            <ul>
+              <li>In summary...</li>
+              <li>To conclude...</li>
+              <li>It has been shown that...</li>
+              <li>In conclusion...</li>
+              <li>Hence...</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>8. Quick workflow</h2>
+        <ol>
+          <li>Complete the setup details.</li>
+          <li>Write the introduction in future tense.</li>
+          <li>Add one or more mathematical investigation cycles in present tense.</li>
+          <li>Enter the data and build the graphs.</li>
+          <li>Write the analysis in past tense.</li>
+          <li>Finish the conclusion in past tense.</li>
+          <li>Check the preview, then export as Word or PDF. The Word export is formatted with Calibri 10 and 1.27 cm margins.</li>
+        </ol>
+      </section>
+    </main>
+  </body>
+</html>

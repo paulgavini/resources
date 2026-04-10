@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mathematics Investigation Builder</title>
+    <link rel="stylesheet" href="./vendor/tabulator.min.css" />
+    <link rel="stylesheet" href="./css/styles.css" />
+    <link rel="stylesheet" href="./css/print.css" media="print" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar" role="banner">
+        <div class="brand-block">
+          <h1>Mathematics Investigation Builder</h1>
+          <p>Draft a formal mathematics report with structured sections, tables, graphs, and export tools.</p>
+        </div>
+        <div class="project-credit">
+          Based on <strong>practical_wu</strong> and local assets from
+          <strong>tabulator_chart_resource</strong>.
+        </div>
+        <div class="top-controls" aria-label="Project controls">
+          <label class="template-control" for="template-select">
+            Starter template
+            <select id="template-select" aria-label="Choose a starter template"></select>
+          </label>
+          <button class="secondary" type="button" data-action="open-instructions">Instructions</button>
+          <button type="button" data-action="apply-template">Apply template</button>
+          <button class="icon-button" type="button" data-action="save-now" aria-label="Save now" title="Save now">
+            <svg class="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M3 2.5h8l2.5 2.5v8.5H3z" />
+              <path d="M5 2.5v4h5v-4" />
+              <path d="M5.5 11h5" />
+            </svg>
+            <span class="sr-only">Save now</span>
+          </button>
+          <button class="icon-button" type="button" data-action="load-saved" aria-label="Load saved" title="Load saved">
+            <svg class="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M4 5.5a4.5 4.5 0 1 1-.3 5" />
+              <path d="M4 2.8v2.8h2.8" />
+            </svg>
+            <span class="sr-only">Load saved</span>
+          </button>
+          <button class="icon-button" type="button" data-action="export-json" aria-label="Export JSON" title="Export JSON">
+            <svg class="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M8 10.5v-7" />
+              <path d="M5.5 5.5 8 3l2.5 2.5" />
+              <path d="M3 12.5h10" />
+            </svg>
+            <span class="sr-only">Export JSON</span>
+          </button>
+          <button class="icon-button" type="button" data-action="import-json" aria-label="Import JSON" title="Import JSON">
+            <svg class="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M8 3v7" />
+              <path d="M5.5 7.5 8 10l2.5-2.5" />
+              <path d="M3 12.5h10" />
+            </svg>
+            <span class="sr-only">Import JSON</span>
+          </button>
+          <button class="icon-button" type="button" data-action="print-report" aria-label="Print or export PDF" title="Print or export PDF">
+            <svg class="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M5 3h6v3H5z" />
+              <path d="M4 6h8a2 2 0 0 1 2 2v2.5H11v2.5H5v-2.5H2V8a2 2 0 0 1 2-2z" />
+              <path d="M5.5 11h5" />
+            </svg>
+            <span class="sr-only">Print or export PDF</span>
+          </button>
+          <button class="secondary icon-button" type="button" id="toggle-report-preview" data-action="toggle-report-preview" aria-pressed="true" aria-label="Disable preview" title="Disable preview">
+            <svg class="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M1.5 8s2.3-4 6.5-4 6.5 4 6.5 4-2.3 4-6.5 4S1.5 8 1.5 8Z" />
+              <circle cx="8" cy="8" r="2" />
+            </svg>
+            <span class="sr-only">Disable preview</span>
+          </button>
+          <button class="icon-button" type="button" data-action="export-word" aria-label="Export Word document" title="Export Word document">
+            <svg class="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M4.5 2.5h5L12 5v8.5H4.5z" />
+              <path d="M9.5 2.5v2.5H12" />
+              <path d="m6.2 7.2.6 3 .9-1.7.8 1.7.6-3" />
+            </svg>
+            <span class="sr-only">Export Word document</span>
+          </button>
+          <button class="danger" type="button" data-action="clear-data">Clear all</button>
+        </div>
+        <div class="status-row" aria-live="polite" id="save-status">Ready</div>
+      </header>
+
+      <div class="workspace">
+        <aside class="sidebar" aria-label="Section navigation">
+          <nav id="section-nav">
+            <button class="section-link" data-nav-target="setup" type="button">
+              <span>1. Investigation setup</span>
+              <span class="section-state" data-section-state="setup">Incomplete</span>
+            </button>
+            <button class="section-link" data-nav-target="introduction" type="button">
+              <span>2. Introduction</span>
+              <span class="section-state" data-section-state="introduction">Incomplete</span>
+            </button>
+            <button class="section-link" data-nav-target="investigation" type="button">
+              <span>3. Mathematical investigation</span>
+              <span class="section-state" data-section-state="investigation">Incomplete</span>
+            </button>
+            <button class="section-link" data-nav-target="data" type="button">
+              <span>4. Data tables</span>
+              <span class="section-state" data-section-state="data">Incomplete</span>
+            </button>
+            <button class="section-link" data-nav-target="graphs" type="button">
+              <span>5. Graphs</span>
+              <span class="section-state" data-section-state="graphs">Incomplete</span>
+            </button>
+            <button class="section-link" data-nav-target="analysis" type="button">
+              <span>6. Analysis</span>
+              <span class="section-state" data-section-state="analysis">Incomplete</span>
+            </button>
+            <button class="section-link" data-nav-target="conclusion" type="button">
+              <span>7. Conclusion</span>
+              <span class="section-state" data-section-state="conclusion">Incomplete</span>
+            </button>
+            <button class="section-link" data-nav-target="export" type="button">
+              <span>8. Report export</span>
+              <span class="section-state" data-section-state="export">Incomplete</span>
+            </button>
+          </nav>
+        </aside>
+
+        <main class="editor" id="editor" aria-label="Mathematics investigation editor">
+          <section class="section-card" id="section-setup" data-section="setup">
+            <h2>1. Investigation setup</h2>
+            <div class="grid two-col">
+              <label>
+                Investigation title
+                <input data-bind="setup.title" type="text" maxlength="140" placeholder="e.g. Comparing mobile plan costs with linear models" />
+              </label>
+              <label>
+                Subject
+                <input data-bind="setup.subject" type="text" placeholder="Mathematics" />
+              </label>
+              <label>
+                Year level
+                <input data-bind="setup.yearLevel" type="text" placeholder="Year 10" />
+              </label>
+              <label>
+                Teacher
+                <input data-bind="setup.teacher" type="text" placeholder="Teacher name" />
+              </label>
+              <label>
+                Class
+                <input data-bind="setup.className" type="text" placeholder="10A" />
+              </label>
+              <label>
+                Due date
+                <input data-bind="setup.dueDate" type="date" />
+              </label>
+              <label>
+                Investigation type
+                <select data-bind="setup.taskType">
+                  <option value="Problem solving">Problem solving</option>
+                  <option value="Modelling">Modelling</option>
+                  <option value="Comparison">Comparison</option>
+                  <option value="Optimisation">Optimisation</option>
+                  <option value="Statistical investigation">Statistical investigation</option>
+                </select>
+              </label>
+              <label>
+                Problem focus
+                <input data-bind="setup.problemFocus" type="text" placeholder="What is the main problem or question?" />
+              </label>
+            </div>
+          </section>
+
+          <section class="section-card" id="section-introduction" data-section="introduction">
+            <h2>2. Introduction</h2>
+            <p class="support-text">Write in future tense. The introduction should hook the reader, explain the problem, name the field of mathematics, describe it, and connect that mathematics to the task.</p>
+            <label>
+              Reader hook
+              <textarea data-bind="introduction.hook" rows="3" placeholder="Open with a sentence that introduces the issue and invites the reader into the task."></textarea>
+            </label>
+            <label>
+              Nature of the problem investigated
+              <textarea data-bind="introduction.problemContext" rows="4" placeholder="Describe the context of the problem or investigation."></textarea>
+            </label>
+            <div class="grid two-col">
+              <label>
+                Field of mathematics
+                <input data-bind="introduction.fieldOfMathematics" type="text" placeholder="e.g. Linear relationships, geometry, statistics" />
+              </label>
+              <label>
+                What this field of mathematics involves
+                <textarea data-bind="introduction.fieldDescription" rows="3" placeholder="Describe the mathematics you will use."></textarea>
+              </label>
+            </div>
+            <label>
+              How the mathematics connects to the problem
+              <textarea data-bind="introduction.connection" rows="4" placeholder="Explain how this mathematics will help solve or investigate the problem."></textarea>
+            </label>
+            <div class="preview-box" id="introduction-paragraph-preview" aria-live="polite"></div>
+          </section>
+
+          <section class="section-card" id="section-investigation" data-section="investigation">
+            <h2>3. Mathematical investigation</h2>
+            <p class="support-text">Write in present tense. Each investigation cycle should introduce the mathematics, show the working/table/graph, and explain what it demonstrates.</p>
+            <div id="investigation-cycles" class="stack-list"></div>
+            <button type="button" data-action="add-investigation-cycle">Add investigation cycle</button>
+          </section>
+
+          <section class="section-card" id="section-data" data-section="data">
+            <h2>4. Data tables</h2>
+            <p class="support-text">This table uses local Tabulator assets from <code>tabulator_chart_resource</code>. Build the columns first, then enter the values directly into the table.</p>
+            <div class="row-inline controls-row">
+              <label class="checkbox-label">
+                <input data-bind="data.includeAverage" type="checkbox" />
+                Include calculated average column
+              </label>
+              <label class="checkbox-label">
+                <input data-bind="data.includeStandardDeviation" type="checkbox" />
+                Include calculated standard deviation column
+              </label>
+            </div>
+            <h3>Column settings</h3>
+            <p class="support-text">Drag the column rows to change the order of the data-entry headings.</p>
+            <div id="column-definitions" class="stack-list"></div>
+            <div class="row-inline section-actions">
+              <button type="button" data-action="add-column">Add column</button>
+              <button type="button" data-action="add-trial-column">Add trial column</button>
+            </div>
+            <h3>Data entry table</h3>
+            <div id="data-grid-container" class="table-wrap tabulator-host"></div>
+            <div class="row-inline section-actions">
+              <button type="button" data-action="add-row">Add row</button>
+            </div>
+            <p class="support-text" id="data-summary"></p>
+          </section>
+
+          <section class="section-card" id="section-graphs" data-section="graphs">
+            <h2>5. Graphs</h2>
+            <p class="support-text">Use the data table to build one or more graphs. Each graph can select a different X-axis, one or more Y-axis columns, and an optional trendline.</p>
+            <div id="graph-cards" class="stack-list"></div>
+            <button type="button" data-action="add-graph-card">Add graph</button>
+            <label>
+              What do the graphs show?
+              <textarea data-bind="graphs.commentary" rows="4" placeholder="Summarise what the graphs reveal before you move into the analysis section."></textarea>
+            </label>
+          </section>
+
+          <section class="section-card" id="section-analysis" data-section="analysis">
+            <h2>6. Analysis</h2>
+            <p class="support-text">Write in past tense. Analyse the pattern of results, the reasonableness of the solution, the strengths and limitations of the method, and the improvements that would strengthen the investigation.</p>
+            <label>
+              Pattern of results
+              <textarea data-bind="analysis.patternOfResults" rows="4" placeholder="Describe the patterns, important discoveries, and what the mathematics showed."></textarea>
+            </label>
+            <label>
+              Written evidence and answer to the problem
+              <textarea data-bind="analysis.writtenEvidence" rows="4" placeholder="State the answer and support it with written evidence from the mathematics."></textarea>
+            </label>
+            <label>
+              Assumptions made
+              <textarea data-bind="analysis.assumptions" rows="4" placeholder="Identify fixed values, predictions, or assumptions that affected the investigation."></textarea>
+            </label>
+            <div class="grid two-col">
+              <label>
+                How reasonable was the solution?
+                <textarea data-bind="analysis.reasonableness" rows="4" placeholder="Comment on how realistic the solution was."></textarea>
+              </label>
+              <label>
+                Comparison of methods
+                <textarea data-bind="analysis.methodComparison" rows="4" placeholder="If you used more than one method, compare the answers here."></textarea>
+              </label>
+            </div>
+
+            <h3>Strengths of the method</h3>
+            <div id="strength-rows" class="stack-list"></div>
+            <button type="button" data-action="add-strength-row">Add strength</button>
+
+            <h3>Limitations / weaknesses</h3>
+            <div id="limitation-rows" class="stack-list"></div>
+            <button type="button" data-action="add-limitation-row">Add limitation</button>
+
+            <h3>Improvements</h3>
+            <div id="improvement-rows" class="stack-list"></div>
+            <button type="button" data-action="add-improvement-row">Add improvement</button>
+          </section>
+
+          <section class="section-card" id="section-conclusion" data-section="conclusion">
+            <h2>7. Conclusion</h2>
+            <p class="support-text">Write in past tense. Link back to the introduction, restate the major findings, and clearly state whether the problem was solved and what the solution was.</p>
+            <label>
+              Link back to the mathematics and the problem
+              <textarea data-bind="conclusion.relationBack" rows="4" placeholder="Restate how the mathematics related to the problem, now from a retrospective point of view."></textarea>
+            </label>
+            <label>
+              Major findings from the analysis
+              <textarea data-bind="conclusion.majorFindings" rows="4" placeholder="Summarise the most important findings without re-analysing them."></textarea>
+            </label>
+            <label>
+              Was the problem solved?
+              <textarea data-bind="conclusion.solutionStatement" rows="4" placeholder="State whether the problem was solved and give the final solution."></textarea>
+            </label>
+            <div class="preview-box" id="conclusion-paragraph-preview" aria-live="polite"></div>
+          </section>
+
+          <section class="section-card" id="section-export" data-section="export">
+            <h2>8. Report export</h2>
+            <p class="support-text">Use the controls above to save, load, export JSON, export Word, or print the live report as PDF. The checklist below marks what still needs attention.</p>
+            <ul class="checklist" id="export-checklist"></ul>
+          </section>
+        </main>
+
+        <aside class="preview-panel" id="preview-panel" aria-label="Live report preview">
+          <h2>Live Report Preview</h2>
+          <div class="preview-note">This preview updates automatically and is formatted for a continuous-prose mathematics report.</div>
+          <article class="report-preview" id="report-preview"></article>
+        </aside>
+      </div>
+    </div>
+
+    <input id="import-file" type="file" accept="application/json,.json" hidden />
+
+    <script src="./vendor/tabulator.min.js"></script>
+    <script src="./vendor/chart.umd.min.js"></script>
+    <script src="./vendor/Sortable.min.js"></script>
+    <script src="./vendor/docx.umd.js"></script>
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>
