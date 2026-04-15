@@ -15,6 +15,63 @@ const GRAPH_TYPE_OPTIONS = [
   { value: "radar", label: "Radar" },
 ];
 
+const HELP_CONTENT = {
+  readerHook:
+    "Start with 1-2 sentences that make the issue worth reading about. It should lead naturally into the investigation and make the context matter, not just repeat the title.",
+  problemContext:
+    "Explain the problem clearly: what is being investigated, why it matters, and which quantities or conditions shape the task. The reader should understand the situation before the mathematics begins.",
+  fieldOfMathematics:
+    "Name the main mathematics you will use, such as linear relationships, geometry, statistics, or algebraic modelling. Be specific enough that the reader can predict the type of reasoning involved.",
+  fieldDescription:
+    "Briefly describe the ideas, relationships, or techniques from that field that matter in this task. Focus on what the mathematics does here rather than giving a dictionary definition.",
+  mathsConnection:
+    "Show how the mathematics will help answer the problem. Link the method to the context so the reader can see why these calculations, graphs, or formulas are useful.",
+  investigationHeading:
+    "Give this cycle a precise mathematical purpose, such as calculating a gradient, comparing formulas, or identifying an intersection point. The heading should tell the reader what this step is doing.",
+  introduceMathematics:
+    "Set up the method before the working starts. State what you are about to calculate, graph, or compare, and why that step is needed in the investigation.",
+  workingsNotes:
+    "Show the mathematics clearly enough that someone else could follow and reproduce the method. Include formulas, substitutions, calculations, table values, or graph notes rather than long procedural narration.",
+  explanation:
+    "Interpret the mathematics after you show it. Explain what this step demonstrates, what relationship it reveals, or how it moves the investigation closer to an answer.",
+  graphCommentary:
+    "Summarise the main pattern or relationship shown by the graph. Mention trends, intersections, clusters, or anomalies rather than simply saying the graph was useful.",
+  patternOfResults:
+    "Describe the pattern that emerged across the calculations, tables, and graphs. Point out trends, turning points, consistent relationships, and unusual results, then explain what those patterns mean.",
+  writtenEvidence:
+    "Give a direct answer to the problem and justify it with mathematical evidence. Refer to values, comparisons, equations, or graph features that support your decision.",
+  assumptionsMade:
+    "List the fixed values, simplifications, or predictions you treated as true. Explain how those assumptions shaped the model or result, especially if changing them could change the answer.",
+  reasonableness:
+    "Judge whether the solution makes sense in the real context. Check whether the size, units, trend, and conditions are realistic, and whether another estimate or method supports the result.",
+  methodComparison:
+    "If you used more than one method, compare how similar the answers were and which method was clearer, faster, or more reliable. If you only used one method, explain why it suited the task.",
+  methodStrengths:
+    "Identify features of the method that made the investigation clearer, more efficient, or more reliable. Strong strengths are specific, such as using enough data or choosing a graph that matched the pattern.",
+  methodLimitations:
+    "Identify weaknesses or constraints that reduced accuracy, fairness, or certainty. Good limitations are specific and linked to the method, the data, or the assumptions.",
+  methodImprovements:
+    "Suggest realistic changes that would strengthen the investigation if it were repeated. Improvements should respond directly to the limitations rather than adding unrelated extra work.",
+  strengthPoint:
+    "State one clear strength as a topic sentence. Focus on a feature of the method rather than a vague comment such as saying the task was good or easy.",
+  strengthImpact:
+    "Explain how that strength improved the investigation, for example by making the result more accurate, easier to interpret, or better supported by evidence.",
+  limitationPoint:
+    "State one clear limitation or weakness in the method, data, or model. Be specific about what reduced the quality or certainty of the investigation.",
+  limitationImpact:
+    "Explain the effect of that limitation on the result. For example, did it reduce precision, narrow the validity of the model, or make the conclusion less certain?",
+  improvementPoint:
+    "State one practical change that would improve the investigation next time. The improvement should address a real weakness rather than adding extra work for its own sake.",
+  improvementBenefit:
+    "Explain how the improvement would strengthen the investigation, such as making the result more accurate, more reliable, or more realistic.",
+  conclusionLinkBack:
+    "Return to the original problem and the mathematics named in the introduction. Show, from a past-tense viewpoint, how the mathematics helped answer the question.",
+  majorFindings:
+    "Summarise the most important findings from the analysis without redoing the full explanation. Focus on the main patterns and conclusions that matter most.",
+  solutionStatement:
+    "State clearly whether the problem was solved and give the final answer or decision. This should be unambiguous and supported by the investigation.",
+};
+
 function getByPath(source, path) {
   return path.split(".").reduce((value, key) => (value ? value[key] : undefined), source);
 }
@@ -40,6 +97,10 @@ function escapeHtml(value) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
+}
+
+function renderHelpText(label, key) {
+  return `<span data-help-key="${escapeAttr(key)}">${escapeHtml(label)}</span>`;
 }
 
 function getPreviewToggleIconMarkup(isEnabled) {
@@ -183,19 +244,19 @@ export function renderInvestigationCycles(container, cycles) {
             }
           </div>
           <label>
-            Heading
+            ${renderHelpText("Heading", "investigationHeading")}
             <input type="text" data-array="investigation.cycles" data-index="${index}" data-field="heading" value="${escapeAttr(cycle.heading)}" placeholder="e.g. Calculating gradient from the data" />
           </label>
           <label>
-            Introduce the mathematics
+            ${renderHelpText("Introduce the mathematics", "introduceMathematics")}
             <textarea data-array="investigation.cycles" data-index="${index}" data-field="introduce" rows="3" placeholder="Explain what you are about to do and why.">${escapeHtml(cycle.introduce)}</textarea>
           </label>
           <label>
-            Workings / table / graph notes
+            ${renderHelpText("Workings / table / graph notes", "workingsNotes")}
             <textarea data-array="investigation.cycles" data-index="${index}" data-field="workings" rows="5" placeholder="Show the mathematics here. Use line breaks for calculations.">${escapeHtml(cycle.workings)}</textarea>
           </label>
           <label>
-            Explain what the mathematics shows
+            ${renderHelpText("Explain what the mathematics shows", "explanation")}
             <textarea data-array="investigation.cycles" data-index="${index}" data-field="explanation" rows="4" placeholder="State what this part of the investigation demonstrates.">${escapeHtml(cycle.explanation)}</textarea>
           </label>
         </article>
@@ -560,11 +621,11 @@ function renderFactorRows(container, rows, config) {
       (row, index) => `
         <div class="dynamic-row factor-row">
           <label>
-            ${escapeHtml(config.primaryLabel)}
+            ${renderHelpText(config.primaryLabel, config.primaryHelpKey)}
             <input type="text" data-array="${escapeAttr(config.arrayPath)}" data-index="${index}" data-field="${escapeAttr(config.primaryField)}" value="${escapeAttr(row[config.primaryField])}" placeholder="${escapeAttr(config.primaryPlaceholder)}" />
           </label>
           <label>
-            ${escapeHtml(config.secondaryLabel)}
+            ${renderHelpText(config.secondaryLabel, config.secondaryHelpKey)}
             <textarea data-array="${escapeAttr(config.arrayPath)}" data-index="${index}" data-field="${escapeAttr(config.secondaryField)}" rows="3" placeholder="${escapeAttr(config.secondaryPlaceholder)}">${escapeHtml(row[config.secondaryField])}</textarea>
           </label>
           ${
@@ -585,6 +646,8 @@ export function renderStrengthRows(container, rows) {
     secondaryField: "impact",
     primaryLabel: "Strength",
     secondaryLabel: "How this strengthened the method",
+    primaryHelpKey: "strengthPoint",
+    secondaryHelpKey: "strengthImpact",
     primaryPlaceholder: "State the strength as the topic sentence.",
     secondaryPlaceholder: "Explain how this improved the investigation or solution.",
     removeAction: "remove-strength-row",
@@ -598,6 +661,8 @@ export function renderLimitationRows(container, rows) {
     secondaryField: "impact",
     primaryLabel: "Limitation / weakness",
     secondaryLabel: "How this limited the investigation",
+    primaryHelpKey: "limitationPoint",
+    secondaryHelpKey: "limitationImpact",
     primaryPlaceholder: "State the limiting factor as the topic sentence.",
     secondaryPlaceholder: "Explain how this reduced accuracy or reasonableness.",
     removeAction: "remove-limitation-row",
@@ -611,9 +676,23 @@ export function renderImprovementRows(container, rows) {
     secondaryField: "benefit",
     primaryLabel: "Improvement",
     secondaryLabel: "How this would improve the investigation",
+    primaryHelpKey: "improvementPoint",
+    secondaryHelpKey: "improvementBenefit",
     primaryPlaceholder: "State the improvement as the topic sentence.",
     secondaryPlaceholder: "Explain how this would make the solution more reasonable or accurate.",
     removeAction: "remove-improvement-row",
+  });
+}
+
+export function applyHelpText(root = document) {
+  root.querySelectorAll("[data-help-key]").forEach((element) => {
+    const text = HELP_CONTENT[element.dataset.helpKey];
+    if (!text) {
+      return;
+    }
+
+    element.classList.add("help-target");
+    element.setAttribute("data-help", text);
   });
 }
 

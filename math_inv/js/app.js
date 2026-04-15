@@ -28,6 +28,7 @@ import {
 import { destroyCharts, renderChart } from "./charts.js";
 import { exportReportToWord } from "./word-export.js";
 import {
+  applyHelpText,
   createUI,
   initialiseColumnSortable,
   initialiseInvestigationSortable,
@@ -917,6 +918,7 @@ function renderApp() {
   renderStrengthRows(ui.strengthRows, state.analysis.strengths);
   renderLimitationRows(ui.limitationRows, state.analysis.limitations);
   renderImprovementRows(ui.improvementRows, state.analysis.improvements);
+  applyHelpText(ui.editor);
 
   const validationResults = validateAllSections(state);
   renderSidebarStatus(validationResults);

@@ -1,0 +1,13 @@
+### Browser `mathinv-instructions-fix` opened with pid 12484.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:8766/index.html');
+```
+### Page
+- Page URL: http://127.0.0.1:8766/index.html
+- Page Title: Mathematics Investigation Builder
+- Console: 1 errors, 0 warnings
+### Snapshot
+- [Snapshot](.playwright-cli\page-2026-04-10T11-50-13-229Z.yml)
+### Events
+- New console entries: .playwright-cli\console-2026-04-10T11-50-13-050Z.log#L1

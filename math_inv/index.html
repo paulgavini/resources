@@ -172,25 +172,25 @@
             <h2>2. Introduction</h2>
             <p class="support-text">Write in future tense. The introduction should hook the reader, explain the problem, name the field of mathematics, describe it, and connect that mathematics to the task.</p>
             <label>
-              Reader hook
+              <span data-help-key="readerHook">Reader hook</span>
               <textarea data-bind="introduction.hook" rows="3" placeholder="Open with a sentence that introduces the issue and invites the reader into the task."></textarea>
             </label>
             <label>
-              Nature of the problem investigated
+              <span data-help-key="problemContext">Nature of the problem investigated</span>
               <textarea data-bind="introduction.problemContext" rows="4" placeholder="Describe the context of the problem or investigation."></textarea>
             </label>
             <div class="grid two-col">
               <label>
-                Field of mathematics
+                <span data-help-key="fieldOfMathematics">Field of mathematics</span>
                 <input data-bind="introduction.fieldOfMathematics" type="text" placeholder="e.g. Linear relationships, geometry, statistics" />
               </label>
               <label>
-                What this field of mathematics involves
+                <span data-help-key="fieldDescription">What this field of mathematics involves</span>
                 <textarea data-bind="introduction.fieldDescription" rows="3" placeholder="Describe the mathematics you will use."></textarea>
               </label>
             </div>
             <label>
-              How the mathematics connects to the problem
+              <span data-help-key="mathsConnection">How the mathematics connects to the problem</span>
               <textarea data-bind="introduction.connection" rows="4" placeholder="Explain how this mathematics will help solve or investigate the problem."></textarea>
             </label>
             <div class="preview-box" id="introduction-paragraph-preview" aria-live="polite"></div>
@@ -237,7 +237,7 @@
             <div id="graph-cards" class="stack-list"></div>
             <button type="button" data-action="add-graph-card">Add graph</button>
             <label>
-              What do the graphs show?
+              <span data-help-key="graphCommentary">What do the graphs show?</span>
               <textarea data-bind="graphs.commentary" rows="4" placeholder="Summarise what the graphs reveal before you move into the analysis section."></textarea>
             </label>
           </section>
@@ -246,37 +246,37 @@
             <h2>6. Analysis</h2>
             <p class="support-text">Write in past tense. Analyse the pattern of results, the reasonableness of the solution, the strengths and limitations of the method, and the improvements that would strengthen the investigation.</p>
             <label>
-              Pattern of results
+              <span data-help-key="patternOfResults">Pattern of results</span>
               <textarea data-bind="analysis.patternOfResults" rows="4" placeholder="Describe the patterns, important discoveries, and what the mathematics showed."></textarea>
             </label>
             <label>
-              Written evidence and answer to the problem
+              <span data-help-key="writtenEvidence">Written evidence and answer to the problem</span>
               <textarea data-bind="analysis.writtenEvidence" rows="4" placeholder="State the answer and support it with written evidence from the mathematics."></textarea>
             </label>
             <label>
-              Assumptions made
+              <span data-help-key="assumptionsMade">Assumptions made</span>
               <textarea data-bind="analysis.assumptions" rows="4" placeholder="Identify fixed values, predictions, or assumptions that affected the investigation."></textarea>
             </label>
             <div class="grid two-col">
               <label>
-                How reasonable was the solution?
+                <span data-help-key="reasonableness">How reasonable was the solution?</span>
                 <textarea data-bind="analysis.reasonableness" rows="4" placeholder="Comment on how realistic the solution was."></textarea>
               </label>
               <label>
-                Comparison of methods
+                <span data-help-key="methodComparison">Comparison of methods</span>
                 <textarea data-bind="analysis.methodComparison" rows="4" placeholder="If you used more than one method, compare the answers here."></textarea>
               </label>
             </div>
 
-            <h3>Strengths of the method</h3>
+            <h3><span data-help-key="methodStrengths">Strengths of the method</span></h3>
             <div id="strength-rows" class="stack-list"></div>
             <button type="button" data-action="add-strength-row">Add strength</button>
 
-            <h3>Limitations / weaknesses</h3>
+            <h3><span data-help-key="methodLimitations">Limitations / weaknesses</span></h3>
             <div id="limitation-rows" class="stack-list"></div>
             <button type="button" data-action="add-limitation-row">Add limitation</button>
 
-            <h3>Improvements</h3>
+            <h3><span data-help-key="methodImprovements">Improvements</span></h3>
             <div id="improvement-rows" class="stack-list"></div>
             <button type="button" data-action="add-improvement-row">Add improvement</button>
           </section>
@@ -285,15 +285,15 @@
             <h2>7. Conclusion</h2>
             <p class="support-text">Write in past tense. Link back to the introduction, restate the major findings, and clearly state whether the problem was solved and what the solution was.</p>
             <label>
-              Link back to the mathematics and the problem
+              <span data-help-key="conclusionLinkBack">Link back to the mathematics and the problem</span>
               <textarea data-bind="conclusion.relationBack" rows="4" placeholder="Restate how the mathematics related to the problem, now from a retrospective point of view."></textarea>
             </label>
             <label>
-              Major findings from the analysis
+              <span data-help-key="majorFindings">Major findings from the analysis</span>
               <textarea data-bind="conclusion.majorFindings" rows="4" placeholder="Summarise the most important findings without re-analysing them."></textarea>
             </label>
             <label>
-              Was the problem solved?
+              <span data-help-key="solutionStatement">Was the problem solved?</span>
               <textarea data-bind="conclusion.solutionStatement" rows="4" placeholder="State whether the problem was solved and give the final solution."></textarea>
             </label>
             <div class="preview-box" id="conclusion-paragraph-preview" aria-live="polite"></div>
