@@ -12,62 +12,132 @@
 
     <main>
       <section class="hero" id="home">
-        <h1>Welcome</h1>
-        <p class="tagline">My web apps for education.</p>
+        <p class="eyebrow">Paul Gavini</p>
+        <h1>Educational web apps organised by classroom use.</h1>
+        <p class="tagline">
+          Browse projects under Science, Math, Digital Technologies, and Teacher and student aides.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#projects">Browse projects</a>
+          <a class="button" href="#teacher-and-student-aides">Teacher and student aides</a>
+        </div>
       </section>
 
       <section id="projects" class="projects">
-        <h2>Projects</h2>
-        <div class="grid">
-          <a class="card" href="/resources/3d_simulation/index.html">
-            <h3>3D Coordinate Cube Builder</h3>
-            <p>Build and explore coordinate cubes in 3D.</p>
-          </a>
-          <a class="card" href="/resources/blockly_html/index.html">
-            <h3>Blockly HTML Builder</h3>
-            <p>Build beginner HTML pages and CSS visually with Blockly.</p>
-          </a>
-          <a class="card" href="/resources/blockly_pseudo/index.html">
-            <h3>Blockly Pseudocode Builder</h3>
-            <p>Create structured pseudocode visually with local Blockly blocks.</p>
-          </a>
-          <a class="card" href="/resources/drawing_app/index.html">
-            <h3>Drawing App</h3>
-            <p>Stylus-first multi-page drawing with optional 1cm grid.</p>
-          </a>
-          <a class="card" href="/resources/evolution_sandbox/index.html">
-            <h3>Evolution Sandbox</h3>
-            <p>Explore emergent patterns and simple rules.</p>
-          </a>
-          <a class="card" href="/resources/TreePad/index.html">
-            <h3>Outliner</h3>
-            <p>Structure ideas with a simple outliner.</p>
-          </a>
-          <a class="card" href="/resources/Oscillioscope/index.html">
-            <h3>Oscillioscope</h3>
-            <p>Explore signals with an oscilloscope view.</p>
-          </a>
-          <a class="card" href="/resources/pdf%20editor/index.html">
-            <h3>PDF Editor</h3>
-            <p>Annotate PDFs with pen, eraser, zoom, and export.</p>
-          </a>
-          <a class="card" href="/resources/pdf_editor_vid/index.html">
-            <h3>PDF Editor with record</h3>
-            <p>Annotate PDFs and record MP4 walkthrough videos.</p>
-          </a>
-          <a class="card" href="/resources/practical_wu/index.html">
-            <h3>Practical Investigation Builder</h3>
-            <p>Plan, analyse, and report science practical investigations.</p>
-          </a>
-          <a class="card" href="/resources/Spectrum analyser/index.html">
-            <h3>Spectrum analyser</h3>
-            <p>Visualise sound with live audio spectra.</p>
-          </a>
-          <a class="card" href="/resources/webcam/index.html">
-            <h3>WebCam Visualiser</h3>
-            <p>Turn your webcam into a classroom visualiser.</p>
-          </a>
+        <div class="section-heading">
+          <p class="section-label">Collections</p>
+          <h2>Projects grouped by subject and classroom role.</h2>
+          <p class="section-summary">
+            The page is now arranged as four categories so related tools sit together and scan more cleanly.
+          </p>
         </div>
+
+        <nav class="category-nav" aria-label="Project categories">
+          <a href="#science">Science</a>
+          <a href="#math">Math</a>
+          <a href="#digital-technologies">Digital Technologies</a>
+          <a href="#teacher-and-student-aides">Teacher and student aides</a>
+        </nav>
+
+        <section class="category" id="science" aria-labelledby="science-heading">
+          <div class="category-head">
+            <p class="category-label">Science</p>
+            <div>
+              <h3 id="science-heading">Science projects</h3>
+              <p>Investigation, modelling, and audio tools for practical classroom inquiry.</p>
+            </div>
+          </div>
+          <div class="grid">
+            <a class="card" href="/resources/practical_wu/index.html">
+              <h4>Practical Investigation Builder</h4>
+              <p>Plan, analyse, and report science practical investigations.</p>
+            </a>
+            <a class="card" href="/resources/evolution_sandbox/index.html">
+              <h4>Evolution Sandbox</h4>
+              <p>Explore emergent patterns and simple rules.</p>
+            </a>
+            <a class="card" href="/resources/Oscillioscope/index.html">
+              <h4>Oscillioscope</h4>
+              <p>Explore signals with an oscilloscope view.</p>
+            </a>
+            <a class="card" href="/resources/Spectrum analyser/index.html">
+              <h4>Spectrum analyser</h4>
+              <p>Visualise sound with live audio spectra.</p>
+            </a>
+          </div>
+        </section>
+
+        <section class="category" id="math" aria-labelledby="math-heading">
+          <div class="category-head">
+            <p class="category-label">Math</p>
+            <div>
+              <h3 id="math-heading">Math projects</h3>
+              <p>Tools for coordinate reasoning, structured investigations, and mathematical communication.</p>
+            </div>
+          </div>
+          <div class="grid">
+            <a class="card" href="/resources/3d_simulation/index.html">
+              <h4>3D Coordinate Cube Builder</h4>
+              <p>Build and explore coordinate cubes in 3D.</p>
+            </a>
+            <a class="card" href="/resources/math_inv/index.html">
+              <h4>Mathematics Investigation Builder</h4>
+              <p>Draft formal mathematics investigation reports.</p>
+            </a>
+          </div>
+        </section>
+
+        <section class="category" id="digital-technologies" aria-labelledby="digital-technologies-heading">
+          <div class="category-head">
+            <p class="category-label">Digital Technologies</p>
+            <div>
+              <h3 id="digital-technologies-heading">Digital Technologies projects</h3>
+              <p>Build, structure, and teach core computing concepts with visual authoring tools.</p>
+            </div>
+          </div>
+          <div class="grid">
+            <a class="card" href="/resources/blockly_html/index.html">
+              <h4>Blockly HTML Builder</h4>
+              <p>Build beginner HTML pages and CSS visually with Blockly.</p>
+            </a>
+            <a class="card" href="/resources/blockly_pseudo/index.html">
+              <h4>Blockly Pseudocode Builder</h4>
+              <p>Create structured pseudocode visually with local Blockly blocks.</p>
+            </a>
+          </div>
+        </section>
+
+        <section class="category" id="teacher-and-student-aides" aria-labelledby="teacher-and-student-aides-heading">
+          <div class="category-head">
+            <p class="category-label">Teacher and student aides</p>
+            <div>
+              <h3 id="teacher-and-student-aides-heading">Teacher and student aides</h3>
+              <p>Presentation, annotation, organisation, and classroom support tools for daily use.</p>
+            </div>
+          </div>
+          <div class="grid">
+            <a class="card" href="/resources/drawing_app/index.html">
+              <h4>Drawing App</h4>
+              <p>Stylus-first multi-page drawing with optional 1cm grid.</p>
+            </a>
+            <a class="card" href="/resources/TreePad/index.html">
+              <h4>Outliner</h4>
+              <p>Structure ideas with a simple outliner.</p>
+            </a>
+            <a class="card" href="/resources/pdf%20editor/index.html">
+              <h4>PDF Editor</h4>
+              <p>Annotate PDFs with pen, eraser, zoom, and export.</p>
+            </a>
+            <a class="card" href="/resources/pdf_editor_vid/index.html">
+              <h4>PDF Editor with record</h4>
+              <p>Annotate PDFs and record MP4 walkthrough videos.</p>
+            </a>
+            <a class="card" href="/resources/webcam/index.html">
+              <h4>WebCam Visualiser</h4>
+              <p>Turn your webcam into a classroom visualiser.</p>
+            </a>
+          </div>
+        </section>
       </section>
     </main>
 

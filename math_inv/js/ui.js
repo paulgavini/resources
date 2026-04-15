@@ -371,7 +371,90 @@ function renderFallbackTable(container, summaryElement, data) {
   summaryElement.textContent = `Columns: ${columns.length}. Rows: ${rows.length}. Trial columns: ${trialCount}.`;
 }
 
-export function renderDataGrid(container, summaryElement, data, onCellEdited) {
+function createDataCellEditor(onCellEdited, onCellPastedText) {
+  return function dataCellEditor(cell, onRendered, success, cancel) {
+    const editor = document.createElement("input");
+    const initialValue = String(cell.getValue() ?? "");
+    editor.type = "text";
+    editor.value = initialValue;
+    editor.style.width = "100%";
+    editor.style.height = "100%";
+    editor.style.padding = "0";
+    editor.style.margin = "0";
+    editor.style.border = "none";
+    editor.style.outline = "none";
+    editor.style.background = "transparent";
+    editor.style.boxSizing = "border-box";
+    editor.style.font = "inherit";
+
+    const rowIndex = Number.parseInt(cell.getRow().getData().__index, 10);
+    const columnIndex = Number.parseInt(String(cell.getField()).slice(4), 10);
+    editor.dataset.tableCell = "true";
+    editor.dataset.row = String(rowIndex);
+    editor.dataset.column = String(columnIndex);
+
+    const syncValue = () => {
+      if (Number.isNaN(rowIndex) || Number.isNaN(columnIndex)) {
+        return;
+      }
+
+      onCellEdited(rowIndex, columnIndex, editor.value);
+    };
+
+    onRendered(() => {
+      editor.focus();
+      editor.select();
+    });
+
+    editor.addEventListener("input", syncValue);
+    editor.addEventListener("change", syncValue);
+    editor.addEventListener("blur", () => {
+      syncValue();
+      success(editor.value);
+    });
+    editor.addEventListener("paste", (event) => {
+      if (typeof onCellPastedText !== "function") {
+        return;
+      }
+
+      const pastedText = event.clipboardData?.getData("text/plain");
+      if (typeof pastedText !== "string") {
+        return;
+      }
+
+      const pasteResult = onCellPastedText(rowIndex, columnIndex, pastedText);
+      if (!pasteResult?.handled) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      editor.value = String(pasteResult.topLeftValue ?? "");
+      success(editor.value);
+    });
+    editor.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        syncValue();
+        success(editor.value);
+      } else if (event.key === "Escape") {
+        if (editor.value !== initialValue) {
+          onCellEdited(rowIndex, columnIndex, initialValue);
+        }
+        cancel();
+      }
+    });
+
+    return editor;
+  };
+}
+
+export function renderDataGrid(
+  container,
+  summaryElement,
+  data,
+  onCellEdited,
+  onCellPastedText,
+) {
   destroyDataGrid();
 
   const columns = data.columns ?? [];
@@ -413,7 +496,7 @@ export function renderDataGrid(container, summaryElement, data, onCellEdited) {
     ...columns.map((column, columnIndex) => ({
       title: formatColumnOptionLabel(column),
       field: `col_${columnIndex}`,
-      editor: "input",
+      editor: createDataCellEditor(onCellEdited, onCellPastedText),
       headerSort: false,
       minWidth: 150,
     })),

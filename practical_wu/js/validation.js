@@ -350,16 +350,36 @@ function validateData(state) {
 }
 
 function validateAnalysis(state) {
-  const complete =
+  const hasGraph = (state.analysis?.graphs ?? []).some(
+    (graph) =>
+      Number.isFinite(Number.parseInt(graph?.xColumn, 10)) &&
+      Array.isArray(graph?.yColumns) &&
+      graph.yColumns.length > 0,
+  );
+  const narrativeComplete =
+    hasText(state.analysis.graphCommentary) &&
     hasText(state.analysis.trend) &&
     hasText(state.analysis.anomalies) &&
     hasText(state.analysis.hypothesisSupported);
 
+  const warnings = [];
+  if (!hasGraph) {
+    warnings.push("Configure at least one graph.");
+  }
+  if (!hasText(state.analysis.graphCommentary)) {
+    warnings.push("Explain what the graph(s) show.");
+  }
+  if (
+    !hasText(state.analysis.trend) ||
+    !hasText(state.analysis.anomalies) ||
+    !hasText(state.analysis.hypothesisSupported)
+  ) {
+    warnings.push("Complete trend, anomalies, and hypothesis support reflections.");
+  }
+
   return {
-    complete,
-    warnings: complete
-      ? []
-      : ["Complete trend, anomalies, and hypothesis support reflections."],
+    complete: hasGraph && narrativeComplete,
+    warnings,
   };
 }
 

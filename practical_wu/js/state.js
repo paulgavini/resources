@@ -1,4 +1,13 @@
-const GRAPH_TYPES = new Set(["line", "scatter", "bar"]);
+const GRAPH_TYPES = new Set([
+  "line",
+  "scatter",
+  "bar",
+  "bubble",
+  "pie",
+  "doughnut",
+  "polarArea",
+  "radar",
+]);
 const TRENDLINE_TYPES = new Set([
   "none",
   "linear",
@@ -15,6 +24,7 @@ export function createBlankAnalysisGraph() {
     trendlineType: "none",
     xColumn: 0,
     yColumns: [1],
+    bubbleRadiusColumn: null,
     startAtOrigin: false,
   };
 }
@@ -59,6 +69,7 @@ export function createDefaultState() {
     },
     analysis: {
       graphs: [createBlankAnalysisGraph()],
+      graphCommentary: "",
       trend: "",
       anomalies: "",
       hypothesisSupported: "",
@@ -200,11 +211,24 @@ function normaliseAnalysisGraph(graph, maxColumnIndex) {
     }
   }
 
+  const hasBubbleRadiusColumn =
+    safeGraph.bubbleRadiusColumn !== undefined &&
+    safeGraph.bubbleRadiusColumn !== null &&
+    String(safeGraph.bubbleRadiusColumn).trim() !== "";
+  const bubbleRadiusColumn = hasBubbleRadiusColumn
+    ? clampColumnIndex(
+        safeGraph.bubbleRadiusColumn,
+        maxColumnIndex,
+        fallbackGraph.yColumns[0],
+      )
+    : null;
+
   return {
     graphType,
     trendlineType,
     xColumn,
     yColumns,
+    bubbleRadiusColumn,
     startAtOrigin: Boolean(safeGraph.startAtOrigin),
   };
 }

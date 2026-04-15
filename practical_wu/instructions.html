@@ -6,15 +6,15 @@
     <title>Practical Investigation Builder - Instructions</title>
     <style>
       :root {
-        --bg: #f2f5f7;
+        --bg: #ffffff;
         --surface: #ffffff;
-        --surface-alt: #eef3f6;
-        --text: #11202e;
-        --muted: #4f6172;
-        --primary: #0b5ea8;
-        --accent: #0f766e;
-        --border: #c7d2de;
-        --radius: 12px;
+        --surface-alt: #f8fbfd;
+        --surface-accent: #eaf4fb;
+        --text: #111111;
+        --muted: #58636d;
+        --line: #111111;
+        --border: #c8d6df;
+        --radius: 2px;
       }
 
       * {
@@ -23,110 +23,123 @@
 
       body {
         margin: 0;
-        font-family: "Aptos", "Calibri", "Noto Sans", "Segoe UI", sans-serif;
+        font-family: "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
         color: var(--text);
-        background:
-          radial-gradient(circle at 15% 20%, rgba(15, 118, 110, 0.1), transparent 35%),
-          radial-gradient(circle at 85% 10%, rgba(11, 94, 168, 0.14), transparent 32%),
-          var(--bg);
+        background: var(--bg);
         line-height: 1.45;
       }
 
       .page {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 1rem;
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 0.5rem 0.75rem;
       }
 
       .top {
-        background: linear-gradient(115deg, #092844, #0b4c82 65%, #0f766e);
-        color: #fff;
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--line);
         border-radius: var(--radius);
-        padding: 1rem 1.2rem;
-        margin-bottom: 1rem;
+        padding: 0.55rem 0.65rem;
+        margin-bottom: 0.5rem;
       }
 
       .top h1 {
-        margin: 0 0 0.35rem;
-        font-family: "Aptos Display", "Franklin Gothic Medium", "Trebuchet MS", sans-serif;
+        margin: 0 0 0.15rem;
+        font-size: 1.1rem;
       }
 
       .top p {
-        margin: 0.2rem 0;
-        color: rgba(255, 255, 255, 0.92);
+        margin: 0.15rem 0;
+        color: var(--muted);
+        font-size: 0.82rem;
       }
 
       .top-links {
-        margin-top: 0.8rem;
+        margin-top: 0.4rem;
         display: flex;
         flex-wrap: wrap;
-        gap: 0.55rem;
+        gap: 0.3rem 0.35rem;
       }
 
       .btn-link {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 42px;
-        border-radius: 10px;
-        border: 1px solid transparent;
+        min-height: 32px;
+        border-radius: var(--radius);
+        border: 1px solid var(--line);
         text-decoration: none;
-        font-weight: 700;
-        padding: 0.55rem 0.9rem;
+        font-weight: 600;
+        padding: 0.38rem 0.55rem;
+        font-size: 0.78rem;
       }
 
       .btn-primary {
-        background: #fff;
-        color: #0b4c82;
+        background: var(--line);
+        color: #ffffff;
       }
 
       .btn-secondary {
-        background: rgba(255, 255, 255, 0.15);
-        color: #fff;
-        border-color: rgba(255, 255, 255, 0.35);
+        background: var(--surface);
+        color: var(--text);
+        border-color: var(--border);
+      }
+
+      .btn-link:hover,
+      .btn-link:focus-visible {
+        background: var(--surface-accent);
+        color: var(--text);
+        outline: none;
       }
 
       .panel {
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: var(--radius);
-        padding: 1rem;
-        margin-bottom: 1rem;
+        padding: 0.55rem 0.65rem;
+        margin-bottom: 0.5rem;
       }
 
       h2,
       h3 {
-        margin: 0 0 0.6rem;
-        font-family: "Aptos Display", "Franklin Gothic Medium", "Trebuchet MS", sans-serif;
+        margin: 0 0 0.35rem;
+        font-family: "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+        color: var(--text);
       }
 
       p {
-        margin: 0 0 0.65rem;
+        margin: 0 0 0.45rem;
+        font-size: 0.82rem;
       }
 
       ol,
       ul {
-        margin: 0.1rem 0 0.7rem 1.2rem;
+        margin: 0.05rem 0 0.45rem 1rem;
+        padding-left: 0.85rem;
+        font-size: 0.82rem;
       }
 
       table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 0.4rem;
-        background: #fff;
+        margin-top: 0.25rem;
+        background: var(--surface);
       }
 
       th,
       td {
-        border: 1px solid #d6e0ea;
-        padding: 0.55rem 0.6rem;
+        border: 1px solid var(--border);
+        padding: 0.32rem 0.4rem;
         text-align: left;
         vertical-align: top;
+        font-size: 0.8rem;
       }
 
       th {
-        background: #f0f5fa;
-        color: #1c3c57;
+        background: var(--surface-accent);
+        color: var(--text);
       }
 
       .muted {
@@ -135,32 +148,41 @@
 
       .tip {
         background: var(--surface-alt);
-        border-left: 4px solid var(--accent);
-        border-radius: 8px;
-        padding: 0.6rem 0.7rem;
-        margin-top: 0.45rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.42rem 0.48rem;
+        margin-top: 0.35rem;
+        font-size: 0.8rem;
+      }
+
+      .grid {
+        display: grid;
+        gap: 0.5rem;
+      }
+
+      .two-col {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
       code {
         font-family: "Consolas", "Menlo", "Monaco", monospace;
-        background: #eef3f8;
-        padding: 0.05rem 0.35rem;
-        border-radius: 4px;
+        background: var(--surface-accent);
+        padding: 0.02rem 0.22rem;
+        border-radius: var(--radius);
       }
 
-      @media (max-width: 740px) {
+      @media (max-width: 760px) {
         .page {
-          padding: 0.7rem;
+          padding: 0.4rem 0.5rem;
         }
 
         .top,
         .panel {
-          padding: 0.85rem;
+          padding: 0.45rem 0.5rem;
         }
 
-        th,
-        td {
-          font-size: 0.95rem;
+        .two-col {
+          grid-template-columns: 1fr;
         }
       }
     </style>
@@ -262,6 +284,11 @@
               <td>To print or save the report as PDF.</td>
             </tr>
             <tr>
+              <td><strong>Preview toggle</strong></td>
+              <td>Hides or shows the live report preview so the editor can use more horizontal space.</td>
+              <td>Use it when you want a wider editing area, then turn the preview back on to check the report layout.</td>
+            </tr>
+            <tr>
               <td><strong>Clear all</strong></td>
               <td>Clears the current investigation form after confirmation.</td>
               <td>Only when you want to start a new investigation from scratch.</td>
@@ -338,8 +365,8 @@
             </tr>
             <tr>
               <td>Data tables</td>
-              <td><strong>Generate/update table</strong></td>
-              <td>Builds or refreshes the editable data grid from current column and row settings.</td>
+              <td><strong>Add row</strong></td>
+              <td>Adds another editable data row to the table.</td>
             </tr>
             <tr>
               <td>Data tables</td>
@@ -347,7 +374,12 @@
               <td>Adds calculated summary columns to the data table so they can also be graphed.</td>
             </tr>
             <tr>
-              <td>Graph and analysis</td>
+              <td>Data tables</td>
+              <td><strong>Drag column rows</strong></td>
+              <td>Reorders the data-entry columns and keeps the graph column selections aligned with the new order.</td>
+            </tr>
+            <tr>
+              <td>Graphs and analysis</td>
               <td><strong>Add graph</strong></td>
               <td>Adds another graph card so you can compare different graph setups in the same investigation.</td>
             </tr>
@@ -379,16 +411,19 @@
       </section>
 
       <section class="panel">
-        <h2>7. Live report preview and graph</h2>
+        <h2>7. Live report preview and graphs</h2>
         <ul>
           <li>The right-side report preview updates as fields are edited.</li>
           <li>Each analysis graph card appears in preview when enough valid data is available.</li>
           <li>You can add extra graph cards and delete any graph after the first one.</li>
+          <li>Each graph can use line, scatter, bar, bubble, pie, doughnut, polar area, or radar display types.</li>
           <li>Each graph can plot multiple Y-axis columns on the same graph using different colours and a legend.</li>
-          <li>Each graph also has a checkbox to force the graph to start at <code>0,0</code> for scatter graphs and line graphs with numeric X values.</li>
+          <li>Bubble charts need a separate radius column that is different from the X-axis and Y-axis selections.</li>
+          <li>Each graph also has a checkbox to force compatible axes to start at zero where the selected graph type supports it.</li>
           <li>Choose trendlines (linear, quadratic, exponential, logarithmic, power, moving average) or set to none.</li>
           <li>When a trendline is applied, the graph area shows equation, standard deviation, and <code>R²</code> as a percentage below the x-axis label.</li>
-          <li>Trendlines are shown when one Y-axis column is selected for that graph.</li>
+          <li>Trendlines are available for line and scatter graphs, and they are shown when one Y-axis column is selected for that graph.</li>
+          <li>The graph commentary field is for a short summary of what the graph demonstrates before the deeper written analysis.</li>
           <li>Axis labels include units where units are entered in data column settings.</li>
         </ul>
       </section>

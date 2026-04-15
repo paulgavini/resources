@@ -479,6 +479,36 @@ function handleInput(event) {
   handleDataCellInput(target);
 }
 
+function handlePaste(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) {
+    return;
+  }
+
+  if (target.dataset.tableCell !== "true") {
+    return;
+  }
+
+  const rowIndex = Number.parseInt(target.dataset.row, 10);
+  const columnIndex = Number.parseInt(target.dataset.column, 10);
+  if (Number.isNaN(rowIndex) || Number.isNaN(columnIndex)) {
+    return;
+  }
+
+  const pastedText = event.clipboardData?.getData("text/plain");
+  if (typeof pastedText !== "string") {
+    return;
+  }
+
+  const pasteResult = handleDataCellPasteText(rowIndex, columnIndex, pastedText);
+  if (!pasteResult.handled) {
+    return;
+  }
+
+  event.preventDefault();
+  target.value = String(pasteResult.topLeftValue ?? "");
+}
+
 function addTrialColumn(draft) {
   const currentTrials = draft.data.columns.filter((column) =>
     String(column.name ?? "").toLowerCase().includes("trial"),
@@ -490,14 +520,206 @@ function addTrialColumn(draft) {
   });
 }
 
-function updateDataCell(rowIndex, columnIndex, value) {
-  updateStateAndMark((draft) => {
-    if (!draft.data.rows[rowIndex]) {
-      return;
-    }
+function parsePastedDataRows(text) {
+  const normalisedText = String(text ?? "").replace(/\r\n?/g, "\n");
+  if (!normalisedText) {
+    return [];
+  }
 
-    draft.data.rows[rowIndex][columnIndex] = value;
+  const rows = normalisedText.split("\n");
+  while (rows.length > 1 && rows[rows.length - 1] === "") {
+    rows.pop();
+  }
+
+  return rows.map((row) => row.split("\t"));
+}
+
+function getPastedColumnCount(rows) {
+  return rows.reduce((maximum, row) => Math.max(maximum, row.length), 0);
+}
+
+function renderCurrentDataGrid(state) {
+  renderDataGrid(
+    ui.dataGridContainer,
+    ui.dataSummary,
+    state.data,
+    updateDataCell,
+    handleDataCellPasteText,
+  );
+}
+
+function refreshValidationViews(state) {
+  const validationResults = validateAllSections(state);
+  renderSidebarStatus(validationResults);
+  renderExportChecklist(ui.exportChecklist, validationResults);
+}
+
+function refreshGraphsAndPreview(state) {
+  destroyCharts();
+  const graphSnapshots = buildGraphSnapshots(state, {
+    includeImageData: isReportPreviewEnabled,
   });
+
+  if (isReportPreviewEnabled) {
+    setReportPreview(
+      ui.reportPreview,
+      buildReportHtml(state, {
+        graphs: graphSnapshots,
+      }),
+    );
+  } else {
+    setReportPreview(ui.reportPreview, "");
+  }
+}
+
+function refreshDerivedViews(state) {
+  refreshValidationViews(state);
+  refreshGraphsAndPreview(state);
+}
+
+function applyPastedDataBlock(startRow, startColumn, pastedRows) {
+  const topLeftValue = String(pastedRows[0]?.[0] ?? "");
+  const pastedColumnCount = getPastedColumnCount(pastedRows);
+  let changed = false;
+  let structureChanged = false;
+  let clippedRows = 0;
+  let clippedColumns = false;
+
+  updateState(
+    (draft) => {
+      const columnCount = draft.data.columns.length;
+      const requiredRowCount = Math.min(
+        200,
+        Math.max(draft.data.rowCount, startRow + pastedRows.length),
+      );
+      clippedRows = Math.max(0, startRow + pastedRows.length - requiredRowCount);
+
+      if (requiredRowCount !== draft.data.rowCount) {
+        draft.data.rowCount = requiredRowCount;
+        structureChanged = true;
+      }
+
+      ensureDataShape(draft.data);
+
+      pastedRows.forEach((pastedRow, rowOffset) => {
+        const targetRow = startRow + rowOffset;
+        if (targetRow >= draft.data.rowCount) {
+          return;
+        }
+
+        if (startColumn + pastedRow.length > columnCount) {
+          clippedColumns = true;
+        }
+
+        pastedRow.forEach((cellValue, columnOffset) => {
+          const targetColumn = startColumn + columnOffset;
+          if (targetColumn >= columnCount) {
+            return;
+          }
+
+          const nextValue = String(cellValue ?? "");
+          const previousValue = String(draft.data.rows[targetRow][targetColumn] ?? "");
+          if (previousValue === nextValue) {
+            return;
+          }
+
+          draft.data.rows[targetRow][targetColumn] = nextValue;
+          changed = true;
+        });
+      });
+    },
+    { silent: true },
+  );
+
+  if (changed || structureChanged) {
+    markDirty();
+    window.requestAnimationFrame(() => {
+      const latestState = getState();
+      renderCurrentDataGrid(latestState);
+      refreshDerivedViews(latestState);
+    });
+
+    if (clippedRows > 0 || clippedColumns) {
+      const nextState = getState();
+      const appliedRowCount = Math.max(
+        0,
+        Math.min(pastedRows.length, nextState.data.rowCount - startRow),
+      );
+      const appliedColumnCount = Math.max(
+        0,
+        Math.min(pastedColumnCount, nextState.data.columns.length - startColumn),
+      );
+      const notes = [];
+
+      if (clippedRows > 0) {
+        notes.push("maximum 200 rows reached");
+      }
+
+      if (clippedColumns) {
+        notes.push("extra columns were ignored");
+      }
+
+      updateStatus(
+        `Pasted ${appliedRowCount} x ${appliedColumnCount} cells. Unsaved changes. ${notes.join(
+          "; ",
+        )}.`,
+      );
+    }
+  }
+
+  return {
+    handled: true,
+    topLeftValue,
+  };
+}
+
+function handleDataCellPasteText(rowIndex, columnIndex, pastedText) {
+  const pastedRows = parsePastedDataRows(pastedText);
+  const pastedColumnCount = getPastedColumnCount(pastedRows);
+
+  if (
+    pastedRows.length === 0 ||
+    pastedColumnCount === 0 ||
+    (pastedRows.length === 1 && pastedColumnCount === 1)
+  ) {
+    return {
+      handled: false,
+      topLeftValue: String(pastedRows[0]?.[0] ?? ""),
+    };
+  }
+
+  return applyPastedDataBlock(rowIndex, columnIndex, pastedRows);
+}
+
+function updateDataCell(rowIndex, columnIndex, value) {
+  const nextValue = String(value ?? "");
+  let changed = false;
+
+  updateState(
+    (draft) => {
+      if (!draft.data.rows[rowIndex]) {
+        return;
+      }
+
+      const previousValue = String(draft.data.rows[rowIndex][columnIndex] ?? "");
+      if (previousValue === nextValue) {
+        return;
+      }
+
+      draft.data.rows[rowIndex][columnIndex] = nextValue;
+      ensureDataShape(draft.data);
+      changed = true;
+    },
+    { silent: true },
+  );
+
+  if (!changed) {
+    return false;
+  }
+
+  markDirty();
+  refreshDerivedViews(getState());
+  return true;
 }
 
 function applyReportPreviewUi(options = {}) {
@@ -913,33 +1135,16 @@ function renderApp() {
   renderBoundInputs(state);
   renderInvestigationCycles(ui.investigationCycles, state.investigation.cycles);
   renderColumnDefinitions(ui.columnDefinitions, state.data.columns);
-  renderDataGrid(ui.dataGridContainer, ui.dataSummary, state.data, updateDataCell);
+  renderCurrentDataGrid(state);
   renderGraphCards(ui.graphCards, state.graphs, state.data);
   renderStrengthRows(ui.strengthRows, state.analysis.strengths);
   renderLimitationRows(ui.limitationRows, state.analysis.limitations);
   renderImprovementRows(ui.improvementRows, state.analysis.improvements);
   applyHelpText(ui.editor);
 
-  const validationResults = validateAllSections(state);
-  renderSidebarStatus(validationResults);
-  renderExportChecklist(ui.exportChecklist, validationResults);
-
   setIntroductionPreview(ui.introductionPreview, buildIntroductionParagraph(state.introduction));
   setConclusionPreview(ui.conclusionPreview, buildConclusionParagraph(state.conclusion));
-
-  const graphSnapshots = buildGraphSnapshots(state, {
-    includeImageData: isReportPreviewEnabled,
-  });
-  if (isReportPreviewEnabled) {
-    setReportPreview(
-      ui.reportPreview,
-      buildReportHtml(state, {
-        graphs: graphSnapshots,
-      }),
-    );
-  } else {
-    setReportPreview(ui.reportPreview, "");
-  }
+  refreshDerivedViews(state);
 
   if (investigationSortable) {
     investigationSortable.destroy();
@@ -1027,6 +1232,7 @@ async function init() {
 
   document.addEventListener("input", handleInput);
   document.addEventListener("change", handleInput);
+  document.addEventListener("paste", handlePaste);
   document.addEventListener("click", handleDocumentClick);
   ui.importFileInput.addEventListener("change", handleImportFile);
 

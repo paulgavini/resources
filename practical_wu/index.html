@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Practical Investigation Builder</title>
+    <link rel="stylesheet" href="./vendor/tabulator.min.css" />
     <link rel="stylesheet" href="./css/styles.css" />
     <link rel="stylesheet" href="./css/print.css" media="print" />
   </head>
@@ -15,8 +16,10 @@
           <p>Plan, complete, analyse and report your science investigation.</p>
         </div>
         <div class="project-credit">
-          Made by Paul Gavini using CODEX,
-          <a href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener noreferrer">YouTube</a>
+          <a href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener noreferrer"
+            >By Paul Gavini using CODEX</a
+          >
+          <a href="https://paulgavini.github.io/resources/" target="_blank" rel="noopener noreferrer">Home</a>
         </div>
         <div class="top-controls" aria-label="Project controls">
           <label class="template-control" for="template-select">
@@ -25,12 +28,60 @@
           </label>
           <button class="secondary" type="button" data-action="open-instructions">Instructions</button>
           <button type="button" data-action="apply-template">Apply template</button>
-          <button type="button" data-action="save-now">Save</button>
-          <button type="button" data-action="load-saved">Load</button>
-          <button type="button" data-action="export-json">Export JSON</button>
-          <button type="button" data-action="import-json">Import JSON</button>
-          <button type="button" data-action="print-report">Print/PDF</button>
-          <button type="button" data-action="export-word">Export Word</button>
+          <button class="icon-button" type="button" data-action="save-now" aria-label="Save now" title="Save now">
+            <svg class="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M3 2.5h8l2.5 2.5v8.5H3z" />
+              <path d="M5 2.5v4h5v-4" />
+              <path d="M5.5 11h5" />
+            </svg>
+            <span class="sr-only">Save now</span>
+          </button>
+          <button class="icon-button" type="button" data-action="load-saved" aria-label="Load saved" title="Load saved">
+            <svg class="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M4 5.5a4.5 4.5 0 1 1-.3 5" />
+              <path d="M4 2.8v2.8h2.8" />
+            </svg>
+            <span class="sr-only">Load saved</span>
+          </button>
+          <button class="icon-button" type="button" data-action="export-json" aria-label="Export JSON" title="Export JSON">
+            <svg class="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M8 10.5v-7" />
+              <path d="M5.5 5.5 8 3l2.5 2.5" />
+              <path d="M3 12.5h10" />
+            </svg>
+            <span class="sr-only">Export JSON</span>
+          </button>
+          <button class="icon-button" type="button" data-action="import-json" aria-label="Import JSON" title="Import JSON">
+            <svg class="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M8 3v7" />
+              <path d="M5.5 7.5 8 10l2.5-2.5" />
+              <path d="M3 12.5h10" />
+            </svg>
+            <span class="sr-only">Import JSON</span>
+          </button>
+          <button class="icon-button" type="button" data-action="print-report" aria-label="Print or export PDF" title="Print or export PDF">
+            <svg class="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M5 3h6v3H5z" />
+              <path d="M4 6h8a2 2 0 0 1 2 2v2.5H11v2.5H5v-2.5H2V8a2 2 0 0 1 2-2z" />
+              <path d="M5.5 11h5" />
+            </svg>
+            <span class="sr-only">Print or export PDF</span>
+          </button>
+          <button class="secondary icon-button" type="button" id="toggle-report-preview" data-action="toggle-report-preview" aria-pressed="true" aria-label="Disable preview" title="Disable preview">
+            <svg class="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M1.5 8s2.3-4 6.5-4 6.5 4 6.5 4-2.3 4-6.5 4S1.5 8 1.5 8Z" />
+              <circle cx="8" cy="8" r="2" />
+            </svg>
+            <span class="sr-only">Disable preview</span>
+          </button>
+          <button class="icon-button" type="button" data-action="export-word" aria-label="Export Word document" title="Export Word document">
+            <svg class="button-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M4.5 2.5h5L12 5v8.5H4.5z" />
+              <path d="M9.5 2.5v2.5H12" />
+              <path d="m6.2 7.2.6 3 .9-1.7.8 1.7.6-3" />
+            </svg>
+            <span class="sr-only">Export Word document</span>
+          </button>
           <button class="danger" type="button" data-action="clear-data">Clear all</button>
         </div>
         <div class="status-row" aria-live="polite" id="save-status">Ready</div>
@@ -72,7 +123,7 @@
               <span class="section-state" data-section-state="data">Incomplete</span>
             </button>
             <button class="section-link" data-nav-target="analysis" type="button">
-              <span>9. Graph and analysis</span>
+              <span>9. Graphs and analysis</span>
               <span class="section-state" data-section-state="analysis">Incomplete</span>
             </button>
             <button class="section-link" data-nav-target="evaluation" type="button">
@@ -135,7 +186,7 @@
             <h2>2. Research question</h2>
             <p class="support-text">Sentence starters: <strong>How does...</strong>, <strong>What is the effect of...</strong>, <strong>How is ... related to ...?</strong></p>
             <label>
-              Research question
+              <span data-help-key="researchQuestion">Research question</span>
               <textarea data-bind="question.text" rows="4" placeholder="Write a clear and measurable question."></textarea>
             </label>
             <div id="question-feedback" class="validation-panel" aria-live="polite"></div>
@@ -151,11 +202,11 @@
             <h2>3. Hypothesis / prediction</h2>
             <p class="support-text">Prompt: <strong>I predict that... because...</strong></p>
             <label>
-              Hypothesis
+              <span data-help-key="hypothesis">Hypothesis</span>
               <textarea data-bind="hypothesis.statement" rows="3" placeholder="I predict that..."></textarea>
             </label>
             <label>
-              Scientific reasoning
+              <span data-help-key="scientificReasoning">Scientific reasoning</span>
               <textarea data-bind="hypothesis.reasoning" rows="4" placeholder="Explain the science behind your prediction."></textarea>
             </label>
           </section>
@@ -164,28 +215,28 @@
             <h2>4. Variables</h2>
             <div class="grid two-col">
               <label>
-                Independent variable
+                <span data-help-key="independentVariable">Independent variable</span>
                 <input data-bind="variables.independent" type="text" placeholder="What you change" />
               </label>
               <label>
-                Dependent variable
+                <span data-help-key="dependentVariable">Dependent variable</span>
                 <input data-bind="variables.dependent" type="text" placeholder="What you measure" />
               </label>
             </div>
-            <h3>Controlled variables</h3>
+            <h3><span data-help-key="controlledVariables">Controlled variables</span></h3>
             <div id="controlled-rows" class="stack-list"></div>
             <button type="button" data-action="add-controlled">Add controlled variable</button>
           </section>
 
           <section class="section-card" id="section-risks" data-section="risks">
             <h2>5. Risk assessment</h2>
-            <div class="table-wrap">
+            <div class="table-wrap plain-table-wrap">
               <table>
                 <thead>
                   <tr>
-                    <th>Hazard</th>
-                    <th>Risk</th>
-                    <th>Precaution</th>
+                    <th><span data-help-key="hazard">Hazard</span></th>
+                    <th><span data-help-key="risk">Risk</span></th>
+                    <th><span data-help-key="precaution">Precaution</span></th>
                     <th aria-label="Actions">Actions</th>
                   </tr>
                 </thead>
@@ -197,12 +248,24 @@
 
           <section class="section-card" id="section-materials" data-section="materials">
             <h2>6. Materials</h2>
-            <div id="materials-rows" class="stack-list"></div>
+            <div class="table-wrap plain-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th><span data-help-key="materialItem">Item</span></th>
+                    <th><span data-help-key="materialQuantity">Quantity</span></th>
+                    <th><span data-help-key="materialUnit">Unit</span></th>
+                    <th aria-label="Actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="materials-rows"></tbody>
+              </table>
+            </div>
             <button type="button" data-action="add-material">Add material</button>
           </section>
 
           <section class="section-card" id="section-method" data-section="method">
-            <h2>7. Method</h2>
+            <h2><span data-help-key="methodSection">7. Method</span></h2>
             <p class="support-text">Drag to reorder steps. Include repeats/trials where relevant.</p>
             <ol id="method-steps" class="method-list"></ol>
             <button type="button" data-action="add-method-step">Add method step</button>
@@ -210,47 +273,57 @@
 
           <section class="section-card" id="section-data" data-section="data">
             <h2>8. Data tables</h2>
+            <p class="support-text">Build the columns first, then enter the values directly into the data table. Drag the column rows to change the order of the data-entry headings.</p>
             <div class="row-inline controls-row">
-              <button type="button" data-action="add-column">Add column</button>
-              <button type="button" data-action="add-trial-column">Add trial column</button>
-              <button type="button" data-action="regenerate-data-table">Generate/update table</button>
-              <label>
-                Rows
-                <input data-bind="data.rowCount" type="number" min="1" max="100" />
-              </label>
               <label class="checkbox-label">
                 <input data-bind="data.includeAverage" type="checkbox" />
-                Include calculated average column
+                <span data-help-key="dataAverage">Include calculated average column</span>
               </label>
               <label class="checkbox-label">
                 <input data-bind="data.includeStandardDeviation" type="checkbox" />
-                Include calculated standard deviation column
+                <span data-help-key="dataStandardDeviation">Include calculated standard deviation column</span>
               </label>
             </div>
-            <h3>Column settings</h3>
+            <h3><span data-help-key="dataColumnSettings">Column settings</span></h3>
             <div id="column-definitions" class="stack-list"></div>
-            <h3>Data entry table</h3>
-            <div id="data-grid-container" class="table-wrap"></div>
+            <div class="row-inline section-actions">
+              <button type="button" data-action="add-column">Add column</button>
+              <button type="button" data-action="add-trial-column">Add trial column</button>
+            </div>
+            <h3><span data-help-key="dataEntryTable">Data entry table</span></h3>
+            <div id="data-grid-container" class="table-wrap tabulator-host"></div>
+            <div class="row-inline section-actions">
+              <button type="button" data-action="add-row">Add row</button>
+            </div>
             <p class="support-text" id="data-summary"></p>
           </section>
 
           <section class="section-card" id="section-analysis" data-section="analysis">
-            <h2>9. Graph and analysis</h2>
+            <h2>9. Graphs and analysis</h2>
             <p class="support-text">
-              Build one or more graphs. Each graph can use a different setup, and each graph can also plot more than one Y-axis column.
+              Use the data table to build one or more graphs. Each graph can select a different X-axis, one or more Y-axis columns, and an optional trendline.
             </p>
             <div id="analysis-graphs" class="stack-list"></div>
             <button type="button" data-action="add-analysis-graph">Add graph</button>
             <label>
-              Describe the trend
+              <span data-help-key="graphCommentary">What do the graphs show?</span>
+              <textarea
+                data-bind="analysis.graphCommentary"
+                rows="3"
+                placeholder="Summarise what the graph(s) reveal before the deeper analysis."
+              ></textarea>
+            </label>
+            <h3>Analysis</h3>
+            <label>
+              <span data-help-key="trendDescription">Describe the trend</span>
               <textarea data-bind="analysis.trend" rows="3" placeholder="Describe patterns in the data."></textarea>
             </label>
             <label>
-              Identify anomalies
+              <span data-help-key="anomalies">Identify anomalies</span>
               <textarea data-bind="analysis.anomalies" rows="3" placeholder="Describe unusual results and possible reasons."></textarea>
             </label>
             <label>
-              Was the hypothesis supported?
+              <span data-help-key="hypothesisSupported">Was the hypothesis supported?</span>
               <select data-bind="analysis.hypothesisSupported">
                 <option value="">Select...</option>
                 <option value="Yes">Yes</option>
@@ -264,19 +337,19 @@
             <h2>10. Evaluation</h2>
             <p class="support-text">Use issue -> effect on results -> improvement thinking.</p>
             <label>
-              Validity
+              <span data-help-key="validity">Validity</span>
               <textarea data-bind="evaluation.validity" rows="3" placeholder="How fair and accurate was the investigation design?"></textarea>
             </label>
             <label>
-              Reliability
+              <span data-help-key="reliability">Reliability</span>
               <textarea data-bind="evaluation.reliability" rows="3" placeholder="Were the results consistent across repeats/trials?"></textarea>
             </label>
             <label>
-              Limitations
+              <span data-help-key="evaluationLimitations">Limitations</span>
               <textarea data-bind="evaluation.limitations" rows="3" placeholder="What reduced confidence in the results?"></textarea>
             </label>
             <label>
-              Improvements
+              <span data-help-key="evaluationImprovements">Improvements</span>
               <textarea data-bind="evaluation.improvements" rows="3" placeholder="What would you change next time?"></textarea>
             </label>
           </section>
@@ -284,15 +357,15 @@
           <section class="section-card" id="section-conclusion" data-section="conclusion">
             <h2>11. Conclusion (CER)</h2>
             <label>
-              Claim
+              <span data-help-key="claim">Claim</span>
               <textarea data-bind="conclusion.claim" rows="3" placeholder="State the answer to the research question."></textarea>
             </label>
             <label>
-              Evidence
+              <span data-help-key="evidence">Evidence</span>
               <textarea data-bind="conclusion.evidence" rows="3" placeholder="Cite specific data as evidence."></textarea>
             </label>
             <label>
-              Reasoning
+              <span data-help-key="reasoning">Reasoning</span>
               <textarea data-bind="conclusion.reasoning" rows="3" placeholder="Explain why the evidence supports the claim."></textarea>
             </label>
             <div class="preview-box" id="conclusion-paragraph-preview" aria-live="polite"></div>
@@ -315,9 +388,10 @@
 
     <input id="import-file" type="file" accept="application/json,.json" hidden />
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/docx@8.2.4/build/index.umd.js"></script>
+    <script src="./vendor/tabulator.min.js"></script>
+    <script src="./vendor/chart.umd.min.js"></script>
+    <script src="./vendor/Sortable.min.js"></script>
+    <script src="./vendor/docx.umd.js"></script>
     <script type="module" src="./js/app.js"></script>
   </body>
 </html>

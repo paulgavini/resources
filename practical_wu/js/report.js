@@ -222,6 +222,7 @@ export function buildReportHtml(state, options = {}) {
     <section class="report-section">
       <h3>Analysis</h3>
       ${buildGraphBlocks(graphs)}
+      <p><strong>What the graphs show:</strong> ${withFallback(state.analysis.graphCommentary)}</p>
       <p><strong>Trend:</strong> ${withFallback(state.analysis.trend)}</p>
       <p><strong>Anomalies:</strong> ${withFallback(state.analysis.anomalies)}</p>
       <p><strong>Hypothesis supported:</strong> ${withFallback(state.analysis.hypothesisSupported)}</p>
