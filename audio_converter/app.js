@@ -1,6 +1,7 @@
-const CORE_BASE_URL = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
-const FFMPEG_MODULE_URL = "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js";
-const FFMPEG_UTIL_URL = "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js";
+const CORE_BASE_URL = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm";
+const FFMPEG_MODULE_URL = "./vendor/ffmpeg/index.js";
+const FFMPEG_WORKER_URL = new URL("./vendor/ffmpeg/worker.js", import.meta.url).href;
+const FFMPEG_UTIL_URL = "./vendor/ffmpeg-util/index.js";
 const MAX_DISPLAY_BYTES = 1024 * 1024 * 1024;
 
 const fileInput = document.querySelector("#file-input");
@@ -134,6 +135,7 @@ async function loadFFmpeg() {
     });
 
     await instance.load({
+      classWorkerURL: FFMPEG_WORKER_URL,
       coreURL: await toBlobUrl(`${CORE_BASE_URL}/ffmpeg-core.js`, "text/javascript"),
       wasmURL: await toBlobUrl(`${CORE_BASE_URL}/ffmpeg-core.wasm`, "application/wasm"),
     });
