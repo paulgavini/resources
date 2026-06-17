@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WMA Audio Converter</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace" aria-labelledby="app-title">
+        <div class="workspace-header">
+          <div>
+            <p class="eyebrow">Local browser conversion</p>
+            <h1 id="app-title">WMA Audio Converter</h1>
+          </div>
+          <p class="privacy-note">Files stay on this device. FFmpeg loads in the browser when conversion starts.</p>
+        </div>
+
+        <div class="control-band">
+          <label class="drop-zone" id="drop-zone" for="file-input">
+            <input id="file-input" type="file" accept=".wma,audio/x-ms-wma,audio/wma" multiple>
+            <span class="drop-icon" aria-hidden="true">+</span>
+            <span class="drop-title">Drop .wma files here</span>
+            <span class="drop-meta">or choose files from this device</span>
+          </label>
+
+          <div class="settings-panel" aria-label="Conversion settings">
+            <fieldset class="format-picker">
+              <legend>Output</legend>
+              <label>
+                <input type="radio" name="output-format" value="mp3" checked>
+                <span>MP3</span>
+              </label>
+              <label>
+                <input type="radio" name="output-format" value="wav">
+                <span>WAV</span>
+              </label>
+            </fieldset>
+
+            <div class="action-row">
+              <button class="primary-button" id="convert-button" type="button" disabled>Convert</button>
+              <button class="secondary-button" id="cancel-button" type="button" hidden>Cancel</button>
+              <button class="secondary-button" id="clear-button" type="button" disabled>Clear</button>
+            </div>
+
+            <p class="status-line" id="status-line" role="status">Add one or more WMA files to begin.</p>
+            <p class="ffmpeg-indicator" id="ffmpeg-indicator" data-state="idle" aria-live="polite">
+              <span class="ffmpeg-dot" aria-hidden="true"></span>
+              <span id="ffmpeg-indicator-text">FFmpeg: Not loaded</span>
+            </p>
+          </div>
+        </div>
+
+        <section class="queue-section" aria-labelledby="queue-title">
+          <div class="queue-header">
+            <div>
+              <h2 id="queue-title">Batch Queue</h2>
+              <p id="queue-summary">No files selected.</p>
+            </div>
+            <button class="secondary-button" id="download-all-button" type="button" disabled>Download converted</button>
+          </div>
+
+          <ul class="queue-list" id="queue-list" aria-live="polite"></ul>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
