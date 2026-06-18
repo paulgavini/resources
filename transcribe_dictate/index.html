@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Local Audio Transcriber</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace" aria-labelledby="app-title">
+        <div class="workspace-header">
+          <div>
+            <p class="eyebrow">Local browser transcription</p>
+            <h1 id="app-title">Local Audio Transcriber</h1>
+          </div>
+          <p class="privacy-note">
+            Files stay on this device. FFmpeg and Whisper base load in the browser when transcription starts.
+          </p>
+        </div>
+
+        <div class="control-band">
+          <label class="drop-zone" id="drop-zone" for="file-input">
+            <input
+              id="file-input"
+              type="file"
+              accept=".wma,.mp3,.wav,.m4a,.aac,.ogg,.flac,.webm,.mp4,audio/*,video/mp4"
+              multiple
+            >
+            <span class="drop-icon" aria-hidden="true">+</span>
+            <span class="drop-title">Drop audio files here</span>
+            <span class="drop-meta">or choose files from this device</span>
+          </label>
+
+          <div class="settings-panel" aria-label="Transcription controls">
+            <div class="model-card">
+              <label class="model-label" for="model-select">Model</label>
+              <select id="model-select" class="model-select"></select>
+              <span class="model-name" id="model-name">Whisper base English</span>
+              <span class="model-id" id="model-id">Xenova/whisper-base.en</span>
+              <span class="model-note" id="model-note">Balanced English transcription model.</span>
+            </div>
+
+            <div class="action-row">
+              <button class="primary-button" id="transcribe-button" type="button" disabled>Transcribe</button>
+              <button class="secondary-button" id="cancel-button" type="button" hidden>Cancel</button>
+              <button class="secondary-button" id="clear-button" type="button" disabled>Clear</button>
+            </div>
+
+            <p class="status-line" id="status-line" role="status">Add one or more audio files to begin.</p>
+
+            <div class="runtime-stack" aria-label="Runtime status">
+              <p class="runtime-indicator" id="ffmpeg-indicator" data-state="idle" aria-live="polite">
+                <span class="runtime-dot" aria-hidden="true"></span>
+                <span id="ffmpeg-indicator-text">FFmpeg: Not loaded</span>
+              </p>
+              <p class="runtime-indicator" id="model-indicator" data-state="idle" aria-live="polite">
+                <span class="runtime-dot" aria-hidden="true"></span>
+                <span id="model-indicator-text">Whisper: Not loaded</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <section class="queue-section" aria-labelledby="queue-title">
+          <div class="queue-header">
+            <div>
+              <h2 id="queue-title">Transcription Queue</h2>
+              <p id="queue-summary">No files selected.</p>
+            </div>
+          </div>
+
+          <ul class="queue-list" id="queue-list" aria-live="polite"></ul>
+        </section>
+
+        <section class="transcript-section" aria-labelledby="transcript-title">
+          <div class="transcript-header">
+            <div>
+              <h2 id="transcript-title">Transcript</h2>
+              <p id="transcript-summary">Transcribed text will appear here.</p>
+            </div>
+            <div class="transcript-actions">
+              <button class="secondary-button" id="copy-button" type="button" disabled>Copy</button>
+              <button class="secondary-button" id="download-text-button" type="button" disabled>Download .txt</button>
+            </div>
+          </div>
+          <textarea
+            id="transcript-output"
+            class="transcript-output"
+            spellcheck="true"
+            placeholder="Your transcript will appear here after transcription."
+          ></textarea>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
