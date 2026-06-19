@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Blockly Character Movement</title>
+    <link rel="stylesheet" href="css/style.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="top-bar">
+        <div>
+          <h1>Creature Coding</h1>
+          <p>Drag blocks, then press Run.</p>
+        </div>
+        <div class="controls" aria-label="Program controls">
+          <div class="maze-controls" aria-label="Maze controls">
+            <div class="level-selector" role="group" aria-label="Maze level">
+              <button class="level-button is-active" type="button" data-level="easy" aria-pressed="true">Easy</button>
+              <button class="level-button" type="button" data-level="medium" aria-pressed="false">Medium</button>
+              <button class="level-button" type="button" data-level="hard" aria-pressed="false">Hard</button>
+            </div>
+            <button id="newMazeButton" class="control-button maze-button" type="button">New Maze</button>
+            <button id="sandpitButton" class="control-button sandpit-button" type="button" aria-pressed="false">Sandpit</button>
+            <div id="sandpitTools" class="sandpit-tools" aria-label="Sandpit tools" hidden>
+              <button class="tool-button is-active" type="button" data-tool="wall" aria-pressed="true">Wall</button>
+              <button class="tool-button" type="button" data-tool="flag" aria-pressed="false">Flag</button>
+            </div>
+          </div>
+          <button id="runButton" class="control-button run-button" type="button">Run</button>
+          <button id="pauseButton" class="control-button" type="button">Pause</button>
+          <button id="stopButton" class="control-button stop-button" type="button">Stop</button>
+          <button id="resetButton" class="control-button" type="button">Reset</button>
+        </div>
+      </header>
+
+      <section class="work-area">
+        <section class="code-panel" aria-label="Blockly coding area">
+          <div id="blocklyDiv"></div>
+        </section>
+
+        <section class="stage-panel" aria-label="Game stage">
+          <div class="stage-header">
+            <h2>Stage</h2>
+            <p id="statusText" aria-live="polite">Ready</p>
+          </div>
+          <div id="stage" class="stage">
+            <div id="mazeLayer" class="maze-layer" aria-hidden="true"></div>
+            <div id="ouchBubble" class="ouch-bubble" aria-live="polite">Ouch!</div>
+            <img id="character" class="character" src="assets/static/walk_down.png" alt="Cute yellow classroom creature">
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <xml id="toolbox" style="display: none">
+      <block type="when_run"></block>
+      <block type="move_up"></block>
+      <block type="move_down"></block>
+      <block type="move_left"></block>
+      <block type="move_right"></block>
+      <block type="repeat_times"></block>
+      <block type="pause_action"></block>
+      <block type="stop_action"></block>
+    </xml>
+
+    <script src="lib/blockly/blockly_compressed.js"></script>
+    <script src="lib/blockly/blocks_compressed.js"></script>
+    <script src="lib/blockly/javascript_compressed.js"></script>
+    <script src="lib/blockly/msg/en.js"></script>
+    <script src="js/blocks.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
