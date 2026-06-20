@@ -7,10 +7,10 @@
     N: "Not attempted."
   };
   var LENGTH_LABELS = {
-    "under-50": "under 50 words",
-    "under-100": "under 100 words",
-    "under-150": "under 150 words",
-    "under-200": "under 200 words"
+    "under-50": "≤ 50 words",
+    "under-100": "≤ 100 words",
+    "under-150": "≤ 150 words",
+    "under-200": "≤ 200 words"
   };
   var LENGTH_ALIASES = {
     brief: "under-50",
@@ -157,27 +157,27 @@
           id: "student-1",
           name: "Student 1",
           grades: {
-            "criterion-ideas": "B",
-            "criterion-structure": "C",
-            "criterion-language": "B"
+            "criterion-ideas": "",
+            "criterion-structure": "",
+            "criterion-language": ""
           }
         },
         {
           id: "student-2",
           name: "Student 2",
           grades: {
-            "criterion-ideas": "C",
-            "criterion-structure": "C",
-            "criterion-language": "D"
+            "criterion-ideas": "",
+            "criterion-structure": "",
+            "criterion-language": ""
           }
         },
         {
           id: "student-3",
           name: "Student 3",
           grades: {
-            "criterion-ideas": "A",
-            "criterion-structure": "B",
-            "criterion-language": "A"
+            "criterion-ideas": "",
+            "criterion-structure": "",
+            "criterion-language": ""
           }
         }
       ]
@@ -394,6 +394,11 @@
         select.className = "grade-select";
         select.setAttribute("aria-label", student.name + " grade for " + criterion.name);
 
+        var blankOption = document.createElement("option");
+        blankOption.value = "";
+        blankOption.textContent = "";
+        select.appendChild(blankOption);
+
         GRADES.forEach(function (grade) {
           var option = document.createElement("option");
           option.value = grade;
@@ -401,13 +406,17 @@
           select.appendChild(option);
         });
 
-        if (!GRADES.includes(student.grades[criterion.id])) {
-          student.grades[criterion.id] = "C";
+        if (isBlankGrade(student.grades[criterion.id])) {
+          student.grades[criterion.id] = "";
+        } else if (!isGrade(student.grades[criterion.id])) {
+          student.grades[criterion.id] = "";
         }
 
         select.value = student.grades[criterion.id];
+        applyIncompleteGradeStyle(cell, select);
         select.addEventListener("change", function (event) {
           student.grades[criterion.id] = event.target.value;
+          applyIncompleteGradeStyle(cell, select);
           persistAndRenderPrompt();
         });
 
@@ -485,6 +494,7 @@
     lines.push("Use only the evidence in the rubric data. Do not invent extra achievements, behaviour, assessment scores or personal details.");
     lines.push("Do not mention the letter grade given for each criterion in the comment; use descriptive language that reflects the grade instead.");
     lines.push("If a criterion is marked N, count it as not attempted when estimating the overall grade and writing the comment. Do not infer achievement for that criterion.");
+    lines.push("If any criterion says [No grade selected], ask the teacher to complete the missing grade before writing final comments.");
     if (instructions) {
       lines.push("Additional teacher instructions: " + instructions);
     }
@@ -520,8 +530,10 @@
       lines.push("");
       lines.push(student.name + ":");
       state.criteria.forEach(function (criterion) {
-        var grade = student.grades[criterion.id] || "C";
-        if (useDescriptors) {
+        var grade = student.grades[criterion.id];
+        if (isBlankGrade(grade)) {
+          lines.push("- " + criterion.name + ": [No grade selected]");
+        } else if (useDescriptors) {
           lines.push("- " + criterion.name + ": " + grade + " - " + (cleanText(criterion.descriptors[grade]) || "[No descriptor entered]"));
         } else {
           lines.push("- " + criterion.name + ": " + grade);
@@ -553,7 +565,7 @@
 
     state.criteria.push(criterion);
     state.students.forEach(function (student) {
-      student.grades[criterion.id] = "C";
+      student.grades[criterion.id] = "";
     });
     state.selectedCriterionId = criterion.id;
     render();
@@ -568,7 +580,7 @@
     };
 
     state.criteria.forEach(function (criterion) {
-      student.grades[criterion.id] = "C";
+      student.grades[criterion.id] = "";
     });
 
     state.students.push(student);
@@ -736,7 +748,7 @@
     options.students.forEach(function (student) {
       commands.push(pdfCell(tableLeft, y - options.rowHeight, options.studentColumnWidth, options.rowHeight, student.name, 9, false));
       options.criteria.forEach(function (criterion, index) {
-        var grade = student.grades[criterion.id] || "C";
+        var grade = isBlankGrade(student.grades[criterion.id]) ? "Incomplete" : student.grades[criterion.id];
         commands.push(pdfCell(tableLeft + options.studentColumnWidth + index * criterionWidth, y - options.rowHeight, criterionWidth, options.rowHeight, grade, 10, false));
       });
       y -= options.rowHeight;
@@ -1002,6 +1014,20 @@
 
   function hasKey(object, key) {
     return Object.prototype.hasOwnProperty.call(object, key);
+  }
+
+  function isGrade(value) {
+    return GRADES.includes(value);
+  }
+
+  function isBlankGrade(value) {
+    return value === "" || value === null || typeof value === "undefined";
+  }
+
+  function applyIncompleteGradeStyle(cell, select) {
+    var incomplete = isBlankGrade(select.value);
+    cell.classList.toggle("incomplete", incomplete);
+    select.classList.toggle("incomplete", incomplete);
   }
 
   function createId(prefix) {

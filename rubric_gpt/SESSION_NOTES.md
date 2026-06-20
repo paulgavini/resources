@@ -14,9 +14,10 @@ Rubric GPT is a dependency-free vanilla HTML, CSS and JavaScript app for teacher
 - Add/delete students.
 - Add/delete criteria.
 - A-E and N grade dropdowns in each student/criterion cell, where N means not attempted.
+- Grade dropdowns default to blank and show a pale red background until completed.
 - Criterion descriptor editor with A-E and N descriptor text.
 - Toggle to include or exclude criterion descriptors from the generated prompt.
-- Comment length options: under 50, 100, 150 and 200 words.
+- Comment length options: `≤ 50`, `≤ 100`, `≤ 150` and `≤ 200` words.
 - Tone options, with `Where are they now and where to next` first.
 - Browser autosave using `localStorage`.
 - Export/load app data as `.json`.
@@ -46,9 +47,10 @@ Rubric GPT is a dependency-free vanilla HTML, CSS and JavaScript app for teacher
 - Extra criteria should remain usable through horizontal scrolling if needed.
 - Criterion header height was increased by about 1cm to give rotated text more room.
 - Grade dropdowns are centered and set to 90% of their table cell width.
+- Incomplete blank grade dropdowns and their table cells use pale red danger styling.
 - Student delete buttons use the same light red danger style as the criterion delete button and are shifted left within the student row control cell.
 - Header file controls are labelled `Export`, `Load` and `Reset`.
-- Use ASCII-only characters in files unless there is a clear reason not to.
+- Use ASCII-only characters in files unless there is a clear reason not to. The `≤` character is intentionally used for comment length labels.
 
 ## Prompt Behaviour
 - Descriptor mode on:
@@ -60,10 +62,12 @@ Rubric GPT is a dependency-free vanilla HTML, CSS and JavaScript app for teacher
   - Use Australian spelling.
   - Avoid inventing extra achievements, behaviour, scores or personal details.
   - Treat N as not attempted when estimating the overall grade and writing the comment.
+  - Ask the teacher to complete missing grades if any criterion says `[No grade selected]`.
   - Avoid mentioning the grade for each criterion in the comment; use descriptive language reflecting the grade instead.
   - Include strengths and next steps.
   - Return each student's name, an estimated overall grade and their comment.
 - Student grade selections show raw grades only, for example `N`, not `N (not attempted)`.
+- Blank grade selections show as `[No grade selected]` in the prompt and `Incomplete` in the PDF export.
 
 ## Testing Notes
 - The app is intended to open directly from `index.html`; no dev server is required.

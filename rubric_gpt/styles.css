@@ -438,6 +438,10 @@ button:focus-visible {
   padding: 3px;
 }
 
+.grade-cell.incomplete {
+  background: var(--danger-soft);
+}
+
 .grade-select {
   display: block;
   width: 90%;
@@ -449,6 +453,11 @@ button:focus-visible {
   line-height: 1.1;
   text-align: center;
   font-weight: 700;
+}
+
+.grade-select.incomplete {
+  border-color: var(--danger-line);
+  background: var(--danger-soft);
 }
 
 .grade-select:hover {
