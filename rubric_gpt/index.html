@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Rubric GPT</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <h1>Rubric GPT</h1>
+        <p>Create a copy-ready prompt for report comments from rubric grades.</p>
+      </div>
+      <div class="header-actions" aria-label="App actions">
+        <div class="file-actions">
+          <button class="tool-button" id="saveJsonButton" type="button" title="Export rubric data to a JSON file">Export</button>
+          <button class="tool-button" id="loadJsonButton" type="button" title="Load rubric data from a JSON file">Load</button>
+          <button class="tool-button" id="resetButton" type="button" title="Reset saved data">Reset</button>
+        </div>
+        <nav class="creator-links" aria-label="Creator links">
+          <a href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener">By Paul Gavini using CODEX</a>
+          <a href="https://paulgavini.github.io/resources/">Home</a>
+        </nav>
+        <input id="loadJsonInput" class="visually-hidden" type="file" accept="application/json,.json">
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="context-panel" aria-labelledby="contextHeading">
+        <div class="section-title">
+          <h2 id="contextHeading">Class Context</h2>
+        </div>
+        <div class="context-grid">
+          <label>
+            Subject / year level
+            <input id="subjectInput" type="text" autocomplete="off">
+          </label>
+          <label>
+            Assessment task
+            <input id="taskInput" type="text" autocomplete="off">
+          </label>
+          <label>
+            Comment length
+            <select id="lengthInput">
+              <option value="under-50">Under 50 words</option>
+              <option value="under-100">Under 100 words</option>
+              <option value="under-150">Under 150 words</option>
+              <option value="under-200">Under 200 words</option>
+            </select>
+          </label>
+          <label>
+            Tone
+            <select id="toneInput">
+              <option value="where-now-next">Where are they now and where to next</option>
+              <option value="professional">Professional</option>
+              <option value="warm">Warm</option>
+              <option value="encouraging">Encouraging</option>
+              <option value="formal">Formal</option>
+            </select>
+          </label>
+          <label class="toggle-field">
+            <input id="useDescriptorsInput" type="checkbox">
+            <span>Use criterion descriptors in prompt</span>
+          </label>
+          <label class="wide-field">
+            Optional teacher instructions
+            <textarea id="instructionsInput" rows="3"></textarea>
+          </label>
+        </div>
+      </section>
+
+      <section class="workspace-grid" aria-label="Rubric workspace">
+        <section class="sheet-panel" aria-labelledby="sheetHeading">
+          <div class="section-title sheet-title-row">
+            <h2 id="sheetHeading">Student Grades</h2>
+            <button class="tool-button" id="addCriterionButton" type="button" title="Add criterion">
+              <span aria-hidden="true">+</span>
+              <span>Add criterion</span>
+            </button>
+          </div>
+          <div class="sheet-scroll" id="sheetMount"></div>
+          <div class="sheet-footer">
+            <button class="tool-button" id="addStudentButton" type="button" title="Add student">
+              <span aria-hidden="true">+</span>
+              <span>Add student</span>
+            </button>
+          </div>
+        </section>
+
+        <aside class="descriptor-panel" aria-labelledby="descriptorHeading">
+          <div class="section-title descriptor-title-row">
+            <div>
+              <h2 id="descriptorHeading">Criterion Descriptors</h2>
+              <p id="selectedCriterionName"></p>
+            </div>
+            <button class="icon-button danger" id="deleteCriterionButton" type="button" title="Delete selected criterion" aria-label="Delete selected criterion">X</button>
+          </div>
+          <div id="descriptorMount" class="descriptor-list"></div>
+        </aside>
+      </section>
+
+      <section class="output-panel" aria-labelledby="outputHeading">
+        <div class="section-title output-title-row">
+          <div>
+            <h2 id="outputHeading">ChatGPT Prompt</h2>
+            <p id="saveStatus" aria-live="polite">Autosaved</p>
+          </div>
+          <button class="primary-button" id="copyButton" type="button">
+            <span>Copy prompt</span>
+          </button>
+        </div>
+        <textarea id="promptOutput" readonly spellcheck="false"></textarea>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
