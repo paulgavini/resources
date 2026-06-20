@@ -242,6 +242,13 @@ button:focus-visible {
   flex-wrap: wrap;
 }
 
+.output-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
 .sheet-scroll {
   overflow: auto;
   width: 100%;
@@ -655,5 +662,14 @@ button:focus-visible {
   .output-title-row,
   .sheet-title-row {
     align-items: stretch;
+  }
+
+  .output-actions {
+    width: 100%;
+  }
+
+  .output-actions .tool-button,
+  .output-actions .primary-button {
+    flex: 1 1 130px;
   }
 }

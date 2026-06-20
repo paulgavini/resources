@@ -2,7 +2,10 @@
   "use strict";
 
   var STORAGE_KEY = "rubric-gpt-state-v1";
-  var GRADES = ["A", "B", "C", "D", "E"];
+  var GRADES = ["A", "B", "C", "D", "E", "N"];
+  var DEFAULT_DESCRIPTORS = {
+    N: "Not attempted."
+  };
   var LENGTH_LABELS = {
     "under-50": "under 50 words",
     "under-100": "under 100 words",
@@ -41,6 +44,7 @@
     saveJsonButton: document.getElementById("saveJsonButton"),
     loadJsonButton: document.getElementById("loadJsonButton"),
     loadJsonInput: document.getElementById("loadJsonInput"),
+    savePdfButton: document.getElementById("savePdfButton"),
     copyButton: document.getElementById("copyButton"),
     promptOutput: document.getElementById("promptOutput"),
     saveStatus: document.getElementById("saveStatus")
@@ -95,6 +99,7 @@
       els.loadJsonInput.click();
     });
     els.loadJsonInput.addEventListener("change", loadJsonFile);
+    els.savePdfButton.addEventListener("click", saveResultsPdf);
     els.copyButton.addEventListener("click", copyPrompt);
   }
 
@@ -118,7 +123,8 @@
             B: "Develops strong ideas with relevant supporting detail.",
             C: "Develops suitable ideas with some supporting detail.",
             D: "Includes basic ideas with limited supporting detail.",
-            E: "Needs support to develop clear ideas and relevant detail."
+            E: "Needs support to develop clear ideas and relevant detail.",
+            N: "Not attempted."
           }
         },
         {
@@ -129,7 +135,8 @@
             B: "Organises writing clearly with a suitable introduction, sequence and conclusion.",
             C: "Uses a basic structure with mostly clear sequencing.",
             D: "Shows some structure, though sequencing may be uneven.",
-            E: "Needs support to organise ideas into a clear structure."
+            E: "Needs support to organise ideas into a clear structure.",
+            N: "Not attempted."
           }
         },
         {
@@ -140,7 +147,8 @@
             B: "Uses appropriate vocabulary and sentence variety for the task.",
             C: "Uses generally suitable vocabulary and sentence structures.",
             D: "Uses simple vocabulary and sentence structures with limited control.",
-            E: "Needs support to choose vocabulary and sentence structures for the task."
+            E: "Needs support to choose vocabulary and sentence structures for the task.",
+            N: "Not attempted."
           }
         }
       ],
@@ -243,7 +251,7 @@
 
   function normaliseDescriptors(source) {
     return GRADES.reduce(function (descriptors, grade) {
-      descriptors[grade] = source && typeof source[grade] === "string" ? source[grade] : "";
+      descriptors[grade] = source && typeof source[grade] === "string" ? source[grade] : DEFAULT_DESCRIPTORS[grade] || "";
       return descriptors;
     }, {});
   }
@@ -475,7 +483,8 @@
     lines.push("Use this tone/structure: " + describeTone(tone) + ".");
     lines.push("For each student, write one clear paragraph that mentions strengths and next steps.");
     lines.push("Use only the evidence in the rubric data. Do not invent extra achievements, behaviour, assessment scores or personal details.");
-    lines.push("Do not mention the grade given for each criterion in the comment; use descriptive language that reflects the grade instead.");
+    lines.push("Do not mention the letter grade given for each criterion in the comment; use descriptive language that reflects the grade instead.");
+    lines.push("If a criterion is marked N, count it as not attempted when estimating the overall grade and writing the comment. Do not infer achievement for that criterion.");
     if (instructions) {
       lines.push("Additional teacher instructions: " + instructions);
     }
@@ -501,7 +510,7 @@
         lines.push("- " + criterion.name);
       });
       lines.push("");
-      lines.push("Use only the criterion names and selected A-E grades as evidence.");
+      lines.push("Use only the criterion names and selected A-E or N grades as evidence. N means not attempted and should affect the estimated overall grade and comment.");
     }
 
     lines.push("");
@@ -636,6 +645,205 @@
     setSaveStatus("JSON saved");
   }
 
+  function saveResultsPdf() {
+    var pdf = buildResultsPdf();
+    var blob = new Blob([pdf], { type: "application/pdf" });
+    var link = document.createElement("a");
+    var objectUrl = URL.createObjectURL(blob);
+
+    link.href = objectUrl;
+    link.download = createResultsPdfFileName();
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+    setSaveStatus("PDF saved");
+  }
+
+  function buildResultsPdf() {
+    var pageWidth = 842;
+    var pageHeight = 595;
+    var margin = 36;
+    var usableWidth = pageWidth - margin * 2;
+    var studentColumnWidth = 138;
+    var minimumCriterionWidth = 56;
+    var headerHeight = 28;
+    var rowHeight = 22;
+    var titleY = pageHeight - margin;
+    var tableTop = pageHeight - 128;
+    var bottom = margin;
+    var maxCriteriaPerPage = Math.max(1, Math.floor((usableWidth - studentColumnWidth) / minimumCriterionWidth));
+    var maxStudentsPerPage = Math.max(1, Math.floor((tableTop - bottom - headerHeight) / rowHeight));
+    var criteriaChunks = chunkItems(state.criteria, maxCriteriaPerPage);
+    var studentChunks = chunkItems(state.students, maxStudentsPerPage);
+    var pageStreams = [];
+    var totalPages = Math.max(1, criteriaChunks.length * studentChunks.length);
+    var pageNumber = 1;
+
+    criteriaChunks.forEach(function (criteriaChunk, criteriaChunkIndex) {
+      studentChunks.forEach(function (studentChunk) {
+        pageStreams.push(buildResultsPdfPage({
+          pageWidth: pageWidth,
+          pageHeight: pageHeight,
+          margin: margin,
+          usableWidth: usableWidth,
+          studentColumnWidth: studentColumnWidth,
+          headerHeight: headerHeight,
+          rowHeight: rowHeight,
+          titleY: titleY,
+          tableTop: tableTop,
+          criteria: criteriaChunk,
+          students: studentChunk,
+          criteriaChunkIndex: criteriaChunkIndex,
+          criteriaChunkCount: criteriaChunks.length,
+          pageNumber: pageNumber,
+          totalPages: totalPages
+        }));
+        pageNumber += 1;
+      });
+    });
+
+    return assemblePdf(pageStreams, pageWidth, pageHeight);
+  }
+
+  function buildResultsPdfPage(options) {
+    var commands = [];
+    var subject = cleanText(state.context.subject) || "Subject / year level not entered";
+    var task = cleanText(state.context.task) || "Assessment task not entered";
+    var criterionWidth = (options.usableWidth - options.studentColumnWidth) / Math.max(options.criteria.length, 1);
+    var tableLeft = options.margin;
+    var y = options.tableTop;
+
+    commands.push("0 0 0 RG 0 0 0 rg");
+    commands.push(pdfText("Rubric GPT Results", options.margin, options.titleY, 16));
+    commands.push(pdfText("Subject / year level: " + subject, options.margin, options.titleY - 22, 10));
+    commands.push(pdfText("Assessment task: " + task, options.margin, options.titleY - 36, 10));
+    commands.push(pdfText("N = not attempted. N affects the estimated overall grade and generated comment.", options.margin, options.titleY - 54, 9));
+
+    if (options.criteriaChunkCount > 1) {
+      commands.push(pdfText("Criteria set " + (options.criteriaChunkIndex + 1) + " of " + options.criteriaChunkCount, options.margin, options.titleY - 68, 9));
+    }
+
+    commands.push(pdfText("Page " + options.pageNumber + " of " + options.totalPages, options.pageWidth - options.margin - 72, options.margin - 12, 9));
+    commands.push(pdfCell(tableLeft, y - options.headerHeight, options.studentColumnWidth, options.headerHeight, "Student", 9, true));
+
+    options.criteria.forEach(function (criterion, index) {
+      commands.push(pdfCell(tableLeft + options.studentColumnWidth + index * criterionWidth, y - options.headerHeight, criterionWidth, options.headerHeight, criterion.name, 8, true));
+    });
+
+    y -= options.headerHeight;
+
+    options.students.forEach(function (student) {
+      commands.push(pdfCell(tableLeft, y - options.rowHeight, options.studentColumnWidth, options.rowHeight, student.name, 9, false));
+      options.criteria.forEach(function (criterion, index) {
+        var grade = student.grades[criterion.id] || "C";
+        commands.push(pdfCell(tableLeft + options.studentColumnWidth + index * criterionWidth, y - options.rowHeight, criterionWidth, options.rowHeight, grade, 10, false));
+      });
+      y -= options.rowHeight;
+    });
+
+    return commands.join("\n");
+  }
+
+  function pdfCell(x, y, width, height, text, fontSize, filled) {
+    var safeText = fitPdfText(text, width - 8, fontSize);
+    var fill = filled ? "0.93 0.96 0.98 rg " + numberForPdf(x) + " " + numberForPdf(y) + " " + numberForPdf(width) + " " + numberForPdf(height) + " re f 0 0 0 rg\n" : "";
+    return fill + numberForPdf(x) + " " + numberForPdf(y) + " " + numberForPdf(width) + " " + numberForPdf(height) + " re S\n" + pdfText(safeText, x + 4, y + height - fontSize - 6, fontSize);
+  }
+
+  function pdfText(text, x, y, fontSize) {
+    return "BT /F1 " + numberForPdf(fontSize) + " Tf 1 0 0 1 " + numberForPdf(x) + " " + numberForPdf(y) + " Tm (" + escapePdfText(text) + ") Tj ET";
+  }
+
+  function fitPdfText(text, maxWidth, fontSize) {
+    var cleaned = cleanPdfText(text);
+    var maxCharacters = Math.max(3, Math.floor(maxWidth / (fontSize * 0.52)));
+
+    if (cleaned.length <= maxCharacters) {
+      return cleaned;
+    }
+
+    return cleaned.slice(0, maxCharacters - 3) + "...";
+  }
+
+  function cleanPdfText(text) {
+    return cleanText(text).replace(/[^\x20-\x7E]/g, "?");
+  }
+
+  function escapePdfText(text) {
+    return cleanPdfText(text).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+  }
+
+  function assemblePdf(pageStreams, pageWidth, pageHeight) {
+    var objects = [];
+    var pageIds = [];
+
+    objects.push("<< /Type /Catalog /Pages 2 0 R >>");
+    objects.push("");
+    objects.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+
+    pageStreams.forEach(function (stream, index) {
+      var contentId = 4 + index * 2;
+      var pageId = contentId + 1;
+
+      pageIds.push(pageId + " 0 R");
+      objects.push("<< /Length " + stream.length + " >>\nstream\n" + stream + "\nendstream");
+      objects.push("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + pageWidth + " " + pageHeight + "] /Resources << /Font << /F1 3 0 R >> >> /Contents " + contentId + " 0 R >>");
+    });
+
+    objects[1] = "<< /Type /Pages /Kids [" + pageIds.join(" ") + "] /Count " + pageIds.length + " >>";
+
+    return writePdfObjects(objects);
+  }
+
+  function writePdfObjects(objects) {
+    var pdf = "%PDF-1.4\n";
+    var offsets = [0];
+    var startXref = 0;
+    var index = 0;
+
+    objects.forEach(function (objectBody, objectIndex) {
+      offsets[objectIndex + 1] = pdf.length;
+      pdf += (objectIndex + 1) + " 0 obj\n" + objectBody + "\nendobj\n";
+    });
+
+    startXref = pdf.length;
+    pdf += "xref\n0 " + (objects.length + 1) + "\n";
+    pdf += "0000000000 65535 f \n";
+
+    for (index = 1; index < offsets.length; index += 1) {
+      pdf += padPdfOffset(offsets[index]) + " 00000 n \n";
+    }
+
+    pdf += "trailer\n<< /Size " + (objects.length + 1) + " /Root 1 0 R >>\n";
+    pdf += "startxref\n" + startXref + "\n%%EOF";
+    return pdf;
+  }
+
+  function padPdfOffset(offset) {
+    var text = String(offset);
+    while (text.length < 10) {
+      text = "0" + text;
+    }
+    return text;
+  }
+
+  function numberForPdf(value) {
+    return String(Math.round(value * 100) / 100);
+  }
+
+  function chunkItems(items, size) {
+    var chunks = [];
+    var index = 0;
+
+    while (index < items.length) {
+      chunks.push(items.slice(index, index + size));
+      index += size;
+    }
+
+    return chunks.length ? chunks : [[]];
+  }
+
   function loadJsonFile(event) {
     var file = event.target.files && event.target.files[0];
     if (!file) {
@@ -659,6 +867,11 @@
   function createJsonFileName() {
     var task = cleanText(state.context.task).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     return (task || "rubric-gpt") + ".json";
+  }
+
+  function createResultsPdfFileName() {
+    var task = cleanText(state.context.task).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    return (task || "rubric-gpt") + "-results.pdf";
   }
 
   function selectCriterion(criterionId) {

@@ -1,7 +1,7 @@
 # Rubric GPT Session Notes
 
 ## Project Summary
-Rubric GPT is a dependency-free vanilla HTML, CSS and JavaScript app for teachers. Teachers enter rubric criteria, A-E grades and student names, then copy a structured prompt into ChatGPT to generate report comments.
+Rubric GPT is a dependency-free vanilla HTML, CSS and JavaScript app for teachers. Teachers enter rubric criteria, A-E or N grades and student names, then copy a structured prompt into ChatGPT to generate report comments.
 
 ## Main Files
 - `index.html` - App structure, controls, header links and form fields.
@@ -13,15 +13,17 @@ Rubric GPT is a dependency-free vanilla HTML, CSS and JavaScript app for teacher
 - Student names on the left, rubric criteria across the top.
 - Add/delete students.
 - Add/delete criteria.
-- A-E grade dropdowns in each student/criterion cell.
-- Criterion descriptor editor with A-E descriptor text.
+- A-E and N grade dropdowns in each student/criterion cell, where N means not attempted.
+- Criterion descriptor editor with A-E and N descriptor text.
 - Toggle to include or exclude criterion descriptors from the generated prompt.
 - Comment length options: under 50, 100, 150 and 200 words.
 - Tone options, with `Where are they now and where to next` first.
 - Browser autosave using `localStorage`.
 - Export/load app data as `.json`.
+- Export the current student results table as a `.pdf` for file storage.
 - Copy-ready ChatGPT prompt output.
 - The prompt output panel expands to fill the remaining page height.
+- Prompt output actions include `PDF results` and `Copy prompt`.
 - Header links:
   - `By Paul Gavini using CODEX` -> `https://www.youtube.com/@paulgavini`
   - `Home` -> `https://paulgavini.github.io/resources/`
@@ -50,16 +52,18 @@ Rubric GPT is a dependency-free vanilla HTML, CSS and JavaScript app for teacher
 
 ## Prompt Behaviour
 - Descriptor mode on:
-  - Prompt includes criteria, A-E descriptors and each student's selected grades with matching descriptor text.
+  - Prompt includes criteria, A-E and N descriptors and each student's selected grades with matching descriptor text.
 - Descriptor mode off:
-  - Prompt includes only criterion names and selected A-E grades.
-  - Prompt keeps the instruction: `Use only the criterion names and selected A-E grades as evidence.`
+  - Prompt includes only criterion names and selected A-E or N grades.
+  - Prompt keeps the instruction: `Use only the criterion names and selected A-E or N grades as evidence. N means not attempted and should affect the estimated overall grade and comment.`
 - Prompt asks ChatGPT to:
   - Use Australian spelling.
   - Avoid inventing extra achievements, behaviour, scores or personal details.
+  - Treat N as not attempted when estimating the overall grade and writing the comment.
   - Avoid mentioning the grade for each criterion in the comment; use descriptive language reflecting the grade instead.
   - Include strengths and next steps.
   - Return each student's name, an estimated overall grade and their comment.
+- Student grade selections show raw grades only, for example `N`, not `N (not attempted)`.
 
 ## Testing Notes
 - The app is intended to open directly from `index.html`; no dev server is required.

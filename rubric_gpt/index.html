@@ -106,9 +106,14 @@
             <h2 id="outputHeading">ChatGPT Prompt</h2>
             <p id="saveStatus" aria-live="polite">Autosaved</p>
           </div>
-          <button class="primary-button" id="copyButton" type="button">
-            <span>Copy prompt</span>
-          </button>
+          <div class="output-actions">
+            <button class="tool-button" id="savePdfButton" type="button" title="Download a PDF table of student results">
+              <span>PDF results</span>
+            </button>
+            <button class="primary-button" id="copyButton" type="button">
+              <span>Copy prompt</span>
+            </button>
+          </div>
         </div>
         <textarea id="promptOutput" readonly spellcheck="false"></textarea>
       </section>
