@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Flashcard Study</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="study-stage" aria-label="Flashcard study area">
+        <div class="top-bar">
+          <div>
+            <p class="deck-title" id="deckTitle">Flashcards</p>
+            <p class="deck-meta" id="deckMeta">0 cards</p>
+          </div>
+          <div class="top-actions">
+            <select class="deck-select" id="deckSelect" aria-label="Choose deck"></select>
+            <label class="icon-button file-button" title="Import CSV" aria-label="Import CSV">
+              <input id="csvInput" type="file" accept=".csv,text/csv">
+              <span aria-hidden="true">+</span>
+            </label>
+            <button class="icon-button" id="deleteDeckButton" type="button" title="Delete current deck" aria-label="Delete current deck">−</button>
+            <button class="icon-button" id="shuffleButton" type="button" title="Shuffle" aria-label="Shuffle cards">⇄</button>
+            <button class="icon-button" id="printButton" type="button" title="Print cards" aria-label="Print cards">▦</button>
+            <button class="icon-button" id="exportButton" type="button" title="Export Anki TSV" aria-label="Export Anki TSV">⇩</button>
+            <button class="icon-button" id="resetButton" type="button" title="Reset progress" aria-label="Reset progress">↺</button>
+          </div>
+        </div>
+
+        <section class="progress-panel" aria-label="Progress and encouragement">
+          <div class="stat-grid">
+            <div class="stat-chip">
+              <span>XP</span>
+              <strong id="xpValue">0</strong>
+            </div>
+            <div class="stat-chip">
+              <span>Level</span>
+              <strong id="levelValue">1</strong>
+            </div>
+            <div class="stat-chip">
+              <span>Streak</span>
+              <strong id="streakValue">0</strong>
+            </div>
+            <div class="stat-chip">
+              <span>Mastered</span>
+              <strong id="masteryValue">0%</strong>
+            </div>
+          </div>
+          <div class="encouragement" id="encouragement" aria-live="polite">Choose a card response to start building progress.</div>
+          <div class="badge-row" id="badgeRow" aria-label="Unlocked emoji badges"></div>
+        </section>
+
+        <article class="flashcard" id="flashcard" tabindex="0" aria-live="polite">
+          <div class="card-header">
+            <span class="counter" id="counter">0 / 0</span>
+            <button class="menu-dot" id="toggleListButton" type="button" title="Browse cards" aria-label="Browse cards">⋮</button>
+          </div>
+          <div class="card-content">
+            <p class="card-label" id="cardLabel">Question</p>
+            <div class="card-text" id="cardText">Import a CSV to begin.</div>
+          </div>
+          <button class="answer-toggle" id="flipButton" type="button">See answer</button>
+        </article>
+
+        <nav class="study-controls" aria-label="Study controls">
+          <button class="round-button" id="prevButton" type="button" title="Previous" aria-label="Previous card">←</button>
+          <button class="score-button again" id="againButton" type="button" title="Needs review" aria-label="Mark needs review">
+            <span aria-hidden="true">×</span>
+            <strong id="againCount">0</strong>
+          </button>
+          <button class="score-button good" id="goodButton" type="button" title="Known" aria-label="Mark known">
+            <strong id="goodCount">0</strong>
+            <span aria-hidden="true">✓</span>
+          </button>
+          <button class="round-button" id="nextButton" type="button" title="Next" aria-label="Next card">→</button>
+        </nav>
+
+        <div class="progress-wrap" aria-hidden="true">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+      </section>
+
+      <aside class="drawer" id="drawer" aria-label="Card browser">
+        <div class="drawer-header">
+          <h1>Cards</h1>
+          <button class="icon-button" id="closeDrawerButton" type="button" title="Close" aria-label="Close card browser">×</button>
+        </div>
+        <input class="search-box" id="searchInput" type="search" placeholder="Search cards" aria-label="Search cards">
+        <div class="filter-row" role="group" aria-label="Card filters">
+          <button class="filter-button active" data-filter="all" type="button">All</button>
+          <button class="filter-button" data-filter="again" type="button">Review</button>
+          <button class="filter-button" data-filter="good" type="button">Known</button>
+        </div>
+        <ol class="card-list" id="cardList"></ol>
+      </aside>
+    </main>
+
+    <section class="print-sheet" id="printSheet" aria-hidden="true"></section>
+
+    <script src="app.js?v=20260629-remove-bundled"></script>
+  </body>
+</html>
