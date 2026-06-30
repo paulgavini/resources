@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Work Year Countdown</title>
+  <style>
+    :root {
+      --ink: #1c2430;
+      --muted: #5d6674;
+      --paper: #f7f3ea;
+      --panel: rgba(255, 255, 255, 0.78);
+      --line: rgba(28, 36, 48, 0.12);
+      --accent: #006d77;
+      --accent-2: #d1495b;
+      --accent-3: #edae49;
+      --shadow: 0 24px 70px rgba(28, 36, 48, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      color: var(--ink);
+      font-family:
+        Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 18% 22%, rgba(237, 174, 73, 0.24), transparent 28rem),
+        radial-gradient(circle at 82% 18%, rgba(0, 109, 119, 0.20), transparent 26rem),
+        linear-gradient(135deg, #fffaf0 0%, var(--paper) 48%, #e7f0ed 100%);
+      overflow-x: hidden;
+    }
+
+    main {
+      width: min(1120px, 100%);
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.92fr) minmax(320px, 1.08fr);
+      gap: clamp(18px, 4vw, 46px);
+      align-items: center;
+    }
+
+    .scene {
+      position: relative;
+      min-height: 540px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.42)),
+        linear-gradient(150deg, rgba(0, 109, 119, 0.10), rgba(209, 73, 91, 0.08));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .sun {
+      position: absolute;
+      top: 46px;
+      right: 44px;
+      width: 118px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 32% 30%, #fff5cc 0 16%, transparent 17%),
+        linear-gradient(135deg, #ffd166, var(--accent-3));
+      box-shadow: 0 0 58px rgba(237, 174, 73, 0.45);
+      animation: pulse 4s ease-in-out infinite;
+    }
+
+    .window {
+      position: absolute;
+      top: 92px;
+      left: 54px;
+      width: min(58%, 320px);
+      aspect-ratio: 1.28;
+      border: 10px solid rgba(28, 36, 48, 0.78);
+      border-radius: 8px;
+      background:
+        linear-gradient(90deg, transparent 48%, rgba(28, 36, 48, 0.78) 48% 53%, transparent 53%),
+        linear-gradient(180deg, transparent 47%, rgba(28, 36, 48, 0.78) 47% 53%, transparent 53%),
+        linear-gradient(180deg, #bfe5ec 0%, #fff3c4 100%);
+      box-shadow: inset 0 -34px 0 rgba(0, 109, 119, 0.18);
+    }
+
+    .desk {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      height: 36%;
+      background:
+        linear-gradient(90deg, rgba(28, 36, 48, 0.08), transparent 18% 82%, rgba(28, 36, 48, 0.06)),
+        linear-gradient(180deg, #b86f52, #8f4c3d);
+    }
+
+    .rabbit {
+      position: absolute;
+      bottom: 88px;
+      left: -112px;
+      z-index: 1;
+      width: 96px;
+      height: 56px;
+      animation: rabbit-run 8.5s linear infinite;
+      filter: drop-shadow(0 8px 10px rgba(28, 36, 48, 0.18));
+    }
+
+    .rabbit::before {
+      position: absolute;
+      content: "";
+      right: 18px;
+      bottom: 12px;
+      width: 54px;
+      height: 32px;
+      border-radius: 54% 46% 45% 55%;
+      background: #f6f1e7;
+      box-shadow: inset -8px -8px 0 rgba(28, 36, 48, 0.08);
+      animation: rabbit-bob 0.42s ease-in-out infinite;
+    }
+
+    .rabbit::after {
+      position: absolute;
+      content: "";
+      right: 8px;
+      bottom: 26px;
+      width: 26px;
+      height: 24px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 72% 42%, #1c2430 0 7%, transparent 8%),
+        #f6f1e7;
+      box-shadow: inset -4px -5px 0 rgba(28, 36, 48, 0.08);
+      animation: rabbit-bob 0.42s ease-in-out infinite;
+    }
+
+    .rabbit-ear {
+      position: absolute;
+      right: 14px;
+      bottom: 44px;
+      width: 10px;
+      height: 30px;
+      border-radius: 999px 999px 60% 60%;
+      background: linear-gradient(90deg, #f6f1e7 0 68%, #f2b2ad 69% 100%);
+      transform-origin: bottom center;
+      animation: rabbit-ear 0.42s ease-in-out infinite;
+    }
+
+    .rabbit-ear:nth-child(2) {
+      right: 26px;
+      height: 34px;
+      animation-delay: -0.12s;
+    }
+
+    .rabbit-tail {
+      position: absolute;
+      left: 18px;
+      bottom: 28px;
+      width: 18px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: #fff8ef;
+      animation: rabbit-bob 0.42s ease-in-out infinite;
+    }
+
+    .rabbit-leg {
+      position: absolute;
+      bottom: 8px;
+      width: 24px;
+      height: 10px;
+      border-radius: 999px;
+      background: #e8ded1;
+      transform-origin: right center;
+      animation: rabbit-leg 0.42s ease-in-out infinite;
+    }
+
+    .rabbit-leg:nth-child(4) {
+      left: 34px;
+    }
+
+    .rabbit-leg:nth-child(5) {
+      left: 58px;
+      animation-delay: -0.21s;
+    }
+
+    .monitor {
+      position: absolute;
+      right: 56px;
+      bottom: 124px;
+      z-index: 2;
+      width: min(48%, 300px);
+      aspect-ratio: 1.48;
+      border: 12px solid #1c2430;
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(0, 109, 119, 0.86), rgba(28, 36, 48, 0.90)),
+        repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 22px);
+      box-shadow: 0 18px 34px rgba(28, 36, 48, 0.24);
+    }
+
+    .monitor::before,
+    .monitor::after {
+      position: absolute;
+      content: "";
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1c2430;
+    }
+
+    .monitor::before {
+      bottom: -58px;
+      width: 34px;
+      height: 46px;
+    }
+
+    .monitor::after {
+      bottom: -72px;
+      width: 112px;
+      height: 16px;
+      border-radius: 4px;
+    }
+
+    .mug {
+      position: absolute;
+      left: 72px;
+      bottom: 72px;
+      z-index: 2;
+      width: 72px;
+      height: 86px;
+      border-radius: 0 0 20px 20px;
+      background: linear-gradient(135deg, var(--accent-2), #f47c65);
+      box-shadow: inset 0 -16px 0 rgba(28, 36, 48, 0.12);
+    }
+
+    .mug::before {
+      position: absolute;
+      content: "";
+      top: 18px;
+      right: -36px;
+      width: 44px;
+      height: 44px;
+      border: 10px solid #d1495b;
+      border-left: 0;
+      border-radius: 0 26px 26px 0;
+    }
+
+    .steam {
+      position: absolute;
+      bottom: 166px;
+      left: 94px;
+      z-index: 3;
+      width: 9px;
+      height: 74px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, transparent, rgba(28, 36, 48, 0.24), transparent);
+      filter: blur(1px);
+      animation: drift 3.4s ease-in-out infinite;
+    }
+
+    .steam:nth-of-type(2) {
+      left: 121px;
+      height: 62px;
+      animation-delay: -1.2s;
+    }
+
+    .panel {
+      padding: clamp(24px, 4vw, 44px);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .eyebrow {
+      margin: 0 0 14px;
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 13ch;
+      margin: 0;
+      font-size: clamp(3rem, 8vw, 6.6rem);
+      line-height: 0.9;
+      letter-spacing: 0;
+    }
+
+    .target {
+      margin: 22px 0 0;
+      color: var(--muted);
+      font-size: clamp(1rem, 2vw, 1.18rem);
+      line-height: 1.5;
+    }
+
+    .countdown {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: clamp(28px, 4vw, 42px) 0 26px;
+    }
+
+    .time-card {
+      container-type: inline-size;
+      min-width: 0;
+      padding: 16px 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.68);
+      text-align: center;
+    }
+
+    .number {
+      display: block;
+      min-height: 1.05em;
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(2.1rem, 4.2vw, 3.5rem);
+      font-size: clamp(2.1rem, 44cqw, 4.2rem);
+      font-weight: 850;
+      line-height: 1;
+    }
+
+    .label {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .progress-wrap {
+      display: grid;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .progress {
+      height: 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(28, 36, 48, 0.08);
+      overflow: hidden;
+    }
+
+    .bar {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent-3), var(--accent-2));
+      transition: width 500ms ease;
+    }
+
+    @keyframes pulse {
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.04);
+      }
+    }
+
+    @keyframes drift {
+      0%,
+      100% {
+        opacity: 0.34;
+        transform: translateY(0) translateX(0);
+      }
+
+      50% {
+        opacity: 0.7;
+        transform: translateY(-14px) translateX(7px);
+      }
+    }
+
+    @keyframes rabbit-run {
+      0% {
+        transform: translateX(0);
+      }
+
+      100% {
+        transform: translateX(calc(100vw + 230px));
+      }
+    }
+
+    @keyframes rabbit-bob {
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-7px);
+      }
+    }
+
+    @keyframes rabbit-ear {
+      0%,
+      100% {
+        transform: rotate(-12deg);
+      }
+
+      50% {
+        transform: rotate(10deg) translateY(-4px);
+      }
+    }
+
+    @keyframes rabbit-leg {
+      0%,
+      100% {
+        transform: rotate(12deg) translateX(0);
+      }
+
+      50% {
+        transform: rotate(-18deg) translateX(-8px);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .sun,
+      .steam,
+      .rabbit,
+      .rabbit::before,
+      .rabbit::after,
+      .rabbit-ear,
+      .rabbit-tail,
+      .rabbit-leg {
+        animation: none;
+      }
+
+      .rabbit {
+        left: 58%;
+        transform: translateX(-50%);
+      }
+    }
+
+    @media (max-width: 840px) {
+      body {
+        padding: 18px;
+      }
+
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .scene {
+        min-height: 320px;
+        order: 2;
+      }
+
+      .panel {
+        order: 1;
+      }
+
+      .window {
+        top: 42px;
+        left: 30px;
+        width: 45%;
+        border-width: 7px;
+      }
+
+      .sun {
+        top: 34px;
+        right: 34px;
+        width: 82px;
+      }
+
+      .monitor {
+        right: 30px;
+        bottom: 86px;
+        width: 44%;
+        border-width: 8px;
+      }
+
+      .rabbit {
+        bottom: 58px;
+        width: 76px;
+        height: 46px;
+      }
+
+      .mug {
+        left: 44px;
+        bottom: 42px;
+        width: 52px;
+        height: 62px;
+      }
+
+      .mug::before {
+        top: 13px;
+        right: -28px;
+        width: 34px;
+        height: 34px;
+        border-width: 8px;
+      }
+
+      .steam {
+        bottom: 106px;
+        left: 61px;
+      }
+
+      .steam:nth-of-type(2) {
+        left: 81px;
+      }
+    }
+
+    @media (max-width: 540px) {
+      .countdown {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .progress-meta {
+        display: grid;
+        gap: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="shell" aria-label="Countdown to the end of the work year">
+      <div class="scene" aria-hidden="true">
+        <div class="sun"></div>
+        <div class="window"></div>
+        <div class="desk"></div>
+        <div class="rabbit">
+          <span class="rabbit-ear"></span>
+          <span class="rabbit-ear"></span>
+          <span class="rabbit-tail"></span>
+          <span class="rabbit-leg"></span>
+          <span class="rabbit-leg"></span>
+        </div>
+        <div class="monitor"></div>
+        <div class="mug"></div>
+        <div class="steam"></div>
+        <div class="steam"></div>
+      </div>
+
+      <div class="panel">
+        <p class="eyebrow">Work year countdown</p>
+        <h1>Almost there.</h1>
+        <p class="target" id="targetText">Counting down to Friday, 11 December 2026 at 2:30 PM.</p>
+
+        <div class="countdown" aria-live="polite">
+          <div class="time-card">
+            <span class="number" id="days">0</span>
+            <span class="label">Days</span>
+          </div>
+          <div class="time-card">
+            <span class="number" id="hours">00</span>
+            <span class="label">Hours</span>
+          </div>
+          <div class="time-card">
+            <span class="number" id="minutes">00</span>
+            <span class="label">Minutes</span>
+          </div>
+          <div class="time-card">
+            <span class="number" id="seconds">00</span>
+            <span class="label">Seconds</span>
+          </div>
+        </div>
+
+        <div class="progress-wrap">
+          <div class="progress-meta">
+            <span id="progressLabel">Year progress</span>
+            <span id="percent">0%</span>
+          </div>
+          <div class="progress" role="progressbar" aria-label="Progress through the work year" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="bar" id="bar"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const target = new Date(2026, 11, 11, 14, 30, 0);
+    const yearStart = new Date(2026, 0, 1, 0, 0, 0);
+
+    const elements = {
+      days: document.getElementById("days"),
+      hours: document.getElementById("hours"),
+      minutes: document.getElementById("minutes"),
+      seconds: document.getElementById("seconds"),
+      targetText: document.getElementById("targetText"),
+      percent: document.getElementById("percent"),
+      progress: document.querySelector(".progress"),
+      bar: document.getElementById("bar")
+    };
+
+    const formatter = new Intl.DateTimeFormat(undefined, {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    });
+
+    function pad(value) {
+      return String(value).padStart(2, "0");
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function updateCountdown() {
+      const now = new Date();
+      const remaining = target - now;
+
+      elements.targetText.textContent = `Counting down to ${formatter.format(target)}.`;
+
+      if (remaining <= 0) {
+        elements.days.textContent = "0";
+        elements.hours.textContent = "00";
+        elements.minutes.textContent = "00";
+        elements.seconds.textContent = "00";
+        elements.bar.style.width = "100%";
+        elements.percent.textContent = "100%";
+        elements.progress.setAttribute("aria-valuenow", "100");
+        document.title = "Work Year Finished";
+        return;
+      }
+
+      const totalSeconds = Math.floor(remaining / 1000);
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      const progress = clamp(((now - yearStart) / (target - yearStart)) * 100, 0, 100);
+
+      elements.days.textContent = days;
+      elements.hours.textContent = pad(hours);
+      elements.minutes.textContent = pad(minutes);
+      elements.seconds.textContent = pad(seconds);
+      elements.bar.style.width = `${progress}%`;
+      elements.percent.textContent = `${progress.toFixed(4)}%`;
+      elements.progress.setAttribute("aria-valuenow", progress.toFixed(2));
+      document.title = `${days}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`;
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  </script>
+</body>
+</html>
