@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Local Two Host TTS</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Local browser TTS</p>
+          <h1>Two-host transcript to speech</h1>
+          <p class="intro">
+            Paste or load a two-speaker transcript, choose two Kokoro voices, and export one WAV file.
+          </p>
+        </div>
+        <div class="privacy-note">
+          Transcript text is processed locally in this browser. First model use may download and cache Kokoro files.
+        </div>
+      </header>
+
+      <section class="panel input-panel" aria-labelledby="transcript-heading">
+        <div class="section-heading">
+          <div>
+            <h2 id="transcript-heading">Transcript</h2>
+            <p>Use lines like <code>Host 1: ...</code> and <code>Host 2: ...</code>.</p>
+          </div>
+          <div class="button-row">
+            <button id="loadSampleButton" type="button">Load sample transcript</button>
+            <button id="clearButton" type="button" class="secondary">Clear</button>
+          </div>
+        </div>
+
+        <label for="fileInput" class="file-label">
+          Load a .txt or .md file
+          <input id="fileInput" type="file" accept=".txt,.md,text/plain,text/markdown">
+        </label>
+
+        <label for="transcriptInput" class="textarea-label">Transcript text</label>
+        <textarea id="transcriptInput" rows="14" spellcheck="true" placeholder="Host 1: Today we are looking at chemical reactions.&#10;Host 2: So, what actually makes a reaction happen?"></textarea>
+      </section>
+
+      <section class="panel" aria-labelledby="voices-heading">
+        <div class="section-heading">
+          <div>
+            <h2 id="voices-heading">Voices</h2>
+            <p>Choose different voices for Speaker A and Speaker B.</p>
+          </div>
+          <div id="selectedVoices" class="selected-voices">Selected voices: af_heart and am_puck</div>
+        </div>
+
+        <div id="voiceWarnings" class="warning-list" aria-live="polite"></div>
+
+        <div class="voice-grid">
+          <div class="voice-control">
+            <label for="speakerAVoice">Speaker A / Host 1 voice</label>
+            <select id="speakerAVoice"></select>
+            <button id="testSpeakerAButton" type="button" class="secondary">Test Speaker A voice</button>
+          </div>
+
+          <div class="voice-control">
+            <label for="speakerBVoice">Speaker B / Host 2 voice</label>
+            <select id="speakerBVoice"></select>
+            <button id="testSpeakerBButton" type="button" class="secondary">Test Speaker B voice</button>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+          <label>
+            Speech speed (%)
+            <input id="speechSpeedInput" type="number" min="50" max="200" step="5" value="100">
+          </label>
+          <label>
+            Silence between turns (seconds)
+            <input id="silenceGapInput" type="number" min="0" max="5" step="0.05" value="0.05">
+          </label>
+          <label>
+            Pause tag silence (seconds)
+            <input id="pauseGapInput" type="number" min="0" max="10" step="0.05" value="0.2">
+          </label>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="preview-heading">
+        <div class="section-heading">
+          <div>
+            <h2 id="preview-heading">Parsed preview</h2>
+            <p id="previewSummary">No turns parsed yet.</p>
+          </div>
+          <button id="parseButton" type="button" class="secondary">Refresh preview</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Turn</th>
+                <th scope="col">Speaker</th>
+                <th scope="col">Text sent to TTS</th>
+                <th scope="col">Characters</th>
+              </tr>
+            </thead>
+            <tbody id="previewBody">
+              <tr>
+                <td colspan="4" class="empty-cell">Paste or load a transcript to preview speaker turns.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel output-panel" aria-labelledby="generate-heading">
+        <div class="section-heading">
+          <div>
+            <h2 id="generate-heading">Generate audio</h2>
+            <p>Long transcripts may take time depending on your computer.</p>
+          </div>
+          <div class="button-row">
+            <button id="generateButton" type="button" class="primary">Generate audio</button>
+            <button id="stopButton" type="button" class="danger" disabled>Stop</button>
+          </div>
+        </div>
+
+        <div id="status" class="status" role="status" aria-live="polite">Ready to load a transcript.</div>
+        <div id="errorMessage" class="error-message" role="alert"></div>
+
+        <audio id="finalAudio" controls></audio>
+        <a id="downloadLink" class="download-link disabled" download="two-host-tts-output.wav" aria-disabled="true">Download WAV</a>
+      </section>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
