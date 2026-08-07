@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A simple classroom tool for collecting frequency data.">
+    <title>Click Count — Statistics Tool</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="Click Count home">
+        <span>CLICK COUNT</span>
+      </a>
+      <span class="subject-label">STATISTICS TOOL</span>
+    </header>
+
+    <main id="top">
+      <section class="setup" id="setupScreen">
+        <div class="eyebrow"><span></span> SET UP YOUR DATA</div>
+        <h1>What are you<br>counting today?</h1>
+        <p class="intro">Name the categories you want to observe. Each one will become a button for fast data collection.</p>
+
+        <form class="setup-form" id="setupForm">
+          <fieldset>
+            <legend>Field names</legend>
+            <div class="field-list" id="fieldList"></div>
+          </fieldset>
+          <button class="add-button" id="addFieldButton" type="button"><span>＋</span> Add another field</button>
+          <div class="form-footer">
+            <p class="message" id="setupMessage" role="status"></p>
+            <button class="primary-button" type="submit">Create buttons <span>→</span></button>
+          </div>
+        </form>
+
+      </section>
+
+      <section class="counter hidden" id="counterScreen">
+        <div class="counter-heading">
+          <div>
+            <div class="eyebrow" id="sessionStatus"><span class="live-dot"></span> COLLECTION IN PROGRESS</div>
+            <h1 id="counterTitle">Record an observation</h1>
+            <p class="intro" id="counterIntro">Tap the matching category each time you see it.</p>
+          </div>
+          <div class="total-card" aria-live="polite">
+            <span>TOTAL</span><strong id="totalCount">0</strong><small>observations</small>
+          </div>
+        </div>
+
+        <div class="button-grid" id="buttonGrid" aria-label="Data collection fields"></div>
+        <div class="summary hidden" id="summary" aria-label="Results chart"></div>
+
+        <div class="control-panel">
+          <p id="counterMessage" role="status">Buttons are live — each tap adds one.</p>
+          <div class="controls">
+            <button class="stop-button" id="stopButton" type="button"><span></span> Stop</button>
+            <button class="resume-button hidden" id="resumeButton" type="button">Resume counting</button>
+            <button class="secondary-button" id="clearButton" type="button">Clear values</button>
+            <button class="text-button" id="newFieldsButton" type="button">Enter new fields →</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer><span>Click Count</span><span>Student statistics tool</span></footer>
+  </body>
+</html>
