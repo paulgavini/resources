@@ -137,6 +137,8 @@ legend { margin-bottom: 16px; font-size: 13px; font-weight: 650; }
   text-align: left;
   -webkit-user-select: none;
   user-select: none;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
   transition: border-color .15s, transform .1s;
 }
 .count-button:not(:disabled):hover { border-color: var(--accent); }

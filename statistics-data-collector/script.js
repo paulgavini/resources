@@ -53,6 +53,7 @@ function renderButtons() {
   buttonGrid.innerHTML = "";
   fields.forEach((field, index) => {
     const button = document.createElement("button");
+    let touchStart = null;
     button.type = "button";
     button.className = `count-button ${colours[index % colours.length]}`;
     button.disabled = !collecting;
@@ -63,12 +64,25 @@ function renderButtons() {
     `;
     button.querySelector(".count-name").textContent = field.name;
     button.setAttribute("aria-label", `${field.name}: ${field.count} observations${collecting ? ", click to add one" : ""}`);
-    button.addEventListener("click", () => {
+    const addObservation = () => {
       if (!collecting) return;
       field.count += 1;
       renderButtons();
       updateTotal();
-    });
+    };
+    button.addEventListener("click", addObservation);
+    button.addEventListener("dblclick", (event) => event.preventDefault());
+    button.addEventListener("touchstart", (event) => {
+      const touch = event.changedTouches[0];
+      touchStart = { x: touch.clientX, y: touch.clientY };
+    }, { passive: true });
+    button.addEventListener("touchend", (event) => {
+      event.preventDefault();
+      const touch = event.changedTouches[0];
+      const moved = !touchStart || Math.hypot(touch.clientX - touchStart.x, touch.clientY - touchStart.y) > 12;
+      touchStart = null;
+      if (!moved) addObservation();
+    }, { passive: false });
     buttonGrid.append(button);
   });
 }
