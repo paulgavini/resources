@@ -76,6 +76,7 @@ The original `33 Speed of Sound.doc` source document was deliberately deleted du
 - Minimalist responsive design based on the existing Paul Gavini practical resources.
 - Light and dark modes, with the preference stored in `localStorage`.
 - Accessible focus states, status announcements, labels, and touch targets.
+- The main header links to Paul Gavini's YouTube channel and `https://paulgavini.github.io/resources/`; both open safely in a new tab.
 - The teacher reflection/question section was intentionally removed; teachers provide their own instructions.
 
 ## Physics and calculation decisions
@@ -177,6 +178,8 @@ PROJECT_RESUME.md
 
 GitHub Pages serves the application over HTTPS, which provides the secure context required for microphone permission. Microphone access still depends on the user's browser permission and device settings.
 
+The YouTube and Paul Gavini resources links are ordinary external navigation links. They do not make a network request unless a user selects them, so the practical itself remains functional offline.
+
 ## Testing
 
 ### Deterministic tests
@@ -244,4 +247,4 @@ An optional `Automatic / 48 / 96 / 192 kHz` selector could be added, but `exact`
 
 ## Last project state
 
-At the time this resume file was last updated, the application syntax, deterministic physics calculations, HTML IDs, local asset references, and JavaScript DOM references had been checked successfully. The deployment set had been reduced to seven runtime files, including the image inside `assets/`. Full microphone behavior still requires testing with real browser permissions and hardware.
+At the time this resume file was last updated, the application syntax, deterministic physics calculations, HTML IDs, local asset references, and JavaScript DOM references had been checked successfully. The deployment set contains seven runtime files, including the image inside `assets/`. The main page header includes YouTube and Paul Gavini resources links. Full microphone behavior still requires testing with real browser permissions and hardware.
