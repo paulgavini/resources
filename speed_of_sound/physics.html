@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Student physics guide for measuring the speed of sound with a tube, microphone and reflected pulse.">
+  <title>Physics Guide · Speed of Sound Practical</title>
+  <script>
+    try { document.documentElement.dataset.theme = localStorage.getItem("speed-sound-theme") || "light"; } catch (_) { document.documentElement.dataset.theme = "light"; }
+  </script>
+  <link rel="icon" href="assets/tube-microphone-setup.png" type="image/png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header resource-header">
+    <div>
+      <p class="eyebrow">Student resource</p>
+      <h1>The physics of the speed-of-sound practical</h1>
+      <p class="lede">How a sound pulse travels through a tube, reflects, and reveals the speed of sound.</p>
+    </div>
+    <div class="header-tools">
+      <a class="button resource-link" href="index.html">Return to practical</a>
+      <button id="resourceThemeToggle" class="button theme-toggle" type="button" aria-label="Switch colour theme">Dark mode</button>
+    </div>
+  </header>
+
+  <main class="page-shell resource-page">
+    <nav class="panel resource-nav" aria-label="On this page">
+      <strong>On this page</strong>
+      <a href="#pulse-echo">Pulse and echo</a>
+      <a href="#temperature">Temperature</a>
+      <a href="#diameter">Tube diameter</a>
+      <a href="#losses">Wall losses</a>
+      <a href="#position">Microphone position</a>
+      <a href="#end-correction">End correction</a>
+      <a href="#sampling">Sampling and uncertainty</a>
+    </nav>
+
+    <article id="pulse-echo" class="panel resource-section">
+      <div class="section-kicker">1 · The main idea</div>
+      <h2>A pulse makes a round trip</h2>
+      <div class="resource-two-column">
+        <div>
+          <p>A sharp click produces a changing air pressure. Part of this disturbance enters the tube, travels to the sealed end, reflects, and returns to the microphone.</p>
+          <p>The waveform therefore contains an initial pulse and a later echo. The cursor separation, <strong>Δt</strong>, is the time taken for the round trip.</p>
+          <div class="equation" aria-label="Speed equals two times tube length divided by echo time">
+            <span>v =</span><span class="fraction"><span>2L</span><span>Δt</span></span>
+          </div>
+          <p>For a tube of length <strong>L</strong>, the sound travels <strong>L</strong> to the cap and <strong>L</strong> back. The total distance is therefore <strong>2L</strong>.</p>
+        </div>
+        <figure class="resource-figure">
+          <img src="assets/tube-microphone-setup.png" alt="Microphone beside the open end of a horizontal tube with a sealed far end.">
+          <figcaption>The measured echo is the reflection from the sealed end.</figcaption>
+        </figure>
+      </div>
+      <div class="worked-example">
+        <strong>Example</strong>
+        <p>If L = 1.50 m and Δt = 8.75 ms, then v = 3.00 m ÷ 0.00875 s = <strong>343 m/s</strong>.</p>
+      </div>
+    </article>
+
+    <article id="temperature" class="panel resource-section">
+      <div class="section-kicker">2 · Temperature</div>
+      <h2>Warm air carries sound faster</h2>
+      <p>Sound speed depends on the properties of the gas. In warmer air, molecules move faster and pressure disturbances are transferred more quickly. Near ordinary room temperatures, the accepted speed can be estimated by:</p>
+      <div class="equation"><span>v<sub>accepted</sub> = 331.5 + 0.607T</span></div>
+      <p>Here, <strong>T</strong> is the air temperature in degrees Celsius and speed is in metres per second. At 20 °C this gives 343.6 m/s. The temperature should be measured near the tube, away from heaters or direct sunlight.</p>
+    </article>
+
+    <article id="diameter" class="panel resource-section">
+      <div class="section-kicker">3 · Internal diameter</div>
+      <h2>Diameter affects the shape of the echo</h2>
+      <p>At sufficiently low frequencies, the pressure is almost uniform across the tube. This is called the <strong>plane-wave mode</strong>, and it behaves like a one-dimensional wave travelling along the tube.</p>
+      <p>Above the first cutoff frequency, transverse patterns can also propagate. Their pressure varies across the tube and their axial motion differs from the plane wave. Because a click contains many frequencies, these extra modes can broaden or split the recorded echo.</p>
+      <div class="equation" aria-label="Cutoff frequency is approximately 1.84 times sound speed divided by pi times internal diameter">
+        <span>f<sub>c</sub> ≈</span><span class="fraction"><span>1.84v</span><span>πD</span></span>
+      </div>
+      <p><strong>D</strong> is the internal diameter in metres. A larger diameter gives a lower cutoff frequency, so more of a broadband click may excite higher-order modes.</p>
+      <div class="table-wrap resource-table">
+        <table>
+          <thead><tr><th scope="col">Internal diameter</th><th scope="col">Approximate cutoff at 343 m/s</th></tr></thead>
+          <tbody>
+            <tr><td>25 mm</td><td>8.04 kHz</td></tr>
+            <tr><td>50 mm</td><td>4.02 kHz</td></tr>
+            <tr><td>75 mm</td><td>2.68 kHz</td></tr>
+            <tr><td>100 mm</td><td>2.01 kHz</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="key-point"><strong>Important:</strong> diameter is not added to the distance and is not a multiplier in v = 2L/Δt. In this experiment it is mainly a check on whether the pulse is likely to remain simple.</p>
+    </article>
+
+    <article id="losses" class="panel resource-section">
+      <div class="section-kicker">4 · Energy losses</div>
+      <h2>Why the reflection is quieter</h2>
+      <p>The returning pulse is weaker because its energy spreads, some energy is absorbed by the tube and cap, and air next to the wall experiences viscous friction and heat transfer. These boundary-layer effects are relatively stronger in a narrow tube because it has more wall area compared with its air volume.</p>
+      <p>Wall losses depend on frequency, so different parts of a broadband click are attenuated by different amounts. This can change the pulse shape as well as its amplitude. The sensitivity slider enlarges the displayed waveform only; it does not recover lost information or change the measured time.</p>
+    </article>
+
+    <article id="position" class="panel resource-section">
+      <div class="section-kicker">5 · Microphone position</div>
+      <h2>Define the measurement reference point</h2>
+      <p>If the microphone diaphragm and the click are together, a distance <strong>x</strong> outside the tube opening, the pulse travels from that position to the cap and back. The calculation becomes:</p>
+      <div class="equation"><span>v =</span><span class="fraction"><span>2(L + x)</span><span>Δt</span></span></div>
+      <p>The optional microphone-offset field uses this model. Measure <strong>x</strong> parallel to the tube axis—not diagonally.</p>
+      <p>If the click is produced at the tube-mouth plane while the microphone is farther outside, the additional microphone path occurs in both arrival times and cancels from their difference. In that arrangement, leave the offset at zero. The simplest procedure is to keep the click and microphone close together and as close to the mouth as practical.</p>
+    </article>
+
+    <article id="end-correction" class="panel resource-section">
+      <div class="section-kicker">6 · A commonly confused correction</div>
+      <h2>Open-end correction is not used here</h2>
+      <p>In a resonance experiment, the pressure node of an open tube lies slightly outside its physical end. The extra effective length is called an <strong>end correction</strong> and depends on tube radius and the shape around the opening.</p>
+      <p>This practical measures a travelling pulse reflected from a <strong>sealed end</strong>. When L is measured to the inside face of the cap, an open-end correction must not be added. If the cap is not rigid or its inner position is uncertain, that is instead an uncertainty in L.</p>
+    </article>
+
+    <article id="sampling" class="panel resource-section">
+      <div class="section-kicker">7 · Measurement quality</div>
+      <h2>Sampling rate and uncertainty</h2>
+      <p>A digital microphone records amplitude at equally spaced moments. At 96 kHz, the interval between samples is about 10.42 µs; at 48 kHz it is about 20.83 µs. A higher rate places more samples across a short pulse, but it does not guarantee that the microphone hardware actually captures ultrasonic frequencies.</p>
+      <p>The app reports the actual sample rate supplied by the browser. Cursor timing is based on sample positions, so zooming, panning, cropping and display sensitivity do not change Δt.</p>
+      <h3>Important sources of uncertainty</h3>
+      <ul class="resource-list">
+        <li>deciding exactly where each pulse begins;</li>
+        <li>a weak or broadened reflected pulse;</li>
+        <li>measuring tube length and microphone position;</li>
+        <li>temperature varying along the tube;</li>
+        <li>background reflections from the room;</li>
+        <li>automatic processing that the browser or microphone cannot disable.</li>
+      </ul>
+      <p>Repeat the measurement five times and use the average Δt. Consistent trials reduce random variation, although they do not remove a systematic error such as an incorrect tube length.</p>
+      <div class="equation" aria-label="Percentage difference equals absolute experimental speed minus accepted speed divided by accepted speed times one hundred percent">
+        <span>percentage difference =</span><span class="fraction"><span>|v<sub>experiment</sub> − v<sub>accepted</sub>|</span><span>v<sub>accepted</sub></span></span><span>× 100%</span>
+      </div>
+    </article>
+
+    <aside class="panel resource-section source-note">
+      <h2>Further physics</h2>
+      <p>The plane-wave cutoff comes from the solutions of the wave equation in a rigid circular duct. The value 1.84 is the first relevant zero associated with the radial boundary condition. Thermoviscous models add the effects of viscosity and heat flow near the walls.</p>
+      <p>For further reading, see the <a href="https://www3.nd.edu/~atassi/Teaching/ame60612/Notes/Acoustic_circular_duct1.pdf" target="_blank" rel="noopener noreferrer">University of Notre Dame notes on waves in circular ducts</a> and the <a href="https://pubmed.ncbi.nlm.nih.gov/25234868/" target="_blank" rel="noopener noreferrer">Journal of the Acoustical Society of America paper on thermoviscous propagation</a>. These optional links require internet access; the guide itself works offline.</p>
+    </aside>
+  </main>
+
+  <footer>This guide is part of the Speed of Sound practical. The practical and guide work locally without external libraries.</footer>
+  <script>
+    (function () {
+      "use strict";
+      const button = document.getElementById("resourceThemeToggle");
+      function applyTheme(theme) {
+        const next = theme === "dark" ? "dark" : "light";
+        document.documentElement.dataset.theme = next;
+        button.textContent = next === "dark" ? "Light mode" : "Dark mode";
+        button.setAttribute("aria-pressed", String(next === "dark"));
+        try { localStorage.setItem("speed-sound-theme", next); } catch (_) { /* storage may be unavailable */ }
+      }
+      button.addEventListener("click", function () {
+        applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+      });
+      applyTheme(document.documentElement.dataset.theme);
+    }());
+  </script>
+</body>
+</html>

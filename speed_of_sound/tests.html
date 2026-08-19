@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Speed of Sound Tests</title>
+</head>
+<body>
+  <h1>Speed of Sound Tests</h1>
+  <pre id="result">Running…</pre>
+  <script src="math.js"></script>
+  <script>
+    (function runTests() {
+      const M = window.SoundMath;
+      const failures = [];
+      let passed = 0;
+      function check(condition, label) {
+        if (condition) passed += 1;
+        else failures.push(label);
+      }
+      function closeTo(actual, expected, tolerance) {
+        return Math.abs(actual - expected) <= tolerance;
+      }
+      check(closeTo(M.secondsFromSamples(9600, 48000), 0.2, 1e-12), "sample interval");
+      check(closeTo(M.secondsFromSamples(-4800, 48000), 0.1, 1e-12), "absolute interval");
+      check(closeTo(M.secondsFromSamples(1, 96000), 1 / 96000, 1e-15), "96 kHz sample interval");
+      check(closeTo(M.trialSpeed(1.5, 0.009), 333.333333, 1e-5), "trial speed");
+      check(closeTo(M.roundTripDistance(1.5, 0.025), 3.05, 1e-12), "offset distance");
+      check(closeTo(M.trialSpeed(1.5, 0.01, 0.025), 305, 1e-12), "offset speed");
+      check(closeTo(M.planeWaveCutoff(0.05, 343), 4017.835, 0.001), "tube cutoff");
+      check(closeTo(M.acceptedSpeed(20), 343.64, 1e-12), "accepted speed");
+      check(closeTo(M.percentageDifference(340, 343.64), 1.059247, 1e-5), "percentage difference");
+      check(closeTo(M.average([0.009, null, 0.01, NaN]), 0.0095, 1e-12), "trial average");
+      check(M.sampleFromFraction(0, 100, 1100) === 100, "left mapping");
+      check(M.sampleFromFraction(1, 100, 1100) === 1099, "right mapping");
+      check(M.sampleFromFraction(-1, 100, 1100) === 100, "left clamp");
+      check(M.sampleFromFraction(2, 100, 1100) === 1099, "right clamp");
+      check(Number.isNaN(M.trialSpeed(0, 0.01)), "invalid length");
+      check(Number.isNaN(M.trialSpeed(1, 0)), "invalid time");
+      check(Number.isNaN(M.roundTripDistance(1, -0.01)), "negative offset");
+      check(Number.isNaN(M.planeWaveCutoff(0, 343)), "invalid diameter");
+      const result = document.getElementById("result");
+      result.id = failures.length ? "tests-failed" : "tests-passed";
+      result.textContent = failures.length ? `FAIL: ${failures.join(", ")}` : `PASS: ${passed} deterministic tests`;
+    }());
+  </script>
+</body>
+</html>
