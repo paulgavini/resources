@@ -1,0 +1,22 @@
+.mass-editor[hidden] { display: none; }
+.mass-value-row { display: grid; grid-template-columns: auto 1fr auto; gap: 6px; align-items: center; }
+.mass-value-row .button { padding: 7px; font-size: 10px; min-height: 34px; }
+.mass-value-row label { display: flex; align-items: center; border: 1px solid #d6e0dc; border-radius: 7px; background: #fff; overflow: hidden; }
+.mass-value-row input { width: 100%; min-width: 0; border: 0; padding: 8px 3px 8px 8px; text-align: right; font-weight: 800; color: var(--ink); }
+.mass-value-row label span { font-size: 9px; color: #788784; padding-right: 7px; }
+.mass-remove { width: 100%; margin-top: 7px; font-size: 10px; min-height: 34px; }
+.mass-selected { filter: drop-shadow(0 0 5px #d8ef78); }
+.material-cost-display { display: flex; justify-content: space-between; align-items: center; margin-top: 9px; padding: 9px 10px; border-radius: 7px; background: #eff4e6; border-left: 4px solid var(--lime); }
+.material-cost-display > span { font-size: 9px; font-weight: 750; text-transform: uppercase; color: #65756f; }
+.material-cost-display > b { font-size: 14px; color: var(--ink); }
+.material-cost-display small { font-size: 8px; font-weight: 650; color: #71807b; }
+.guide-modal { width: min(760px, calc(100% - 28px)); max-height: 90vh; overflow: auto; }
+.guide-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+.guide-grid section { padding: 12px; border: 1px solid #dde5e2; border-radius: 9px; background: #f7f9f6; }
+.guide-grid h3 { margin: 0 0 7px; font-size: 12px; color: var(--teal); }
+.guide-grid ol { margin: 0; padding-left: 17px; }
+.guide-grid li, .guide-grid p { margin: 4px 0; font-size: 10px; line-height: 1.45; }
+.guide-grid kbd { padding: 1px 4px; border: 1px solid #cad5d1; border-radius: 3px; background: #fff; }
+.guide-tips { margin-top: 10px; padding: 10px 12px; border-left: 4px solid var(--lime); background: #eff4e6; border-radius: 4px; font-size: 10px; line-height: 1.45; }
+@media (max-width: 600px) { .guide-grid { grid-template-columns: 1fr; } }
+@media print { body > *:not(#helpDialog) { display: none !important; } #helpDialog { position: static; display: block; width: 100%; max-height: none; box-shadow: none; } #helpDialog .modal-close, #helpDialog .modal-actions { display: none; } .guide-grid { grid-template-columns: 1fr 1fr; } }

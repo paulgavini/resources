@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>QuakeLab Student Guide</title>
+  <meta name="description" content="Complete student instructions for the QuakeLab structural earthquake simulator.">
+  <link rel="stylesheet" href="css/student-guide.css">
+</head>
+<body>
+  <header class="guide-header">
+    <a class="brand" href="index.html"><span class="mark">QL</span><span><b>QUAKE</b>LAB</span></a>
+    <div class="header-actions"><button onclick="window.print()">Print guide</button><button onclick="window.close()">Close guide</button></div>
+  </header>
+  <main>
+    <section class="hero">
+      <p class="eyebrow">Student guide</p>
+      <h1>Design → Build → Shake → Measure → Improve</h1>
+      <p>Design a simplified structure, test it on an earthquake shake table, measure its response, identify weaknesses and improve it. Keep the earthquake settings unchanged when comparing designs.</p>
+    </section>
+
+    <nav class="contents" aria-label="Guide contents">
+      <a href="#foundation">1 Foundation</a><a href="#frame">2 Frame</a><a href="#materials">3 Materials</a><a href="#mass">4 Mass</a><a href="#sensors">5 Sensors</a><a href="#earthquake">6 Earthquake</a><a href="#test">7 Test</a><a href="#results">8 Results</a><a href="#improve">9 Improve</a>
+    </nav>
+
+    <div class="guide-grid">
+      <section id="foundation"><span class="number">1</span><h2>Build a foundation</h2><ol><li>Select <b>Floor Joint</b> or press <kbd>G</kbd>.</li><li>Tap twice to create two foundation joints. They automatically appear on the solid ground line.</li><li>Check for lime-green centres. These joints are fixed to the shake table.</li><li>Select <b>Joint</b> or press <kbd>J</kbd> and place movable joints above the foundations.</li></ol></section>
+
+      <section id="frame"><span class="number">2</span><h2>Connect the structure</h2><ol><li>Select <b>Beam</b> (<kbd>B</kbd>) or <b>Brace</b> (<kbd>R</kbd>).</li><li>Press on the first joint, drag to the second joint and release directly over it.</li><li>Add vertical columns and horizontal beams.</li><li>Try diagonal bracing. Triangular arrangements usually resist sideways movement better than unbraced rectangles.</li></ol><p class="tip"><b>Important:</b> Beams must end on joints. A joint placed visually over an existing beam does not split that member.</p></section>
+
+      <section id="materials"><span class="number">3</span><h2>Select materials</h2><p>Choose timber, steel, reinforced or lightweight before drawing new members. Compare the displayed classroom values:</p><ul><li>Strength</li><li>Stiffness</li><li>Weight</li><li>Damping</li><li>Cost per metre-equivalent</li></ul><p class="tip">Changing material affects new members only—not members already drawn.</p></section>
+
+      <section id="mass"><span class="number">4</span><h2>Add payload masses</h2><ol><li>Select <b>Mass</b> or press <kbd>M</kbd>.</li><li>Tap a joint or any position along a member.</li><li>Tap an existing mass to open its editor.</li><li>Adjust it in 100 kg steps, enter 100–5,000 kg, or remove it.</li></ol><p>A beam mass is distributed between its endpoint joints according to position. It does not create an extra hinge.</p></section>
+
+      <section id="sensors"><span class="number">5</span><h2>Add analysis sensors</h2><ol><li>Select <b>Sensors</b> or press <kbd>S</kbd>.</li><li>Tap up to four joints or positions along members.</li><li>Each sensor is labelled S1–S4 and appears under Live Measurements.</li><li>Select a sensor from the graph menu to display its response.</li><li>Use <b>×</b> on its live card to remove it.</li></ol><p class="tip">Sensors report signed horizontal displacement relative to the moving table: positive is right and negative is left.</p></section>
+
+      <section id="earthquake"><span class="number">6</span><h2>Configure the earthquake</h2><dl><dt>Amplitude</dt><dd>Maximum shake-table displacement.</dd><dt>Frequency</dt><dd>Cycles per second. Frequency has a squared effect on peak acceleration.</dd><dt>Duration</dt><dd>Length of the test.</dd><dt>Structural damping</dt><dd>Simplified energy loss in the model.</dd></dl><p>Peak acceleration is calculated using <code>a = (2πf)²A</code> and displayed relative to gravitational acceleration.</p></section>
+
+      <section id="test"><span class="number">7</span><h2>Run the test</h2><ol><li>Check structure cost, member count and total mass.</li><li>Select <b>Start test</b>.</li><li>Observe roof sway, storey drift, failures, acceleration, sensor readings and the response graph.</li><li>Use <b>Pause</b>, <b>Resume</b> or <b>Reset</b> when needed.</li></ol><p class="tip"><b>Red member with !:</b> the beam or brace has exceeded its simplified material deformation limit and failed. It stops carrying load for the rest of that test. Loading colours are classroom indicators, not professional stress calculations.</p></section>
+
+      <section id="results"><span class="number">8</span><h2>Interpret survival</h2><p>The structure survives only when all four classroom limits are satisfied:</p><table><tr><th>Measurement</th><th>Survival limit</th></tr><tr><td>Maximum roof sway</td><td>≤ 160 mm</td></tr><tr><td>Maximum relative storey drift</td><td>≤ 80 mm</td></tr><tr><td>Failed members</td><td>≤ 25%</td></tr><tr><td>Height retained</td><td>≥ 65%</td></tr></table><p>The results identify any limit that caused failure.</p></section>
+
+      <section id="improve"><span class="number">9</span><h2>Modify and retest</h2><p>Close the results to return to editable Design Mode. Consider changing:</p><ul><li>Bracing pattern</li><li>Member material</li><li>Structure width or height</li><li>Payload position or mass</li><li>Number and position of members</li></ul><p class="tip"><b>Fair test:</b> keep the same earthquake settings when comparing two designs.</p></section>
+    </div>
+
+    <section class="wide-section"><h2>Save and submit</h2><div class="three-col"><p><b>Save design</b><br>Downloads a portable JSON design file.</p><p><b>Load</b><br>Opens a previously saved design.</p><p><b>Export results CSV</b><br>Downloads recorded response data.</p></div></section>
+
+    <section class="wide-section troubleshooting"><h2>Troubleshooting</h2><dl><dt>The structure falls immediately</dt><dd>Check that columns connect to Floor Joints.</dd><dt>A loose joint falls</dt><dd>Connect it with members before testing.</dd><dt>A beam will not appear</dt><dd>Drag from one joint and release directly over another.</dd><dt>A mass cannot be edited</dt><dd>Select Mass, then tap the mass label.</dd><dt>A sensor shows zero</dt><dd>Check its attachment and select the correct sensor in the graph.</dd><dt>The design cannot be edited after testing</dt><dd>Close the results window to return to Design Mode.</dd></dl></section>
+
+    <aside class="disclaimer"><b>Educational model:</b> QuakeLab is a simplified comparative simulator. It is not suitable for professional structural design or safety decisions.</aside>
+  </main>
+  <footer><a href="index.html">Return to QuakeLab</a><button onclick="window.print()">Print this guide</button></footer>
+</body>
+</html>

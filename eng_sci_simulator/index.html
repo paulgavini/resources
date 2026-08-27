@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#112c31">
+  <title>QuakeLab — Structural Design Simulator</title>
+  <meta name="description" content="Design, shake and improve a simplified building structure in an offline classroom simulator.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/mass-editor.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="QuakeLab home">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span><b>QUAKE</b>LAB</span>
+    </a>
+    <nav class="workflow" aria-label="Engineering workflow">
+      <span class="active">1 <b>Design</b></span><i></i><span>2 <b>Build</b></span><i></i><span>3 <b>Shake</b></span><i></i><span>4 <b>Measure</b></span>
+    </nav>
+    <div class="top-actions">
+      <a class="button ghost" id="helpBtn" href="student-guide.html" target="_blank" rel="noopener">? <span>Guide</span></a>
+      <button class="button ghost" id="newBtn">New</button>
+      <button class="button ghost" id="loadBtn">Load</button>
+      <button class="button dark" id="saveBtn">Save design</button>
+      <input type="file" id="fileInput" accept="application/json,.json" hidden>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <aside class="left-panel panel">
+      <section>
+        <div class="section-heading"><span>Build tools</span><small>Tap or press shortcut</small></div>
+        <div class="tool-grid" id="tools" role="toolbar" aria-label="Building tools">
+          <button class="tool active" data-tool="select" title="Select or move (V)"><span>↖</span>Select<kbd>V</kbd></button>
+          <button class="tool" data-tool="joint" title="Add joint (J)"><span>●</span>Joint<kbd>J</kbd></button>
+          <button class="tool" data-tool="beam" title="Draw beam (B)"><span>━</span>Beam<kbd>B</kbd></button>
+          <button class="tool" data-tool="brace" title="Draw brace (R)"><span>╱</span>Brace<kbd>R</kbd></button>
+          <button class="tool" data-tool="floorJoint" title="Add fixed floor joint (G)"><span>◉</span>Floor joint<kbd>G</kbd></button>
+          <button class="tool" data-tool="mass" title="Add mass to a joint or member (M)"><span>⬡</span>Mass<kbd>M</kbd></button>
+          <button class="tool" id="sensorToolBtn" data-tool="sensor" title="Place up to four sensors on joints or members (S)"><span>◉</span><b id="sensorToolLabel">Sensors 0/4</b><kbd>S</kbd></button>
+          <button class="tool" data-tool="delete" title="Delete item (D)"><span>×</span>Delete<kbd>D</kbd></button>
+          <button class="tool" data-tool="pan" title="Pan workspace (H)"><span>✥</span>Pan<kbd>H</kbd></button>
+        </div>
+        <div class="history-row">
+          <button class="button soft" id="undoBtn" disabled>↶ Undo</button>
+          <button class="button soft" id="redoBtn" disabled>↷ Redo</button>
+          <button class="button soft danger" id="clearBtn">Clear</button>
+        </div>
+      </section>
+
+      <section class="mass-editor" id="massEditorSection" hidden>
+        <div class="section-heading"><span>Selected mass</span><small id="massLocation">Joint</small></div>
+        <div class="mass-value-row">
+          <button class="button soft" id="massMinus" aria-label="Reduce mass by 100 kilograms">−100</button>
+          <label><input id="massValue" type="number" min="100" max="5000" step="100" value="500" aria-label="Selected mass in kilograms"><span>kg</span></label>
+          <button class="button soft" id="massPlus" aria-label="Increase mass by 100 kilograms">+100</button>
+        </div>
+        <button class="button soft danger mass-remove" id="massRemove">Remove mass</button>
+      </section>
+
+      <section>
+        <div class="section-heading"><span>Material</span><small id="materialSummary">balanced</small></div>
+        <div class="material-select" id="materials"></div>
+        <div class="material-cost-display"><span>Selected material cost</span><b id="materialCost">$10 <small>/ metre equivalent</small></b></div>
+        <div class="property-bars" id="propertyBars"></div>
+        <p class="note">Properties are comparative classroom values, not professional engineering specifications.</p>
+      </section>
+
+      <section class="compact-section">
+        <div class="toggle-line"><span><b>Grid snapping</b><small>20 mm equivalent</small></span><label class="switch"><input id="gridToggle" type="checkbox" checked><i></i></label></div>
+        <div class="toggle-line"><span><b>Loading overlay</b><small>Show relative demand</small></span><label class="switch"><input id="stressToggle" type="checkbox" checked><i></i></label></div>
+        <div class="toggle-line"><span><b>Motion trail</b><small>Trace roof movement</small></span><label class="switch"><input id="trailToggle" type="checkbox"><i></i></label></div>
+      </section>
+    </aside>
+
+    <section class="workspace-wrap">
+      <div class="workspace-toolbar">
+        <div><span class="status-dot"></span><b id="modeLabel">DESIGN MODE</b><small id="modeHint">Draw between joints to add members</small></div>
+        <div class="view-actions"><button id="zoomOut" aria-label="Zoom out">−</button><b id="zoomLabel">100%</b><button id="zoomIn" aria-label="Zoom in">+</button><button id="fitBtn">Fit</button></div>
+      </div>
+      <div class="canvas-stage" id="canvasStage">
+        <canvas id="simCanvas" aria-label="Interactive structural construction workspace"></canvas>
+        <div class="canvas-tip" id="canvasTip"><b>First step:</b><span>Select Floor Joint and place two foundations.</span></div>
+        <div class="scale-legend"><i></i><span>1 m equivalent</span></div>
+        <div class="axis-label">HEIGHT <b id="heightLabel">0.0 m</b></div>
+      </div>
+      <div class="shake-deck">
+        <span class="mount">▲</span><div><b>SHAKE TABLE</b><small id="tableReadout">displacement 0 mm</small></div><span class="direction">← &nbsp; HORIZONTAL MOTION &nbsp; →</span><span class="mount">▲</span>
+      </div>
+      <div class="workspace-footer">
+        <span><i class="legend joint"></i>Joint</span><span><i class="legend beam"></i>Member</span><span><i class="legend floor"></i>Foundation</span><span><i class="legend failed"></i>Failed</span>
+        <span class="tipline">Tip: bracing changes how a frame responds to sideways motion.</span>
+      </div>
+    </section>
+
+    <aside class="right-panel panel">
+      <section>
+        <div class="eyebrow">Earthquake test</div>
+        <h2>Shake settings</h2>
+        <label class="control-label"><span>Amplitude <output id="ampOut">20 mm</output></span><input id="amplitude" type="range" min="1" max="100" value="20"></label>
+        <label class="control-label"><span>Frequency <output id="freqOut">1.50 Hz</output></span><input id="frequency" type="range" min="0.2" max="10" step="0.1" value="1.5"></label>
+        <label class="control-label"><span>Duration <output id="durationOut">10 s</output></span><input id="duration" type="range" min="1" max="30" value="10"></label>
+        <label class="control-label"><span>Structural damping <output id="dampingOut">8%</output></span><input id="damping" type="range" min="1" max="25" value="8"></label>
+        <div class="acceleration-card"><span>Calculated peak acceleration</span><b id="accelOut">0.18 g</b><small>aₘₐₓ = (2πf)²A</small></div>
+        <div class="test-actions">
+          <button class="button primary" id="startBtn"><span>▶</span> Start test</button>
+          <button class="button soft" id="pauseBtn" disabled>Pause</button>
+          <button class="button soft" id="resetTestBtn">Reset</button>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-heading"><span>Live measurements</span><small id="elapsed">0.0 / 10 s</small></div>
+        <div class="measure-grid">
+          <article><small>Roof sway</small><b id="roofSway">0 <em>mm</em></b><i><span id="swayBar"></span></i></article>
+          <article><small>Storey drift</small><b id="storeyDrift">0 <em>mm</em></b><i><span id="driftBar"></span></i></article>
+          <article><small>Failed items</small><b id="failures">0</b><i><span id="failureBar"></span></i></article>
+          <article><small>Table acceleration</small><b id="liveAccel">0.00 <em>g</em></b><i><span id="accelBar"></span></i></article>
+        </div>
+        <div class="sensor-live" id="sensorMeasurements" aria-label="Live sensor measurements"><p>Select <b>Sensor</b>, then tap up to four joints or members.</p></div>
+      </section>
+
+      <section class="graph-section">
+        <div class="section-heading"><span>Response over time</span><select id="graphMetric" aria-label="Graph measurement"><option value="sensor1">Sensor 1</option><option value="sensor2">Sensor 2</option><option value="sensor3">Sensor 3</option><option value="sensor4">Sensor 4</option><option value="roof">Roof displacement</option><option value="table">Table displacement</option><option value="accel">Table acceleration</option></select></div>
+        <canvas id="graphCanvas" aria-label="Response over time graph"></canvas>
+        <div class="graph-key"><span><i></i><b id="graphKey">Sensor: highest joint</b></span><span>Time (s) →</span></div>
+      </section>
+
+      <section class="budget-card">
+        <div><small>Structure cost</small><b id="costOut">$0</b></div><div><small>Members</small><b id="memberOut">0</b></div><div><small>Total mass</small><b id="massOut">0 kg</b></div>
+      </section>
+    </aside>
+  </main>
+
+  <dialog id="resultsDialog" class="modal">
+    <button class="modal-close" data-close aria-label="Close">×</button>
+    <div class="result-icon" id="resultIcon">✓</div><div class="eyebrow">Structural test results</div><h2 id="resultTitle">Structure survived</h2><p id="resultText">Your design stayed within the classroom response limits.</p>
+    <div class="result-grid"><span>Maximum roof sway <b id="rSway">0 mm</b></span><span>Maximum storey drift <b id="rDrift">0 mm</b></span><span>Peak table acceleration <b id="rAccel">0 g</b></span><span>Failed components <b id="rFailures">0</b></span><span>Construction cost <b id="rCost">$0</b></span><span>Test duration <b id="rDuration">0 s</b></span></div>
+    <p class="result-reason" id="resultReason"></p>
+    <div class="modal-actions"><button class="button soft" id="exportBtn">Export results CSV</button><button class="button primary" data-close>Modify & retest</button></div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="lib/matter.min.js"></script>
+  <script src="js/materials.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
