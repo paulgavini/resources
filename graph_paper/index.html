@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="description" content="Create precise, printable A4 and A3 square graph paper in your browser." />
+    <title>Square graph paper generator</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style id="pageSizeStyle">@page { size: A4 portrait; margin: 0; }</style>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-actions">
+        <p class="creator-line">
+          By Paul Gavini using CODEX
+          <span aria-hidden="true">·</span>
+          <a href="#" class="creator-link" data-placeholder-link>YouTube</a>
+          <span aria-hidden="true">·</span>
+          <a href="#" class="creator-link" data-placeholder-link>Website</a>
+        </p>
+        <button type="button" class="header-button" id="themeToggle" aria-pressed="false">Dark mode</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="pageTitle">
+        <p class="eyebrow">Precision paper, made simply</p>
+        <h1 id="pageTitle">Make your grid.</h1>
+        <p class="lede">Set the sheet, spacing and ink. Your square grid is drawn in exact millimetres and stays on this device.</p>
+      </section>
+
+      <section class="workspace" aria-label="Graph paper generator">
+        <aside class="controls" aria-label="Grid settings">
+          <div class="control-section">
+            <div class="section-heading">
+              <span class="step">01</span>
+              <h2>Paper</h2>
+            </div>
+
+            <fieldset>
+              <legend>Page size</legend>
+              <div class="choice-row" id="pageSizeChoices">
+                <label class="choice">
+                  <input type="radio" name="pageSize" value="A4" checked />
+                  <span><strong>A4</strong><small>210 × 297 mm</small></span>
+                </label>
+                <label class="choice">
+                  <input type="radio" name="pageSize" value="A3" />
+                  <span><strong>A3</strong><small>297 × 420 mm</small></span>
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend>Orientation</legend>
+              <div class="segmented">
+                <label><input type="radio" name="orientation" value="portrait" checked /><span>Portrait</span></label>
+                <label><input type="radio" name="orientation" value="landscape" /><span>Landscape</span></label>
+              </div>
+            </fieldset>
+
+            <label class="toggle-control" for="duplex">
+              <span>
+                <strong>Double-sided sheet</strong>
+                <small>Add a matching grid to the reverse</small>
+              </span>
+              <input id="duplex" type="checkbox" />
+              <i aria-hidden="true"></i>
+            </label>
+
+            <div class="range-control">
+              <span>
+                <span id="marginLabel">Minimum page margin</span>
+                <label class="measure-input" for="marginNumber">
+                  <input id="marginNumber" type="number" min="10" max="40" value="10" step="1" aria-labelledby="marginLabel" />
+                  <span>mm</span>
+                </label>
+              </span>
+              <input id="margin" type="range" min="10" max="40" value="10" step="1" aria-labelledby="marginLabel" />
+            </div>
+          </div>
+
+          <div class="control-section">
+            <div class="section-heading">
+              <span class="step">02</span>
+              <h2>Grid</h2>
+            </div>
+
+            <div class="preset-row" aria-label="Grid spacing presets">
+              <button type="button" data-spacing="2">Fine <small>2 mm</small></button>
+              <button type="button" class="active" data-spacing="5">Standard <small>5 mm</small></button>
+              <button type="button" data-spacing="10">Large <small>10 mm</small></button>
+            </div>
+
+            <label class="range-control" for="spacing">
+              <span><span>Square size</span><output id="spacingOutput">5 mm</output></span>
+              <input id="spacing" type="range" min="1" max="20" value="5" step="0.5" />
+            </label>
+
+            <label class="range-control" for="majorEvery">
+              <span><span>Bold line interval</span><output id="majorOutput">Every 5</output></span>
+              <input id="majorEvery" type="range" min="1" max="10" value="5" step="1" />
+            </label>
+
+            <label class="range-control" for="lineWidth">
+              <span><span>Fine line width</span><output id="lineWidthOutput">0.12 mm</output></span>
+              <input id="lineWidth" type="range" min="0.05" max="0.30" value="0.12" step="0.01" />
+            </label>
+          </div>
+
+          <div class="control-section colour-section">
+            <div class="section-heading">
+              <span class="step">03</span>
+              <h2>Colour</h2>
+            </div>
+            <div class="colour-grid">
+              <label for="minorColour"><span>Fine lines</span><span class="swatch-wrap"><input id="minorColour" type="color" value="#b9e2fb" /><code id="minorHex">#B9E2FB</code></span></label>
+              <label for="majorColour"><span>Bold lines</span><span class="swatch-wrap"><input id="majorColour" type="color" value="#707070" /><code id="majorHex">#707070</code></span></label>
+              <label for="paperColour"><span>Paper</span><span class="swatch-wrap"><input id="paperColour" type="color" value="#ffffff" /><code id="paperHex">#FFFFFF</code></span></label>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="primary-action" id="downloadButton">
+              <span>Download SVG</span><span aria-hidden="true">↓</span>
+            </button>
+            <button type="button" class="secondary-action" id="printButton">Print A4 / Save PDF</button>
+          </div>
+          <p class="print-note"><span aria-hidden="true">↗</span> <span id="printNoteText">In the print dialog, choose “Actual size” or 100% for exact squares.</span></p>
+        </aside>
+
+        <section class="preview-panel" aria-labelledby="previewTitle">
+          <div class="preview-header">
+            <div>
+              <p class="eyebrow">Live output</p>
+              <h2 id="previewTitle">Your sheet</h2>
+            </div>
+            <span class="status"><i></i><span id="zoomStatusText">Preview: Fit</span></span>
+          </div>
+
+          <div class="preview-well" id="previewWell" role="button" tabindex="0" aria-pressed="false" aria-label="Graph paper preview. Activate to view at 100 percent size.">
+            <div class="paper-stage" id="paperStage"></div>
+          </div>
+
+          <div class="sheet-stats" aria-live="polite">
+            <div><span>Sheet</span><strong id="sheetStat">A4 · Portrait</strong></div>
+            <div><span>Grid</span><strong id="gridStat">35 × 55 squares</strong></div>
+            <div><span>Spacing</span><strong id="spacingStat">5 mm</strong></div>
+            <div><span>Printable area</span><strong id="areaStat">175 × 275 mm</strong></div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <footer>
+      <p>Made for rulers, pencils and good ideas.</p>
+      <p>No uploads. No account. Just paper.</p>
+    </footer>
+
+    <div class="print-pages" id="printPages" aria-hidden="true"></div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
