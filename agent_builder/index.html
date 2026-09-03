@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Design an AI agent as a visual flow, then export it as a reusable Markdown prompt." />
+    <title>Agent Loom — Visual agent builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Agent Loom home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>Agent Loom</span>
+      </a>
+      <div class="project-title">
+        <label for="agent-name">Agent name</label>
+        <input id="agent-name" value="Research companion" maxlength="80" />
+        <span id="save-state" class="save-state">Saved locally</span>
+      </div>
+      <div class="top-actions">
+        <button id="open-project-btn" class="button button-quiet" type="button">Open project</button>
+        <input id="open-project-file" type="file" accept=".agentloom,.json,application/json,.md,text/markdown" hidden />
+        <button id="save-project-btn" class="button button-quiet" type="button">Save project</button>
+        <button id="export-btn" class="button button-primary" type="button">Export prompt <span aria-hidden="true">↗</span></button>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <aside class="library-panel" aria-label="Node library">
+        <div class="panel-heading">
+          <span class="eyebrow">Building blocks</span>
+          <h1>Shape the thinking.</h1>
+          <p>Drag ideas into a sequence your agent can follow.</p>
+        </div>
+        <div id="node-library" class="node-library">
+          <button class="library-item" data-kind="goal" type="button">
+            <span class="library-icon goal-icon" aria-hidden="true">◎</span>
+            <span><strong>Goal</strong><small>The outcome to achieve</small></span>
+            <b aria-hidden="true">+</b>
+          </button>
+          <button class="library-item" data-kind="input" type="button">
+            <span class="library-icon input-icon" aria-hidden="true">↳</span>
+            <span><strong>Input</strong><small>What the agent receives</small></span>
+            <b aria-hidden="true">+</b>
+          </button>
+          <button class="library-item" data-kind="plan" type="button">
+            <span class="library-icon plan-icon" aria-hidden="true">≡</span>
+            <span><strong>Plan</strong><small>The intended approach</small></span>
+            <b aria-hidden="true">+</b>
+          </button>
+          <button class="library-item" data-kind="instruction" type="button">
+            <span class="library-icon instruction-icon" aria-hidden="true">✦</span>
+            <span><strong>Instruction</strong><small>A task or behaviour</small></span>
+            <b aria-hidden="true">+</b>
+          </button>
+          <button class="library-item" data-kind="decision" type="button">
+            <span class="library-icon decision-icon" aria-hidden="true">◇</span>
+            <span><strong>Decision</strong><small>A conditional branch</small></span>
+            <b aria-hidden="true">+</b>
+          </button>
+          <button class="library-item" data-kind="tool" type="button">
+            <span class="library-icon tool-icon" aria-hidden="true">⌁</span>
+            <span><strong>Tool</strong><small>An external capability</small></span>
+            <b aria-hidden="true">+</b>
+          </button>
+          <button class="library-item" data-kind="resource" type="button">
+            <span class="library-icon resource-icon" aria-hidden="true">↗</span>
+            <span><strong>Resource</strong><small>A website to reference</small></span>
+            <b aria-hidden="true">+</b>
+          </button>
+          <button class="library-item" data-kind="output" type="button">
+            <span class="library-icon output-icon" aria-hidden="true">✓</span>
+            <span><strong>Output</strong><small>The expected response</small></span>
+            <b aria-hidden="true">+</b>
+          </button>
+        </div>
+        <div id="example-library" class="example-library">
+          <span class="eyebrow">Example flows</span>
+          <button data-example="marking" type="button"><span><strong>Rubric marker</strong><small>Assess work and write a report comment</small></span><b aria-hidden="true">→</b></button>
+          <button data-example="tutorial" type="button"><span><strong>Tutorial notes</strong><small>Research, assess, and improve in a loop</small></span><b aria-hidden="true">→</b></button>
+        </div>
+      </aside>
+
+      <section class="workspace" aria-label="Agent flow canvas">
+        <div class="canvas-toolbar">
+          <div class="flow-status"><span class="status-dot"></span><span id="flow-summary">5 blocks · 4 connections</span></div>
+          <div class="canvas-actions" aria-label="Canvas controls">
+            <button id="zoom-out" title="Zoom out" aria-label="Zoom out" type="button">−</button>
+            <span id="zoom-label">100%</span>
+            <button id="zoom-in" title="Zoom in" aria-label="Zoom in" type="button">+</button>
+            <i></i>
+            <button id="fit-btn" title="Fit diagram" aria-label="Fit diagram" type="button">⌗</button>
+            <button id="clear-btn" title="Clear diagram" aria-label="Clear diagram" type="button">⌫</button>
+          </div>
+        </div>
+        <div id="canvas-viewport" class="canvas-viewport">
+          <div id="canvas-stage" class="canvas-stage">
+            <svg id="connections" class="connections" aria-hidden="true"></svg>
+            <div id="nodes-layer" class="nodes-layer"></div>
+          </div>
+          <div id="empty-state" class="empty-state" hidden>
+            <span>✦</span>
+            <h2>Your canvas is ready</h2>
+            <p>Add a building block from the left to begin.</p>
+          </div>
+          <div id="connect-hint" class="connect-hint" hidden>Now choose an input dot to connect</div>
+        </div>
+      </section>
+
+      <aside class="details-panel" aria-label="Agent details">
+        <div id="details-resizer" class="details-resizer" role="separator" aria-orientation="vertical" aria-label="Resize the block and agent preview panel" tabindex="0"></div>
+        <div class="details-tabs" role="tablist">
+          <button class="tab active" data-tab="edit" role="tab" aria-selected="true" type="button">Edit block</button>
+          <button class="tab" data-tab="preview" role="tab" aria-selected="false" type="button">Agent preview</button>
+        </div>
+        <section id="edit-panel" class="tab-panel">
+          <div id="editor-empty" class="editor-empty" hidden>
+            <span>◇</span>
+            <h2>Select a block</h2>
+            <p>Choose any block on the canvas to edit its role and instructions.</p>
+          </div>
+          <form id="node-form" autocomplete="off">
+            <div class="selected-kind"><span id="kind-chip" class="kind-chip"></span><span id="kind-label"></span></div>
+            <label class="field-label" for="node-title">Block name</label>
+            <input id="node-title" class="text-input" maxlength="70" />
+            <div id="resource-fields" hidden>
+              <label class="field-label" for="resource-url">Website URL</label>
+              <input id="resource-url" class="text-input" type="url" inputmode="url" placeholder="https://example.org" maxlength="500" />
+            </div>
+            <label id="node-content-label" class="field-label" for="node-content">Instructions</label>
+            <textarea id="node-content" class="text-area" rows="8" maxlength="1600"></textarea>
+            <p class="field-help" id="content-help">Be specific about what should happen at this step.</p>
+            <div id="condition-fields" hidden>
+              <label class="field-label" for="yes-label">True path label</label>
+              <input id="yes-label" class="text-input" maxlength="32" value="True" />
+              <label class="field-label" for="no-label">False path label</label>
+              <input id="no-label" class="text-input" maxlength="32" value="False" />
+            </div>
+            <button id="delete-node" class="delete-button" type="button">Delete this block</button>
+          </form>
+        </section>
+        <section id="preview-panel" class="tab-panel" hidden>
+          <div class="preview-intro">
+            <span class="eyebrow">Clean prompt Markdown</span>
+            <button id="copy-btn" class="copy-button" type="button">Copy</button>
+          </div>
+          <pre id="markdown-preview" tabindex="0"></pre>
+        </section>
+        <footer class="details-footer">
+          <span><i></i> Local-first</span>
+          <span>Clean prompt export</span>
+        </footer>
+      </aside>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
