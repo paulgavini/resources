@@ -188,7 +188,7 @@ function defineCustomBlocks() {
   const blockDefinitions = [
     {
       type: "pseudo_program",
-      message0: withInfoGlyph("PROGRAM %1"),
+      message0: withInfoGlyph("Start %1"),
       args0: [
         {
           type: "field_input",
@@ -203,7 +203,7 @@ function defineCustomBlocks() {
           name: "BODY"
         }
       ],
-      message2: "ENDPROGRAM",
+      message2: "End",
       style: "structure_blocks",
       tooltip: BLOCK_TOOLTIPS.pseudo_program
     },
@@ -628,7 +628,7 @@ function createPseudoGenerator() {
 
   generator.forBlock.pseudo_program = function(block, innerGenerator) {
     const body = innerGenerator.statementToCode(block, "BODY");
-    return `PROGRAM ${getFieldValue(block, "NAME")}\n${body}ENDPROGRAM\n`;
+    return `Start ${getFieldValue(block, "NAME")}\n${body}End\n`;
   };
 
   generator.forBlock.pseudo_step = function(block) {
@@ -1053,8 +1053,8 @@ function buildFlowchartText() {
       buildRoutineFlow(
         builder,
         block,
-        `PROGRAM ${getFieldValue(block, "NAME")}`,
-        "ENDPROGRAM"
+        `Start ${getFieldValue(block, "NAME")}`,
+        "End"
       );
       return;
     }
