@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>Five Tiny Games</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header>
+      <p class="eyebrow">TINY GAME ARCADE</p>
+      <h1>Five tiny games</h1>
+      <p class="intro">Choose a game and have a go.</p>
+    </header>
+
+    <div id="play-layout">
+      <section id="menu" aria-label="Choose a game">
+        <button class="game-card" data-game="boxes"><span>01</span><strong>Boxes</strong><small>Tap the bright box before it moves.</small></button>
+        <button class="game-card" data-game="ttt"><span>02</span><strong>Noughts + crosses</strong><small>Can you beat the computer?</small></button>
+        <button class="game-card" data-game="shooter"><span>03</span><strong>Mini Galaxian</strong><small>Move, dodge, and fire.</small></button>
+        <button class="game-card" data-game="jump"><span>04</span><strong>Jump up</strong><small>Hold left or right to steer.</small></button>
+        <button class="game-card" data-game="checkers"><span>05</span><strong>Checkers</strong><small>Capture every computer piece.</small></button>
+      </section>
+
+      <section id="game-screen" hidden>
+        <div class="game-top"><button id="reset" class="text-button">↻ reset game</button><p id="game-title"></p><span id="score"></span></div>
+        <div id="game-stage"></div>
+        <p id="game-help" class="help"></p>
+      </section>
+    </div>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
