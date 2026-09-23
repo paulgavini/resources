@@ -156,6 +156,7 @@
         {
           id: "student-1",
           name: "Student 1",
+          personalisedPoints: "",
           grades: {
             "criterion-ideas": "",
             "criterion-structure": "",
@@ -165,6 +166,7 @@
         {
           id: "student-2",
           name: "Student 2",
+          personalisedPoints: "",
           grades: {
             "criterion-ideas": "",
             "criterion-structure": "",
@@ -174,6 +176,7 @@
         {
           id: "student-3",
           name: "Student 3",
+          personalisedPoints: "",
           grades: {
             "criterion-ideas": "",
             "criterion-structure": "",
@@ -224,6 +227,7 @@
         return {
           id: student.id || createId("student"),
           name: student.name || "Student " + (index + 1),
+          personalisedPoints: typeof student.personalisedPoints === "string" ? student.personalisedPoints : "",
           grades: student.grades || {}
         };
       })
@@ -354,6 +358,15 @@
       headerRow.appendChild(th);
     });
 
+    var personalisedPointsHeader = document.createElement("th");
+    var personalisedPointsLabel = document.createElement("span");
+    personalisedPointsHeader.className = "personalised-points-header";
+    personalisedPointsHeader.scope = "col";
+    personalisedPointsLabel.className = "personalised-points-label";
+    personalisedPointsLabel.textContent = "Personalised points";
+    personalisedPointsHeader.appendChild(personalisedPointsLabel);
+    headerRow.appendChild(personalisedPointsHeader);
+
     thead.appendChild(headerRow);
 
     state.students.forEach(function (student) {
@@ -424,6 +437,21 @@
         row.appendChild(cell);
       });
 
+      var personalisedPointsCell = document.createElement("td");
+      var personalisedPointsInput = document.createElement("textarea");
+      personalisedPointsCell.className = "personalised-points-cell";
+      personalisedPointsInput.className = "personalised-points-input";
+      personalisedPointsInput.rows = 2;
+      personalisedPointsInput.placeholder = "Optional notes";
+      personalisedPointsInput.value = student.personalisedPoints;
+      personalisedPointsInput.setAttribute("aria-label", "Personalised points for " + student.name);
+      personalisedPointsInput.addEventListener("input", function (event) {
+        student.personalisedPoints = event.target.value;
+        persistAndRenderPrompt();
+      });
+      personalisedPointsCell.appendChild(personalisedPointsInput);
+      row.appendChild(personalisedPointsCell);
+
       tbody.appendChild(row);
     });
 
@@ -492,6 +520,7 @@
     lines.push("Use this tone/structure: " + describeTone(tone) + ".");
     lines.push("For each student, write one clear paragraph that mentions strengths and next steps.");
     lines.push("Use only the evidence in the rubric data. Do not invent extra achievements, behaviour, assessment scores or personal details.");
+    lines.push("Use personalised points only when they are relevant evidence for that student's comment.");
     lines.push("Do not mention the letter grade given for each criterion in the comment; use descriptive language that reflects the grade instead.");
     lines.push("If a criterion is marked N, count it as not attempted when estimating the overall grade and writing the comment. Do not infer achievement for that criterion.");
     lines.push("If any criterion says [No grade selected], ask the teacher to complete the missing grade before writing final comments.");
@@ -539,6 +568,9 @@
           lines.push("- " + criterion.name + ": " + grade);
         }
       });
+      if (cleanText(student.personalisedPoints)) {
+        lines.push("- Personalised points: " + cleanText(student.personalisedPoints));
+      }
     });
 
     lines.push("");
@@ -576,6 +608,7 @@
     var student = {
       id: createId("student"),
       name: "Student " + (state.students.length + 1),
+      personalisedPoints: "",
       grades: {}
     };
 

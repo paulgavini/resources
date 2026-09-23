@@ -260,8 +260,9 @@ button:focus-visible {
 .rubric-table {
   --student-column-width: 155px;
   --criterion-min-width: 92px;
+  --personalised-points-width: 210px;
   width: 100%;
-  min-width: calc(var(--student-column-width) + (var(--criteria-count) * var(--criterion-min-width)));
+  min-width: calc(var(--student-column-width) + (var(--criteria-count) * var(--criterion-min-width)) + var(--personalised-points-width));
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
@@ -270,7 +271,7 @@ button:focus-visible {
 .rubric-table th,
 .rubric-table td {
   min-width: var(--criterion-min-width);
-  width: calc((100% - var(--student-column-width)) / var(--criteria-count));
+  width: calc((100% - var(--student-column-width) - var(--personalised-points-width)) / var(--criteria-count));
   height: 36px;
   border-right: 1px solid var(--grid-line);
   border-bottom: 1px solid var(--grid-line);
@@ -316,6 +317,33 @@ button:focus-visible {
   align-items: stretch;
   height: 100%;
   min-height: 148px;
+}
+
+.personalised-points-header,
+.personalised-points-cell {
+  min-width: var(--personalised-points-width) !important;
+  width: var(--personalised-points-width) !important;
+}
+
+.personalised-points-header {
+  padding: 0 !important;
+}
+
+.personalised-points-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 134px;
+  max-height: 62px;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  transform-origin: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  text-align: center;
+  white-space: normal;
 }
 
 .student-name-wrap {
@@ -461,6 +489,25 @@ button:focus-visible {
 }
 
 .grade-select:hover {
+  border-color: var(--grid-strong);
+}
+
+.personalised-points-cell {
+  padding: 3px !important;
+}
+
+.personalised-points-input {
+  display: block;
+  width: 100%;
+  min-height: 42px;
+  border-color: var(--grid-line);
+  border-radius: 2px;
+  padding: 4px 6px;
+  resize: vertical;
+}
+
+.personalised-points-input:hover,
+.personalised-points-input:focus {
   border-color: var(--grid-strong);
 }
 
@@ -646,6 +693,7 @@ button:focus-visible {
   .rubric-table {
     --student-column-width: 132px;
     --criterion-min-width: 86px;
+    --personalised-points-width: 180px;
   }
 
   .rubric-table th,

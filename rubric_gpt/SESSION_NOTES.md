@@ -14,6 +14,7 @@ Rubric GPT is a dependency-free vanilla HTML, CSS and JavaScript app for teacher
 - Add/delete students.
 - Add/delete criteria.
 - A-E and N grade dropdowns in each student/criterion cell, where N means not attempted.
+- A final per-student `Personalised points` text field for optional teacher-provided evidence.
 - Grade dropdowns default to blank and show a pale red background until completed.
 - Criterion descriptor editor with A-E and N descriptor text.
 - Toggle to include or exclude criterion descriptors from the generated prompt.
@@ -64,6 +65,7 @@ Rubric GPT is a dependency-free vanilla HTML, CSS and JavaScript app for teacher
   - Treat N as not attempted when estimating the overall grade and writing the comment.
   - Ask the teacher to complete missing grades if any criterion says `[No grade selected]`.
   - Avoid mentioning the grade for each criterion in the comment; use descriptive language reflecting the grade instead.
+  - Use a student's personalised points only when they are relevant evidence for that student's comment.
   - Include strengths and next steps.
   - Return each student's name, an estimated overall grade and their comment.
 - Student grade selections show raw grades only, for example `N`, not `N (not attempted)`.
