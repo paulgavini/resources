@@ -6,11 +6,11 @@ Lesson Sequence Board is a standalone browser application for arranging a sequen
 
 ## Current Architecture
 
-The project consists of two standalone HTML documents. `lesson_sequence_board.html` contains the application, with embedded CSS for responsive, dark-mode, and print layouts and JavaScript for rendering, state changes, browser storage, theme preference, drag-and-drop with explicit before-target zones, formatted Excel export, and JSON save/load. `help.html` is a self-contained guide that follows the saved theme preference.
+The project consists of two standalone HTML documents. `lesson_sequence_board.html` contains the application, with embedded CSS for responsive and dark-mode layouts and JavaScript for rendering, state changes, browser storage, theme preference, drag-and-drop with explicit before-target zones, formatted Excel export, and JSON save/load. `help.html` is a self-contained guide that follows the saved theme preference.
 
 ## Current State
 
-Users can create or reset a board with 1-52 weeks and 1-12 slots per week; add empty slots or whole weeks; edit lesson titles and descriptions; resize each week row by dragging its dotted handle and reset it with a double-click; insert after a lesson, delete, or drag/reorder lessons using a blue left-edge drop zone to place a lesson before another; export the board as PDF through the browser's Save as PDF dialog; export a formatted Excel workbook; and save or load a full-fidelity JSON board file. Changes persist automatically in browser storage and, after the user chooses a JSON file in Chrome or Edge, also auto-save to that file. The header displays Graph Paper-style creator information and an accessible light/dark theme control that remembers the choice locally.
+Users can create or reset a board with 1-52 weeks and 1-12 slots per week; add empty slots or whole weeks; edit lesson titles and descriptions; resize each week row by dragging its dotted handle and reset it with a double-click; insert after a lesson, delete, undo the most recent deletion with Ctrl/Cmd+Z, or drag/reorder lessons using a blue left-edge drop zone to place a lesson before another; export a formatted Excel workbook; and save or load a full-fidelity JSON board file. Changes persist automatically in browser storage and, after the user chooses a JSON file in Chrome or Edge, also auto-save to that file; Save As selects a new auto-save destination. The header displays Graph Paper-style creator information and an accessible light/dark theme control that remembers the choice locally.
 
 ## Important Files
 
@@ -29,11 +29,10 @@ Users can create or reset a board with 1-52 weeks and 1-12 slots per week; add e
 - In Chrome and Edge, an optional File System Access API target is retained in IndexedDB after the first Save action. Local storage remains the primary autosave; file writes are debounced, never prompt during edits, and silently defer when permission is unavailable.
 - Excel export creates a native `.xlsx` workbook named `lesson-sequence-board.xlsx` without external libraries. It preserves the board grid with weeks as rows, lesson slots as columns, lesson/empty-cell styling, wrapped lesson text, frozen headers, and landscape worksheet settings.
 - Save files use a versioned `lesson-sequence-board` JSON envelope and retain state exactly, including lesson IDs and empty slots.
-- PDF export uses the browser's Save as PDF dialog, landscape pages, fixed margins, exact colour printing, static lesson text, and print-only grid overrides. The overrides neutralize responsive minimum widths and retain blank week rows so headers and lesson cells remain aligned in the PDF.
 
 ## Dependencies and External Services
 
-None. The app uses standard browser APIs, including DOM APIs, localStorage, FileReader, Blob, native drag-and-drop, and browser PDF printing.
+None. The app uses standard browser APIs, including DOM APIs, localStorage, FileReader, Blob, and native drag-and-drop.
 
 ## Development and Deployment
 
@@ -58,9 +57,7 @@ No explicit TODOs are recorded in the repository.
 ## Recent Significant Changes
 
 - Renamed the product and entry point from Lesson Planner to Lesson Sequence Board.
-- Added print/PDF output, JSON backup/restore, accessible lesson movement controls, responsive editing improvements, character-encoding fixes, and built-in self-tests.
 - Replaced lesson-shift arrows and in-card + Before controls with blue drag-before target zones.
-- Replaced the Print / PDF control with Export PDF and improved PDF layout for landscape output, reliable long-text rendering, aligned headers, and visible blank week rows.
 - Replaced CSV exchange and JSON Backup/Restore labels with formatted Excel export and simple Save/Load actions. The Excel export now produces a native `.xlsx` file rather than legacy SpreadsheetML XML.
 - Removed textarea resizing and added per-week row resizing with double-click reset to the generated default height.
 - Replaced coloured Unicode button symbols with embedded monochrome SVG outline icons, so the interface stays offline and has a consistent IDE-style appearance.
@@ -70,4 +67,6 @@ No explicit TODOs are recorded in the repository.
 - Added Graph Paper-style creator information, a locally persisted light/dark theme toggle, and the current board typography hierarchy.
 - Removed the board's nested horizontal scrolling: its lesson columns now flex to the available page width, including on narrow screens.
 - Added session-only Ctrl/Cmd+Z support for restoring the most recently deleted lesson; any later board change supersedes that undo.
+- Added Save As, which always opens the Chrome/Edge file picker, then makes the chosen JSON file the active auto-save destination; unsupported browsers download a dated JSON copy.
+- Removed PDF export and its print-specific board layout; formatted Excel is the sole board export format.
 - Added a standalone in-project Help page covering board setup, editing, organisation, saving, exports, and offline use.
