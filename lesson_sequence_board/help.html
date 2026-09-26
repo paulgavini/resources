@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Help for Lesson Sequence Board.">
+<title>Lesson Sequence Board Help</title>
+<style>
+  :root{
+    --bg:#f3f4f6;
+    --panel:#fff;
+    --border:#d1d5db;
+    --text:#111827;
+    --muted:#6b7280;
+    --accent:#2563eb;
+    --accent-soft:#eff6ff;
+  }
+
+  :root[data-theme="dark"]{
+    --bg:#111827;
+    --panel:#1f2937;
+    --border:#4b5563;
+    --text:#f9fafb;
+    --muted:#cbd5e1;
+    --accent:#60a5fa;
+    --accent-soft:#1e3a5f;
+  }
+
+  *{box-sizing:border-box}
+
+  body{
+    margin:0;
+    font-family:Arial, Helvetica, sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.5;
+  }
+
+  .page{
+    width:min(900px, calc(100% - 32px));
+    margin:0 auto;
+    padding:28px 0 48px;
+  }
+
+  .page-header{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:24px;
+  }
+
+  h1, h2{line-height:1.2}
+  h1{margin:0;font-size:28px}
+  h2{margin:0 0 10px;font-size:19px}
+  p{margin:0 0 12px}
+
+  .back-link{
+    display:inline-block;
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:8px 10px;
+    color:var(--text);
+    text-decoration:none;
+    font-size:14px;
+  }
+
+  .back-link:hover{background:var(--accent-soft);border-color:var(--accent)}
+  .back-link:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+  .intro, section{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:20px;
+    margin-bottom:14px;
+  }
+
+  .intro{border-left:4px solid var(--accent)}
+  .intro p{margin-bottom:0;color:var(--muted)}
+
+  .steps{
+    margin:0;
+    padding-left:22px;
+  }
+
+  .steps li{margin-bottom:8px}
+  .steps li:last-child{margin-bottom:0}
+
+  .tip{
+    background:var(--accent-soft);
+    border-radius:4px;
+    padding:12px;
+    margin-top:14px;
+  }
+
+  kbd{
+    border:1px solid var(--border);
+    border-radius:3px;
+    background:var(--panel);
+    padding:1px 5px;
+    font-family:inherit;
+    font-size:.9em;
+  }
+
+  @media (max-width:600px){
+    .page{width:min(100% - 20px, 900px);padding-top:16px}
+    .page-header{align-items:flex-start}
+    h1{font-size:24px}
+    .intro, section{padding:16px}
+  }
+
+  @media print{
+    :root{--bg:#fff;--panel:#fff;--border:#9ca3af;--text:#111827;--muted:#4b5563;--accent:#2563eb;--accent-soft:#eff6ff}
+    body{font-size:10pt;background:#fff}
+    .page{width:auto;padding:0}
+    .back-link{display:none}
+    .intro, section{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="page-header">
+    <h1>Lesson Sequence Board Help</h1>
+    <a class="back-link" href="lesson_sequence_board.html">Back to board</a>
+  </header>
+
+  <div class="intro">
+    <p>Use Lesson Sequence Board to arrange lesson ideas across weeks and lesson slots. Your work stays on this device unless you explicitly save or export it.</p>
+  </div>
+
+  <section aria-labelledby="start-heading">
+    <h2 id="start-heading">Start a board</h2>
+    <ol class="steps">
+      <li>Choose the number of <strong>Weeks</strong> and <strong>Lessons per week</strong>.</li>
+      <li>Select <strong>Create Board</strong>. If a board already exists, this becomes <strong>Reset Board</strong> and asks for confirmation before replacing it.</li>
+      <li>Select <strong>Add lesson</strong> in an empty slot to begin planning.</li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="edit-heading">
+    <h2 id="edit-heading">Edit and organise lessons</h2>
+    <ul class="steps">
+      <li>Type a lesson title and a short description directly into a lesson card. Changes save automatically in this browser.</li>
+      <li>Use the <strong>+</strong> button between cards to insert a lesson after a selected lesson.</li>
+      <li>Drag a lesson by its handle. Drop it on the blue left-edge target of another card to place it before that lesson.</li>
+      <li>Drag the dotted line beneath a week label to resize that week. Double-click the line to restore its default height.</li>
+      <li>Select the bin button in a lesson card to delete that lesson.</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="board-heading">
+    <h2 id="board-heading">Manage the board</h2>
+    <ul class="steps">
+      <li><strong>Add Week</strong> appends a new week with the current number of lesson slots.</li>
+      <li><strong>Clear</strong> removes the saved board from this browser after confirmation.</li>
+      <li><strong>Dark mode</strong> switches the colour theme. The preference is remembered on this device.</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="save-heading">
+    <h2 id="save-heading">Save, load, and export</h2>
+    <ul class="steps">
+      <li><strong>Save</strong> creates a full JSON copy of the board. In Chrome and Edge, choosing a file once can also enable automatic updates to that selected file.</li>
+      <li><strong>Load</strong> restores a compatible JSON board file and replaces the current board after confirmation.</li>
+      <li><strong>Export Excel</strong> downloads a formatted workbook with weeks as rows and lesson slots as columns.</li>
+      <li><strong>Export PDF</strong> opens the browser print dialog. Choose <strong>Save as PDF</strong> to create a landscape PDF.</li>
+    </ul>
+    <p class="tip"><strong>Tip:</strong> Use Save before clearing browser data, changing browsers, or moving to another device.</p>
+  </section>
+
+  <section aria-labelledby="privacy-heading">
+    <h2 id="privacy-heading">Privacy and offline use</h2>
+    <p>The board has no account, server, or external service. It works offline and stores automatic saves in this browser. Save a JSON file when you need a portable backup.</p>
+  </section>
+</main>
+
+<script>
+(() => {
+  const savedTheme = (() => {
+    try { return localStorage.getItem("lessonSequenceBoardTheme"); }
+    catch { return null; }
+  })();
+  const theme = savedTheme === "dark" || savedTheme === "light"
+    ? savedTheme
+    : window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.style.colorScheme = theme;
+})();
+</script>
+</body>
+</html>
