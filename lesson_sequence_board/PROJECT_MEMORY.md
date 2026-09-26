@@ -68,4 +68,6 @@ No explicit TODOs are recorded in the repository.
 - The create action is black before a board exists and changes to a red Reset Board warning after creation; reset still requires confirmation.
 - Added optional Chrome/Edge JSON file auto-save after an explicit initial Save file selection, while retaining local browser autosave and a JSON-download fallback for unsupported browsers.
 - Added Graph Paper-style creator information, a locally persisted light/dark theme toggle, and the current board typography hierarchy.
+- Removed the board's nested horizontal scrolling: its lesson columns now flex to the available page width, including on narrow screens.
+- Added session-only Ctrl/Cmd+Z support for restoring the most recently deleted lesson; any later board change supersedes that undo.
 - Added a standalone in-project Help page covering board setup, editing, organisation, saving, exports, and offline use.

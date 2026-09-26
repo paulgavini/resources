@@ -234,12 +234,13 @@
   .planner-grid-container{
     background:var(--panel);
     border:1px solid var(--border);
-    overflow-x:auto;
+    width:100%;
   }
 
   .planner-grid{
     display:grid;
-    grid-template-columns: 40px repeat(auto-fit, minmax(185px, 1fr));
+    width:100%;
+    grid-template-columns:40px repeat(auto-fit, minmax(0, 1fr));
     gap:0;
     border-collapse:collapse;
   }
@@ -311,7 +312,7 @@
   }
 
   .slot{
-    min-width:185px;
+    min-width:0;
     position:relative;
     border-bottom:1px solid var(--border);
     border-right:1px solid var(--border);
@@ -383,6 +384,8 @@
   }
 
   .lesson-title{
+    width:100%;
+    min-width:0;
     border:none !important;
     border-bottom:1px solid transparent !important;
     border-radius:0 !important;
@@ -398,6 +401,8 @@
 
   .lesson-card textarea{
     flex:1;
+    width:100%;
+    min-width:0;
     border:none;
     min-height:44px;
     resize:none;
@@ -556,10 +561,6 @@
     .field input{width:100%}
     .spacer{display:none}
     .toolbar button{flex:1}
-    .header-cell, .row-header, .slot{
-      min-width:145px;
-    }
-    .row-header{min-width:40px}
     .lesson-card,
     .empty-slot{min-height:var(--row-min-height, 220px)}
     .lesson-card textarea{min-height:44px}
@@ -646,7 +647,7 @@
     <input class="file-input" type="file" id="jsonFileInput" accept=".json,application/json">
   </div>
 
-  <p class="helper-text">Drag a lesson to another lesson's blue left-edge drop zone to place it before that lesson. Drag the dotted line beneath a week label to resize that row, or double-click it to reset. Changes save automatically in this browser. In Chrome or Edge, choose Save once to also auto-save to a JSON file.</p>
+  <p class="helper-text">Drag a lesson to another lesson's blue left-edge drop zone to place it before that lesson. Drag the dotted line beneath a week label to resize that row, or double-click it to reset. Press Ctrl+Z (Windows) or Cmd+Z (Mac) to restore the most recently deleted lesson. Changes save automatically in this browser. In Chrome or Edge, choose Save once to also auto-save to a JSON file.</p>
   <div id="status" class="status" role="status" aria-live="polite">Changes save automatically in this browser.</div>
   <div id="planner"></div>
 </main>
@@ -676,6 +677,7 @@
   };
 
   let dragSourceId = null;
+  let deletedLessonUndoState = null;
   let savedBoardFileHandle = null;
   let fileSaveTimer = null;
   let fileSaveChain = Promise.resolve();
@@ -884,7 +886,8 @@
     updateSaveButton();
   }
 
-  function saveState(message="Saved") {
+  function saveState(message="Saved", {preserveDeletedLessonUndo=false}={}) {
+    if (!preserveDeletedLessonUndo) deletedLessonUndoState = null;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     localStorage.removeItem(LEGACY_STORAGE_KEY);
     queueFileAutoSave();
@@ -1018,9 +1021,21 @@
   }
 
   function deleteLesson(id) {
+    if (!findItem(id)) return;
+    deletedLessonUndoState = cloneState(state);
     const lessons = getLessons().filter(x => x.id !== id);
     rebuildFromLessonSequence(lessons);
-    saveState("Lesson deleted");
+    saveState("Lesson deleted. Press Ctrl+Z or Cmd+Z to undo.", {preserveDeletedLessonUndo:true});
+    render();
+  }
+
+  function undoDeletedLesson() {
+    if (!deletedLessonUndoState) return;
+    state = normaliseRowHeights(cloneState(deletedLessonUndoState));
+    deletedLessonUndoState = null;
+    weeksInput.value = state.weeks.length || 10;
+    lessonsInput.value = state.lessonsPerWeek;
+    saveState("Lesson restored");
     render();
   }
 
@@ -1129,7 +1144,7 @@
     const grid = document.createElement("div");
     grid.className = "planner-grid";
 
-    grid.style.gridTemplateColumns = `40px repeat(${state.lessonsPerWeek}, minmax(185px, 1fr))`;
+    grid.style.gridTemplateColumns = `40px repeat(${state.lessonsPerWeek}, minmax(0, 1fr))`;
     grid.style.setProperty("--print-slots", state.lessonsPerWeek);
     applyRowHeights(grid);
 
@@ -1586,6 +1601,18 @@
 
   document.querySelectorAll("[data-placeholder-link]").forEach(link => {
     link.addEventListener("click", event => event.preventDefault());
+  });
+
+  document.addEventListener("keydown", event => {
+    const isUndoShortcut = (event.ctrlKey || event.metaKey) &&
+      !event.shiftKey && event.key.toLowerCase() === "z";
+    const activeElement = document.activeElement;
+    const isEditingText = activeElement instanceof HTMLInputElement ||
+      activeElement instanceof HTMLTextAreaElement || activeElement?.isContentEditable;
+
+    if (!isUndoShortcut || !deletedLessonUndoState || isEditingText) return;
+    event.preventDefault();
+    undoDeletedLesson();
   });
 
   document.getElementById("loadBtn").addEventListener("click", () => {
