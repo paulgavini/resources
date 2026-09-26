@@ -1,0 +1,1677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>Lesson Sequence Board</title>
+<style>
+  :root{
+    --bg:#f3f4f6;
+    --panel:#ffffff;
+    --border:#d1d5db;
+    --text:#111827;
+    --muted:#6b7280;
+    --accent:#2563eb;
+    --danger:#b91c1c;
+    --focus:#93c5fd;
+    --placeholder:#c4c9d1;
+    --input-bg:#fff;
+    --hover-bg:#f9fafb;
+    --hover-border:#9ca3af;
+    --primary-bg:#111827;
+    --primary-text:#fff;
+    --danger-hover:#991b1b;
+    --card-text:#374151;
+    --empty-bg:#fafafa;
+    --drop-bg:#eff6ff;
+    --drop-overlay:rgba(219,234,254,.75);
+    --shadow:rgba(0,0,0,.1);
+  }
+
+  :root[data-theme="dark"]{
+    --bg:#111827;
+    --panel:#1f2937;
+    --border:#4b5563;
+    --text:#f9fafb;
+    --muted:#cbd5e1;
+    --accent:#60a5fa;
+    --danger:#f87171;
+    --focus:#93c5fd;
+    --placeholder:#94a3b8;
+    --input-bg:#111827;
+    --hover-bg:#374151;
+    --hover-border:#94a3b8;
+    --primary-bg:#f3f4f6;
+    --primary-text:#111827;
+    --danger-hover:#dc2626;
+    --card-text:#e5e7eb;
+    --empty-bg:#18212f;
+    --drop-bg:#1e3a5f;
+    --drop-overlay:rgba(30,58,95,.85);
+    --shadow:rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+
+  body{
+    margin:0;
+    font-family:Arial, Helvetica, sans-serif;
+    background:var(--bg);
+    color:var(--text);
+  }
+
+  .app{
+    max-width:1600px;
+    margin:0 auto;
+    padding:18px;
+  }
+
+  .app-header{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:14px;
+  }
+
+  h1{
+    margin:0;
+    font-size:26px;
+  }
+
+  .header-actions{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:12px;
+  }
+
+  .creator-line{
+    margin:0;
+    font-size:12px;
+    color:var(--muted);
+  }
+
+  .creator-line a{
+    color:var(--accent);
+  }
+
+  .theme-toggle{
+    font-size:12px;
+    white-space:nowrap;
+  }
+
+  .toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:end;
+    font-size:14px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    padding:12px;
+    margin-bottom:14px;
+  }
+
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+  }
+
+  label{
+    font-size:12px;
+    font-weight:700;
+    color:var(--muted);
+  }
+
+  .toolbar label{
+    font-size:14px;
+  }
+
+  input, textarea, button{
+    font:inherit;
+  }
+
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible{
+    outline:3px solid var(--focus);
+    outline-offset:2px;
+  }
+
+  input::placeholder,
+  textarea::placeholder{
+    color:var(--placeholder);
+    opacity:1;
+  }
+
+  input[type="number"]{
+    width:105px;
+  }
+
+  input[type="number"],
+  input[type="text"]{
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:8px 9px;
+    background:var(--input-bg);
+  }
+
+  button{
+    border:1px solid var(--border);
+    background:var(--input-bg);
+    border-radius:4px;
+    padding:8px 10px;
+    cursor:pointer;
+    color:var(--text);
+  }
+
+  button:hover{
+    background:var(--hover-bg);
+    border-color:var(--hover-border);
+  }
+
+  button.primary{
+    background:var(--primary-bg);
+    color:var(--primary-text);
+    border-color:var(--primary-bg);
+  }
+
+  button.danger{
+    color:var(--danger);
+  }
+
+  button.warning{
+    background:var(--danger);
+    border-color:var(--danger);
+    color:var(--primary-text);
+  }
+
+  button.warning:hover{
+    background:var(--danger-hover);
+    border-color:var(--danger-hover);
+  }
+
+  .toolbar button{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+
+  .button-icon{
+    width:16px;
+    height:16px;
+    flex:0 0 16px;
+    fill:none;
+    stroke:currentColor;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    stroke-width:1.8;
+  }
+
+  .spacer{flex:1}
+
+  .status{
+    color:var(--muted);
+    font-size:12px;
+    margin-bottom:10px;
+  }
+
+  #planner{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .planner-grid-container{
+    background:var(--panel);
+    border:1px solid var(--border);
+    overflow-x:auto;
+  }
+
+  .planner-grid{
+    display:grid;
+    grid-template-columns: 40px repeat(auto-fit, minmax(185px, 1fr));
+    gap:0;
+    border-collapse:collapse;
+  }
+
+  .header-cell{
+    position:sticky;
+    top:0;
+    background:var(--panel);
+    z-index:25;
+    text-align:center;
+    padding:8px;
+    font-weight:700;
+    font-size:12px;
+    color:var(--muted);
+    border-bottom:2px solid var(--border);
+    border-right:1px solid var(--border);
+  }
+
+  .header-cell:first-child{
+    border-left:1px solid var(--border);
+    z-index:26;
+  }
+
+  .row-header{
+    position:sticky;
+    left:0;
+    background:var(--panel);
+    z-index:20;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:8px;
+    font-weight:700;
+    font-size:12px;
+    color:var(--accent);
+    border-right:2px solid var(--border);
+    border-bottom:1px solid var(--border);
+  }
+
+  .row-resize-handle{
+    position:absolute;
+    right:-2px;
+    bottom:-6px;
+    left:0;
+    z-index:35;
+    height:12px;
+    cursor:row-resize;
+  }
+
+  .row-resize-handle::after{
+    content:"";
+    position:absolute;
+    right:4px;
+    bottom:5px;
+    left:4px;
+    border-bottom:2px dotted var(--focus);
+    opacity:.65;
+  }
+
+  .row-resize-handle:hover::after,
+  .row-resize-handle:focus-visible::after{
+    border-bottom-style:solid;
+    border-bottom-color:var(--accent);
+    opacity:1;
+  }
+
+  .row-header:last-child{
+    border-bottom:none;
+  }
+
+  .slot{
+    min-width:185px;
+    position:relative;
+    border-bottom:1px solid var(--border);
+    border-right:1px solid var(--border);
+  }
+
+  .slot:last-child{
+    border-right:none;
+  }
+
+  .row:last-child .slot{
+    border-bottom:none;
+  }
+
+  .row{
+    display:contents;
+  }
+
+  .lesson-card,
+  .empty-slot{
+    min-height:var(--row-min-height, 190px);
+    height:100%;
+    border:1px solid var(--border);
+    background:var(--panel);
+    position:relative;
+  }
+
+  .lesson-card{
+    display:flex;
+    flex-direction:column;
+  }
+
+  .lesson-card.dragging{
+    opacity:.45;
+  }
+
+  .lesson-card.drag-over-before::before,
+  .lesson-card.drag-over-after::after{
+    content:"";
+    position:absolute;
+    top:-2px;
+    bottom:-2px;
+    width:4px;
+    background:var(--accent);
+    z-index:10;
+  }
+
+  .lesson-card.drag-over-before::before{left:-5px}
+  .lesson-card.drag-over-after::after{right:-5px}
+
+  .lesson-head{
+    display:flex;
+    align-items:center;
+    padding:7px 8px 3px;
+    gap:7px;
+  }
+
+  .lesson-number{
+    font-size:12px;
+    font-weight:700;
+    color:var(--accent);
+  }
+
+  .drag-handle{
+    margin-left:auto;
+    color:var(--muted);
+    cursor:grab;
+    user-select:none;
+    font-size:17px;
+  }
+
+  .lesson-title{
+    border:none !important;
+    border-bottom:1px solid transparent !important;
+    border-radius:0 !important;
+    padding:4px 8px !important;
+    font-size:14px;
+    font-weight:700;
+    outline:none;
+  }
+
+  .lesson-title:focus{
+    border-bottom-color:var(--accent) !important;
+  }
+
+  .lesson-card textarea{
+    flex:1;
+    border:none;
+    min-height:44px;
+    resize:none;
+    outline:none;
+    padding:6px 8px;
+    font-size:12px;
+    line-height:1.35;
+    color:var(--card-text);
+    background:var(--input-bg);
+  }
+
+  .lesson-footer{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:5px;
+    padding:5px 6px 6px;
+  }
+
+  .empty-slot button{
+    font-size:12px;
+    padding:4px 6px;
+  }
+
+  .delete-lesson-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:34px;
+    height:34px;
+    padding:0;
+    border:1px solid var(--border);
+    border-radius:6px;
+    background:var(--input-bg);
+    color:var(--text);
+  }
+
+  .delete-lesson-btn:hover{
+    border-color:var(--primary-bg);
+    background:var(--primary-bg);
+    color:var(--primary-text);
+  }
+
+  .delete-lesson-btn .button-icon{
+    width:18px;
+    height:18px;
+    flex-basis:18px;
+  }
+
+  .visually-hidden{
+    position:absolute;
+    width:1px;
+    height:1px;
+    padding:0;
+    margin:-1px;
+    overflow:hidden;
+    clip:rect(0,0,0,0);
+    white-space:nowrap;
+    border:0;
+  }
+
+  .helper-text{
+    margin:0 0 12px;
+    color:var(--muted);
+    font-size:13px;
+  }
+
+  .empty-slot{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--empty-bg);
+    border-style:dashed;
+  }
+
+  .slot.drag-over-empty .empty-slot{
+    background:var(--drop-bg);
+    border:2px solid var(--accent);
+  }
+
+  .empty-slot button{
+    color:var(--accent);
+  }
+
+  .insert-btn{
+    position:absolute;
+    top:50%;
+    right:-8px;
+    transform:translateY(-50%);
+    z-index:20;
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    padding:0;
+    font-size:11px;
+    font-weight:700;
+    color:var(--accent);
+    background:var(--input-bg);
+    box-shadow:0 1px 2px var(--shadow);
+  }
+
+  .drop-before-zone{
+    position:absolute;
+    top:0;
+    bottom:0;
+    left:0;
+    width:18px;
+    z-index:15;
+    border-left:4px solid transparent;
+  }
+
+  .drop-before-zone::after{
+    content:"Drop before";
+    position:absolute;
+    top:50%;
+    left:5px;
+    transform:translateY(-50%);
+    padding:3px 5px;
+    border-radius:3px;
+    background:var(--accent);
+    color:var(--primary-text);
+    font-size:10px;
+    font-weight:700;
+    white-space:nowrap;
+    opacity:0;
+    pointer-events:none;
+  }
+
+  .drop-before-zone.drag-over-before-slot{
+    border-left-color:var(--accent);
+    background:var(--drop-overlay);
+  }
+
+  .drop-before-zone.drag-over-before-slot::after{
+    opacity:1;
+  }
+
+  .empty-state{
+    background:var(--panel);
+    border:1px dashed var(--border);
+    text-align:center;
+    padding:42px 20px;
+    color:var(--muted);
+  }
+
+  .file-input{display:none}
+
+  .print-only{display:none}
+
+  @media (max-width:800px){
+    .app{padding:10px}
+    .app-header{align-items:flex-start}
+    .header-actions{width:100%}
+    .toolbar{align-items:stretch}
+    .field{width:calc(50% - 5px)}
+    .field input{width:100%}
+    .spacer{display:none}
+    .toolbar button{flex:1}
+    .header-cell, .row-header, .slot{
+      min-width:145px;
+    }
+    .row-header{min-width:40px}
+    .lesson-card,
+    .empty-slot{min-height:var(--row-min-height, 220px)}
+    .lesson-card textarea{min-height:44px}
+    .delete-lesson-btn,
+    .empty-slot button,
+    .toolbar button{min-height:44px}
+    .insert-btn{min-height:24px !important; width:24px; height:24px}
+  }
+
+  @page{size:landscape;margin:10mm}
+
+  @media print{
+    :root{--bg:#fff;--border:#9ca3af}
+    body{background:#fff;font-size:10pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .app{max-width:none;padding:0}
+    .toolbar,
+    .status,
+    .helper-text,
+    .insert-btn,
+    .drop-before-zone,
+    .drag-handle,
+    .row-resize-handle,
+    .header-actions,
+    .lesson-footer{display:none !important}
+    h1{font-size:20pt;margin-bottom:12px}
+    .planner-grid-container{overflow:visible;border:none}
+    .planner-grid{width:100%;grid-template-columns:32px repeat(var(--print-slots), minmax(0, 1fr)) !important}
+    /* Override the narrow-screen cell widths so the headers use the same grid as the body. */
+    .header-cell,
+    .row-header,
+    .slot{min-width:0 !important}
+    .header-cell{position:static;padding:5px;font-size:9pt}
+    .row-header{position:static;padding:5px;font-size:9pt}
+    .slot{break-inside:avoid}
+    .lesson-card,
+    .empty-slot{min-height:86px;height:100%;border:1px solid var(--border);break-inside:avoid}
+    .empty-slot{display:flex !important}
+    .empty-slot button{display:none !important}
+    .lesson-title,
+    .lesson-card textarea{display:none !important}
+    .print-only{display:block}
+    .print-title{padding:4px 8px;font-weight:700}
+    .print-description{padding:5px 8px;white-space:pre-wrap;line-height:1.35;color:#374151}
+  }
+</style>
+</head>
+<body>
+<main class="app">
+  <header class="app-header">
+    <h1>Lesson Sequence Board</h1>
+    <div class="header-actions">
+      <p class="creator-line">
+        By Paul Gavini using CODEX
+        <span aria-hidden="true">&middot;</span>
+        <a href="#" data-placeholder-link>YouTube</a>
+        <span aria-hidden="true">&middot;</span>
+        <a href="#" data-placeholder-link>Website</a>
+      </p>
+      <button id="themeToggle" class="theme-toggle" type="button" aria-pressed="false">Dark mode</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="field">
+      <label for="weeksInput">Weeks</label>
+      <input id="weeksInput" type="number" min="1" max="52" value="10">
+    </div>
+    <div class="field">
+      <label for="lessonsInput">Lessons per week</label>
+      <input id="lessonsInput" type="number" min="1" max="12" value="5">
+    </div>
+
+    <button id="createBtn" class="primary"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0 2 5.5"/><path d="M20 4v7h-7"/></svg>Create Board</button>
+    <button id="addWeekBtn"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8M8 12h8"/></svg>Add Week</button>
+
+    <div class="spacer"></div>
+
+    <button id="exportPdfBtn"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h8l4 4v16H6z"/><path d="M14 2v5h5M8 15h8M8 18h6"/></svg>Export PDF</button>
+    <button id="exportBtn"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11M15 9v11"/></svg>Export Excel</button>
+    <button id="saveBtn"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l3 3v15H5z"/><path d="M8 3v6h8V3M8 20v-6h8v6"/></svg>Save</button>
+    <button id="loadBtn"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z"/><path d="M12 12v6M9 15l3 3 3-3"/></svg>Load</button>
+    <button id="clearBtn" class="danger"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>Clear</button>
+    <input class="file-input" type="file" id="jsonFileInput" accept=".json,application/json">
+  </div>
+
+  <p class="helper-text">Drag a lesson to another lesson's blue left-edge drop zone to place it before that lesson. Drag the dotted line beneath a week label to resize that row, or double-click it to reset. Changes save automatically in this browser. In Chrome or Edge, choose Save once to also auto-save to a JSON file.</p>
+  <div id="status" class="status" role="status" aria-live="polite">Changes save automatically in this browser.</div>
+  <div id="planner"></div>
+</main>
+
+<script>
+(() => {
+  const STORAGE_KEY = "lessonSequenceBoard_v1";
+  const LEGACY_STORAGE_KEY = "lessonPlanner_v2";
+  const FILE_HANDLE_DB = "lessonSequenceBoardFileHandles";
+  const FILE_HANDLE_STORE = "handles";
+  const FILE_HANDLE_KEY = "activeBoardFile";
+  const BACKUP_FORMAT = "lesson-sequence-board";
+  const BACKUP_VERSION = 1;
+  const THEME_STORAGE_KEY = "lessonSequenceBoardTheme";
+  const plannerEl = document.getElementById("planner");
+  const createBtn = document.getElementById("createBtn");
+  const saveBtn = document.getElementById("saveBtn");
+  const weeksInput = document.getElementById("weeksInput");
+  const lessonsInput = document.getElementById("lessonsInput");
+  const statusEl = document.getElementById("status");
+  const themeToggle = document.getElementById("themeToggle");
+
+  let state = {
+    lessonsPerWeek: 5,
+    weeks: [],
+    rowHeights: []
+  };
+
+  let dragSourceId = null;
+  let savedBoardFileHandle = null;
+  let fileSaveTimer = null;
+  let fileSaveChain = Promise.resolve();
+
+  function applyTheme(theme) {
+    const isDark = theme === "dark";
+    document.documentElement.dataset.theme = isDark ? "dark" : "light";
+    document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+    themeToggle.setAttribute("aria-pressed", String(isDark));
+    themeToggle.textContent = isDark ? "Light mode" : "Dark mode";
+  }
+
+  function getSavedTheme() {
+    try {
+      return localStorage.getItem(THEME_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  function storeTheme(theme) {
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {
+      // The selected theme still applies for this visit when storage is unavailable.
+    }
+  }
+
+  function getInitialTheme() {
+    const savedTheme = getSavedTheme();
+    if (savedTheme === "dark" || savedTheme === "light") return savedTheme;
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+
+  const makeId = () =>
+    "l_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,8);
+
+  const makeEmpty = () => ({ type:"empty" });
+
+  const makeLesson = (title="", description="") => ({
+    type:"lesson",
+    id:makeId(),
+    title,
+    description
+  });
+
+  const MIN_ROW_HEIGHT = 160;
+  const MAX_ROW_HEIGHT = 720;
+
+  function normaliseRowHeights(candidate) {
+    const supplied = Array.isArray(candidate.rowHeights) ? candidate.rowHeights : [];
+    candidate.rowHeights = candidate.weeks.map((_, index) => {
+      const height = supplied[index];
+      return Number.isInteger(height) && height >= MIN_ROW_HEIGHT && height <= MAX_ROW_HEIGHT
+        ? height
+        : null;
+    });
+    return candidate;
+  }
+
+  function isValidState(candidate) {
+    if (!candidate || typeof candidate !== "object" ||
+        !Number.isInteger(candidate.lessonsPerWeek) ||
+        candidate.lessonsPerWeek < 1 || candidate.lessonsPerWeek > 12 ||
+        !Array.isArray(candidate.weeks) || candidate.weeks.length > 52 ||
+        (candidate.rowHeights !== undefined &&
+          (!Array.isArray(candidate.rowHeights) ||
+           candidate.rowHeights.length !== candidate.weeks.length ||
+           !candidate.rowHeights.every(height => height === null ||
+             (Number.isInteger(height) && height >= MIN_ROW_HEIGHT && height <= MAX_ROW_HEIGHT))))) return false;
+
+    const lessonIds = new Set();
+    return candidate.weeks.every(week =>
+      Array.isArray(week) && week.length === candidate.lessonsPerWeek &&
+      week.every(slot => {
+        if (!slot || typeof slot !== "object") return false;
+        if (slot.type === "empty") return true;
+        if (slot.type !== "lesson" || typeof slot.id !== "string" || !slot.id ||
+            typeof slot.title !== "string" || typeof slot.description !== "string" ||
+            lessonIds.has(slot.id)) return false;
+        lessonIds.add(slot.id);
+        return true;
+      })
+    );
+  }
+
+  function cloneState(candidate) {
+    return JSON.parse(JSON.stringify(candidate));
+  }
+
+  function makeBackup() {
+    return {
+      format: BACKUP_FORMAT,
+      version: BACKUP_VERSION,
+      exportedAt: new Date().toISOString(),
+      state: cloneState(state)
+    };
+  }
+
+  function stateFromBackup(payload) {
+    if (!payload || typeof payload !== "object") {
+      throw new Error("Backup is not a valid JSON object");
+    }
+    if (payload.format !== BACKUP_FORMAT || payload.version !== BACKUP_VERSION) {
+      throw new Error("This is not a compatible Lesson Sequence Board backup");
+    }
+    if (!isValidState(payload.state)) {
+      throw new Error("Backup contains an invalid board state");
+    }
+    return normaliseRowHeights(cloneState(payload.state));
+  }
+
+  function supportsFileAutoSave() {
+    return "showSaveFilePicker" in window && "indexedDB" in window;
+  }
+
+  function openFileHandleDatabase() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(FILE_HANDLE_DB, 1);
+      request.onupgradeneeded = () => request.result.createObjectStore(FILE_HANDLE_STORE);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async function readSavedFileHandle() {
+    const database = await openFileHandleDatabase();
+    try {
+      return await new Promise((resolve, reject) => {
+        const request = database.transaction(FILE_HANDLE_STORE, "readonly")
+          .objectStore(FILE_HANDLE_STORE).get(FILE_HANDLE_KEY);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error);
+      });
+    } finally {
+      database.close();
+    }
+  }
+
+  async function storeSavedFileHandle(handle) {
+    const database = await openFileHandleDatabase();
+    try {
+      await new Promise((resolve, reject) => {
+        const request = database.transaction(FILE_HANDLE_STORE, "readwrite")
+          .objectStore(FILE_HANDLE_STORE).put(handle, FILE_HANDLE_KEY);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    } finally {
+      database.close();
+    }
+  }
+
+  async function hasFileWritePermission(handle, requestPermission=false) {
+    const options = {mode:"readwrite"};
+    if (await handle.queryPermission(options) === "granted") return true;
+    return requestPermission && await handle.requestPermission(options) === "granted";
+  }
+
+  function updateSaveButton() {
+    if (!supportsFileAutoSave()) {
+      saveBtn.title = "Download a JSON copy of this board";
+      return;
+    }
+    saveBtn.title = savedBoardFileHandle
+      ? "Auto-saving to the selected JSON file. Click to save now or re-authorize access."
+      : "Choose a JSON file. Future changes will save to it automatically.";
+  }
+
+  async function writeBoardToSelectedFile({requestPermission=false, announce=false}={}) {
+    if (!savedBoardFileHandle) return false;
+    const write = async () => {
+      try {
+        if (!await hasFileWritePermission(savedBoardFileHandle, requestPermission)) {
+          if (announce) statusEl.textContent = "File access was not granted. Your board is still saved in this browser.";
+          return false;
+        }
+        const writable = await savedBoardFileHandle.createWritable();
+        await writable.write(JSON.stringify(makeBackup(), null, 2));
+        await writable.close();
+        if (announce) statusEl.textContent = `Saved to ${savedBoardFileHandle.name}.`;
+        return true;
+      } catch (error) {
+        if (announce) statusEl.textContent = "Could not write the JSON file. Your board is still saved in this browser.";
+        return false;
+      }
+    };
+    fileSaveChain = fileSaveChain.then(write, write);
+    return fileSaveChain;
+  }
+
+  function queueFileAutoSave() {
+    if (!savedBoardFileHandle) return;
+    clearTimeout(fileSaveTimer);
+    fileSaveTimer = setTimeout(() => writeBoardToSelectedFile(), 500);
+  }
+
+  async function restoreFileAutoSave() {
+    if (!supportsFileAutoSave()) {
+      updateSaveButton();
+      return;
+    }
+    try {
+      savedBoardFileHandle = await readSavedFileHandle();
+    } catch {}
+    updateSaveButton();
+  }
+
+  function saveState(message="Saved") {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    queueFileAutoSave();
+    statusEl.textContent =
+      message + " \u2022 " +
+      new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+  }
+
+  function createPlanner(weekCount, lessonsPerWeek) {
+    state = {
+      lessonsPerWeek,
+      weeks: Array.from({length:weekCount}, () =>
+        Array.from({length:lessonsPerWeek}, () => makeEmpty())
+      ),
+      rowHeights: Array.from({length:weekCount}, () => null)
+    };
+    saveState("Planner created");
+    render();
+  }
+
+  function getSlots() {
+    return state.weeks.flat();
+  }
+
+  function getLessons() {
+    return getSlots().filter(x => x.type === "lesson");
+  }
+
+  function lessonNumberMap() {
+    const map = new Map();
+    let n = 1;
+    getSlots().forEach(slot => {
+      if (slot.type === "lesson") map.set(slot.id, n++);
+    });
+    return map;
+  }
+
+  function findItem(id) {
+    for (let wi=0; wi<state.weeks.length; wi++) {
+      const si = state.weeks[wi].findIndex(x => x.id === id);
+      if (si !== -1) return {wi, si, item:state.weeks[wi][si]};
+    }
+    return null;
+  }
+
+  function ensureCapacity(requiredLessonCount) {
+    let usableSlots = state.weeks.length * state.lessonsPerWeek;
+    while (requiredLessonCount > usableSlots) {
+      state.weeks.push(
+        Array.from({length:state.lessonsPerWeek}, () => makeEmpty())
+      );
+      state.rowHeights.push(null);
+      usableSlots += state.lessonsPerWeek;
+    }
+    weeksInput.value = state.weeks.length;
+  }
+
+  function rebuildFromLessonSequence(lessons) {
+    ensureCapacity(lessons.length);
+
+    const total = state.weeks.length * state.lessonsPerWeek;
+    const flat = [];
+    let li = 0;
+
+    for (let i=0; i<total; i++) {
+      if (li < lessons.length) {
+        flat.push(lessons[li++]);
+      } else {
+        flat.push(makeEmpty());
+      }
+    }
+
+    state.weeks = [];
+    for (let i=0; i<flat.length; i += state.lessonsPerWeek) {
+      state.weeks.push(flat.slice(i, i + state.lessonsPerWeek));
+    }
+    normaliseRowHeights(state);
+  }
+
+  function insertLessonAtSequenceIndex(index, seed=null) {
+    const lessons = getLessons();
+    lessons.splice(index, 0, seed || makeLesson());
+    rebuildFromLessonSequence(lessons);
+    saveState("Lesson inserted");
+    render();
+  }
+
+  function insertLessonAfter(id) {
+    const lessons = getLessons();
+    const idx = lessons.findIndex(x => x.id === id);
+    insertLessonAtSequenceIndex(idx + 1);
+  }
+
+  function createLessonInEmptySlot(wi, si) {
+    if (!state.weeks[wi] || state.weeks[wi][si]?.type !== "empty") return;
+
+    // Create the lesson in the exact slot the user selected.
+    // Lesson numbering is derived from physical grid order, so no repacking is needed.
+    state.weeks[wi][si] = makeLesson();
+    saveState("Lesson added");
+    render();
+  }
+
+  function moveLesson(sourceId, targetId, after=false) {
+    if (!sourceId || sourceId === targetId) return;
+
+    const lessons = getLessons();
+    const sourceIndex = lessons.findIndex(x => x.id === sourceId);
+    let targetIndex = lessons.findIndex(x => x.id === targetId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+
+    const [moved] = lessons.splice(sourceIndex, 1);
+    if (sourceIndex < targetIndex) targetIndex--;
+    lessons.splice(after ? targetIndex + 1 : targetIndex, 0, moved);
+
+    rebuildFromLessonSequence(lessons);
+    saveState("Lesson moved");
+    render();
+  }
+
+  function moveLessonToEmptySlot(sourceId, targetWi, targetSi) {
+    const source = findItem(sourceId);
+    const target = state.weeks[targetWi]?.[targetSi];
+
+    if (!source || source.item.type !== "lesson" || target?.type !== "empty") return;
+
+    state.weeks[targetWi][targetSi] = source.item;
+    state.weeks[source.wi][source.si] = makeEmpty();
+    saveState("Lesson moved");
+    render();
+  }
+
+  function deleteLesson(id) {
+    const lessons = getLessons().filter(x => x.id !== id);
+    rebuildFromLessonSequence(lessons);
+    saveState("Lesson deleted");
+    render();
+  }
+
+  function addWeek() {
+    if (state.weeks.length >= 52) {
+      statusEl.textContent = "A board can have up to 52 weeks.";
+      return;
+    }
+    state.weeks.push(
+      Array.from({length:state.lessonsPerWeek}, () => makeEmpty())
+    );
+    state.rowHeights.push(null);
+    weeksInput.value = state.weeks.length;
+    saveState("Week added");
+    render();
+  }
+
+  function updateCreateButton() {
+    const resetMode = state.weeks.length > 0;
+    createBtn.classList.toggle("primary", !resetMode);
+    createBtn.classList.toggle("warning", resetMode);
+    createBtn.title = resetMode ? "Reset board (replaces the current sequence)" : "Create a new board";
+    createBtn.setAttribute("aria-label", resetMode ? "Reset board" : "Create board");
+    createBtn.innerHTML = `<svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0 2 5.5"/><path d="M20 4v7h-7"/></svg>${resetMode ? "Reset Board" : "Create Board"}`;
+  }
+
+  function applyRowHeights(grid) {
+    const rows = state.weeks.map((_, index) => {
+      const height = state.rowHeights[index];
+      return height === null ? "minmax(190px, auto)" : `${height}px`;
+    });
+    grid.style.gridTemplateRows = ["auto", ...rows].join(" ");
+  }
+
+  function addRowResizeHandle(rowHeader, weekIndex, grid) {
+    const handle = document.createElement("div");
+    handle.className = "row-resize-handle";
+    handle.tabIndex = 0;
+    handle.setAttribute("role", "separator");
+    handle.setAttribute("aria-orientation", "horizontal");
+    handle.setAttribute("aria-label", `Resize Week ${weekIndex + 1} row. Double-click to reset.`);
+    handle.title = "Drag to resize this week. Double-click to reset.";
+
+    handle.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      const startY = event.clientY;
+      const startHeight = rowHeader.getBoundingClientRect().height;
+      let changed = false;
+
+      const onPointerMove = moveEvent => {
+        const height = Math.max(MIN_ROW_HEIGHT, Math.min(MAX_ROW_HEIGHT,
+          Math.round(startHeight + moveEvent.clientY - startY)
+        ));
+        if (state.rowHeights[weekIndex] !== height) {
+          state.rowHeights[weekIndex] = height;
+          applyRowHeights(grid);
+          changed = true;
+        }
+      };
+
+      const onPointerUp = () => {
+        document.removeEventListener("pointermove", onPointerMove);
+        document.removeEventListener("pointerup", onPointerUp);
+        if (changed) saveState(`Week ${weekIndex + 1} row height changed`);
+      };
+
+      document.addEventListener("pointermove", onPointerMove);
+      document.addEventListener("pointerup", onPointerUp);
+    });
+
+    handle.addEventListener("dblclick", () => {
+      if (state.rowHeights[weekIndex] === null) return;
+      state.rowHeights[weekIndex] = null;
+      applyRowHeights(grid);
+      saveState(`Week ${weekIndex + 1} row height reset`);
+    });
+
+    rowHeader.appendChild(handle);
+  }
+
+  function escapeHtml(text) {
+    return String(text ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function render() {
+    plannerEl.innerHTML = "";
+    normaliseRowHeights(state);
+    updateCreateButton();
+
+    if (!state.weeks.length) {
+      plannerEl.innerHTML =
+        '<div class="empty-state">Choose the number of weeks and lessons per week, then create the board.</div>';
+      return;
+    }
+
+    const numMap = lessonNumberMap();
+
+    const container = document.createElement("div");
+    container.className = "planner-grid-container";
+
+    const grid = document.createElement("div");
+    grid.className = "planner-grid";
+
+    grid.style.gridTemplateColumns = `40px repeat(${state.lessonsPerWeek}, minmax(185px, 1fr))`;
+    grid.style.setProperty("--print-slots", state.lessonsPerWeek);
+    applyRowHeights(grid);
+
+    const headerRow = document.createElement("div");
+    headerRow.className = "row";
+
+    const emptyHeader = document.createElement("div");
+    emptyHeader.className = "header-cell";
+    headerRow.appendChild(emptyHeader);
+
+    for (let si = 0; si < state.lessonsPerWeek; si++) {
+      const headerCell = document.createElement("div");
+      headerCell.className = "header-cell";
+      headerCell.textContent = `L${si + 1}`;
+      headerRow.appendChild(headerCell);
+    }
+    grid.appendChild(headerRow);
+
+    state.weeks.forEach((week, wi) => {
+      const rowHeader = document.createElement("div");
+      rowHeader.className = "row-header";
+      rowHeader.textContent = `W${wi + 1}`;
+      addRowResizeHandle(rowHeader, wi, grid);
+      grid.appendChild(rowHeader);
+
+      week.forEach((item, si) => {
+        const slot = document.createElement("div");
+        slot.className = "slot";
+        if (state.rowHeights[wi] !== null) {
+          slot.style.setProperty("--row-min-height", `${state.rowHeights[wi]}px`);
+        }
+
+        if (item.type === "empty") {
+          const empty = document.createElement("div");
+          empty.className = "empty-slot";
+          empty.innerHTML = `<button data-create-empty="${wi}:${si}">+ Add Lesson</button>`;
+          slot.appendChild(empty);
+
+          slot.addEventListener("dragover", e => {
+            if (!dragSourceId) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            slot.classList.add("drag-over-empty");
+          });
+
+          slot.addEventListener("dragleave", e => {
+            if (!slot.contains(e.relatedTarget)) {
+              slot.classList.remove("drag-over-empty");
+            }
+          });
+
+          slot.addEventListener("drop", e => {
+            e.preventDefault();
+            slot.classList.remove("drag-over-empty");
+            moveLessonToEmptySlot(dragSourceId, wi, si);
+          });
+        }
+
+        if (item.type === "lesson") {
+          const card = document.createElement("div");
+          card.className = "lesson-card";
+          card.draggable = true;
+          card.dataset.id = item.id;
+          card.setAttribute("role", "group");
+          card.setAttribute("aria-label", `Lesson ${numMap.get(item.id)}`);
+
+          card.innerHTML = `
+            <div class="lesson-head">
+              <span class="lesson-number">Lesson ${numMap.get(item.id)}</span>
+              <span class="drag-handle" title="Drag lesson" aria-hidden="true">&#9776;</span>
+            </div>
+            <input class="lesson-title" type="text" placeholder="Lesson title"
+              value="${escapeHtml(item.title)}" data-field="title" data-id="${item.id}">
+            <textarea placeholder="Short description"
+              data-field="description" data-id="${item.id}">${escapeHtml(item.description)}</textarea>
+            <div class="lesson-footer">
+              <button class="delete-lesson-btn" data-delete="${item.id}" title="Delete lesson" aria-label="Delete Lesson ${numMap.get(item.id)}"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg></button>
+            </div>
+          `;
+
+          const lessonNumber = numMap.get(item.id);
+          const titleInput = card.querySelector(".lesson-title");
+          const descriptionInput = card.querySelector("textarea");
+          const dragHandle = card.querySelector(".drag-handle");
+
+          titleInput.id = `lesson-title-${item.id}`;
+          titleInput.setAttribute("aria-label", `Lesson ${lessonNumber} title`);
+          descriptionInput.id = `lesson-description-${item.id}`;
+          descriptionInput.setAttribute("aria-label", `Lesson ${lessonNumber} description`);
+          const printTitle = document.createElement("div");
+          printTitle.className = "print-only print-title";
+          printTitle.textContent = item.title || "Untitled lesson";
+          titleInput.insertAdjacentElement("afterend", printTitle);
+          const printDescription = document.createElement("div");
+          printDescription.className = "print-only print-description";
+          printDescription.textContent = item.description;
+          descriptionInput.insertAdjacentElement("afterend", printDescription);
+          dragHandle.innerHTML = "&#9776;";
+          dragHandle.setAttribute("aria-hidden", "true");
+          card.addEventListener("dragstart", e => {
+            dragSourceId = item.id;
+            card.classList.add("dragging");
+            e.dataTransfer.effectAllowed = "move";
+          });
+
+          card.addEventListener("dragend", () => {
+            dragSourceId = null;
+            document.querySelectorAll(
+              ".drag-over-before,.drag-over-after,.drag-over-before-slot"
+            ).forEach(el => el.classList.remove("drag-over-before","drag-over-after","drag-over-before-slot"));
+            card.classList.remove("dragging");
+          });
+
+          card.addEventListener("dragover", e => {
+            e.preventDefault();
+            if (!dragSourceId || dragSourceId === item.id) return;
+            const rect = card.getBoundingClientRect();
+            const after = e.clientX > rect.left + rect.width / 2;
+            card.classList.toggle("drag-over-before", !after);
+            card.classList.toggle("drag-over-after", after);
+            e.dataTransfer.dropEffect = "move";
+          });
+
+          card.addEventListener("dragleave", () => {
+            card.classList.remove("drag-over-before","drag-over-after");
+          });
+
+          card.addEventListener("drop", e => {
+            e.preventDefault();
+            if (!dragSourceId || dragSourceId === item.id) return;
+            const rect = card.getBoundingClientRect();
+            const after = e.clientX > rect.left + rect.width / 2;
+            card.classList.remove("drag-over-before","drag-over-after");
+            moveLesson(dragSourceId, item.id, after);
+          });
+
+          slot.appendChild(card);
+
+          const dropBefore = document.createElement("div");
+          dropBefore.className = "drop-before-zone";
+          dropBefore.setAttribute("aria-hidden", "true");
+          dropBefore.addEventListener("dragover", e => {
+            if (!dragSourceId || dragSourceId === item.id) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            dropBefore.classList.add("drag-over-before-slot");
+          });
+          dropBefore.addEventListener("dragleave", () => {
+            dropBefore.classList.remove("drag-over-before-slot");
+          });
+          dropBefore.addEventListener("drop", e => {
+            e.preventDefault();
+            dropBefore.classList.remove("drag-over-before-slot");
+            moveLesson(dragSourceId, item.id, false);
+          });
+          slot.appendChild(dropBefore);
+
+          const plus = document.createElement("button");
+          plus.className = "insert-btn";
+          plus.title = "Insert lesson after";
+          plus.textContent = "+";
+          plus.dataset.insertAfter = item.id;
+          slot.appendChild(plus);
+        }
+
+        grid.appendChild(slot);
+      });
+    });
+
+    container.appendChild(grid);
+    plannerEl.appendChild(container);
+
+    bindUI();
+  }
+
+  function bindUI() {
+    document.querySelectorAll("[data-field]").forEach(el => {
+      el.addEventListener("input", () => {
+        const found = findItem(el.dataset.id);
+        if (!found || found.item.type !== "lesson") return;
+        found.item[el.dataset.field] = el.value;
+        saveState();
+      });
+    });
+
+    document.querySelectorAll("[data-delete]").forEach(btn => {
+      btn.addEventListener("click", () => deleteLesson(btn.dataset.delete));
+    });
+
+    document.querySelectorAll("[data-insert-after]").forEach(btn => {
+      btn.addEventListener("click", () => insertLessonAfter(btn.dataset.insertAfter));
+    });
+
+    document.querySelectorAll("[data-create-empty]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const [wi, si] = btn.dataset.createEmpty.split(":").map(Number);
+        createLessonInEmptySlot(wi, si);
+      });
+    });
+  }
+
+  function downloadFile(contents, filename, type) {
+    const blob = new Blob([contents], {type});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
+  function exportPdf() {
+    statusEl.textContent = "Opening the PDF export dialog. Select Save as PDF to download the board.";
+    window.print();
+  }
+
+  function xmlEscape(value) {
+    return String(value ?? "")
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&apos;");
+  }
+
+  function excelColumnName(index) {
+    let column = "";
+    let value = index;
+    while (value > 0) {
+      const remainder = (value - 1) % 26;
+      column = String.fromCharCode(65 + remainder) + column;
+      value = Math.floor((value - 1) / 26);
+    }
+    return column;
+  }
+
+  function buildExcelWorksheetXml(board) {
+    const lessonNumbers = new Map();
+    let number = 1;
+    board.weeks.flat().forEach(item => {
+      if (item.type === "lesson") lessonNumbers.set(item.id, number++);
+    });
+
+    const cell = (address, style, value) => {
+      if (value === "") return `<c r="${address}" s="${style}"/>`;
+      return `<c r="${address}" s="${style}" t="inlineStr"><is><t xml:space="preserve">${xmlEscape(value)}</t></is></c>`;
+    };
+    const lastColumn = excelColumnName(board.lessonsPerWeek + 1);
+    const columns = [
+      '<col min="1" max="1" width="6" customWidth="1"/>',
+      ...Array.from({length:board.lessonsPerWeek}, (_, index) =>
+        `<col min="${index + 2}" max="${index + 2}" width="28" customWidth="1"/>`
+      )
+    ].join("");
+    const headers = Array.from({length:board.lessonsPerWeek}, (_, index) =>
+      cell(`${excelColumnName(index + 2)}2`, 2, `L${index + 1}`)
+    ).join("");
+    const boardRows = board.weeks.map((week, weekIndex) => {
+      const rowNumber = weekIndex + 3;
+      const cells = week.map((item, slotIndex) => {
+        const address = `${excelColumnName(slotIndex + 2)}${rowNumber}`;
+        if (item.type === "empty") return cell(address, 5, "");
+        const lessonText = [
+          `Lesson ${lessonNumbers.get(item.id)}`,
+          item.title || "Untitled lesson",
+          item.description
+        ].filter((value, index) => index < 2 || value).join("\n\n");
+        return cell(address, 4, lessonText);
+      }).join("");
+      return `<row r="${rowNumber}" ht="118" customHeight="1">${cell(`A${rowNumber}`, 3, `W${weekIndex + 1}`)}${cells}</row>`;
+    }).join("");
+
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <dimension ref="A1:${lastColumn}${board.weeks.length + 2}"/>
+  <sheetViews><sheetView workbookViewId="0"><pane ySplit="2" topLeftCell="A3" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A3" sqref="A3"/></sheetView></sheetViews>
+  <sheetFormatPr defaultRowHeight="15"/>
+  <cols>${columns}</cols>
+  <sheetData>
+    <row r="1" ht="26" customHeight="1">${cell("A1", 1, "Lesson Sequence Board")}</row>
+    <row r="2" ht="22" customHeight="1">${cell("A2", 2, "Week")}${headers}</row>
+    ${boardRows}
+  </sheetData>
+  <mergeCells count="1"><mergeCell ref="A1:${lastColumn}1"/></mergeCells>
+  <pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.2" footer="0.2"/>
+  <pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0"/>
+</worksheet>`;
+  }
+
+  function buildExcelStylesXml() {
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts count="4"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="16"/><color rgb="FF111827"/><name val="Arial"/></font><font><b/><sz val="10"/><color rgb="FF6B7280"/><name val="Arial"/></font><font><b/><sz val="10"/><color rgb="FF2563EB"/><name val="Arial"/></font></fonts>
+  <fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFFFFF"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFAFAFA"/><bgColor indexed="64"/></patternFill></fill></fills>
+  <borders count="5"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFD1D5DB"/></left><right style="thin"><color rgb="FFD1D5DB"/></right><top/><bottom style="medium"><color rgb="FFD1D5DB"/></bottom><diagonal/></border><border><left/><right style="medium"><color rgb="FFD1D5DB"/></right><top/><bottom style="thin"><color rgb="FFD1D5DB"/></bottom><diagonal/></border><border><left style="thin"><color rgb="FFD1D5DB"/></left><right style="thin"><color rgb="FFD1D5DB"/></right><top/><bottom style="thin"><color rgb="FFD1D5DB"/></bottom><diagonal/></border><border><left style="dashed"><color rgb="FFD1D5DB"/></left><right style="dashed"><color rgb="FFD1D5DB"/></right><top/><bottom style="dashed"><color rgb="FFD1D5DB"/></bottom><diagonal/></border></borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs count="6"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="center"/></xf><xf numFmtId="0" fontId="2" fillId="2" borderId="1" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="3" fillId="2" borderId="2" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf><xf numFmtId="0" fontId="0" fillId="2" borderId="3" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="3" borderId="4" xfId="0" applyAlignment="1"><alignment vertical="top"/></xf></cellXfs>
+  <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+  }
+
+  function bytes16(value) {
+    return new Uint8Array([value & 255, (value >>> 8) & 255]);
+  }
+
+  function bytes32(value) {
+    return new Uint8Array([value & 255, (value >>> 8) & 255, (value >>> 16) & 255, (value >>> 24) & 255]);
+  }
+
+  function joinBytes(parts) {
+    const size = parts.reduce((total, part) => total + part.length, 0);
+    const result = new Uint8Array(size);
+    let offset = 0;
+    parts.forEach(part => {
+      result.set(part, offset);
+      offset += part.length;
+    });
+    return result;
+  }
+
+  function crc32(bytes) {
+    let crc = 0xFFFFFFFF;
+    for (const byte of bytes) {
+      crc ^= byte;
+      for (let bit = 0; bit < 8; bit++) {
+        crc = (crc >>> 1) ^ (0xEDB88320 & -(crc & 1));
+      }
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function createZip(files) {
+    const encoder = new TextEncoder();
+    const localFiles = [];
+    const centralDirectory = [];
+    let offset = 0;
+
+    files.forEach(file => {
+      const name = encoder.encode(file.name);
+      const data = encoder.encode(file.contents);
+      const checksum = crc32(data);
+      const localHeader = joinBytes([
+        bytes32(0x04034B50), bytes16(20), bytes16(0), bytes16(0), bytes16(0), bytes16(0),
+        bytes32(checksum), bytes32(data.length), bytes32(data.length), bytes16(name.length), bytes16(0), name, data
+      ]);
+      localFiles.push(localHeader);
+      centralDirectory.push(joinBytes([
+        bytes32(0x02014B50), bytes16(20), bytes16(20), bytes16(0), bytes16(0), bytes16(0), bytes16(0),
+        bytes32(checksum), bytes32(data.length), bytes32(data.length), bytes16(name.length), bytes16(0), bytes16(0),
+        bytes16(0), bytes16(0), bytes32(0), bytes32(offset), name
+      ]));
+      offset += localHeader.length;
+    });
+
+    const directory = joinBytes(centralDirectory);
+    return joinBytes([
+      ...localFiles,
+      directory,
+      bytes32(0x06054B50), bytes16(0), bytes16(0), bytes16(files.length), bytes16(files.length),
+      bytes32(directory.length), bytes32(offset), bytes16(0)
+    ]);
+  }
+
+  function buildExcelWorkbook(board) {
+    const sheetXml = buildExcelWorksheetXml(board);
+    const files = [
+      {name:"[Content_Types].xml", contents:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`},
+      {name:"_rels/.rels", contents:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`},
+      {name:"xl/workbook.xml", contents:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Lesson Sequence Board" sheetId="1" r:id="rId1"/></sheets></workbook>`},
+      {name:"xl/_rels/workbook.xml.rels", contents:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`},
+      {name:"xl/worksheets/sheet1.xml", contents:sheetXml},
+      {name:"xl/styles.xml", contents:buildExcelStylesXml()}
+    ];
+    return new Blob([createZip(files)], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  }
+
+  function exportExcel() {
+    const workbook = buildExcelWorkbook(state);
+    downloadFile(workbook, "lesson-sequence-board.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    statusEl.textContent = "Board-grid Excel workbook exported. It uses weeks as rows and lesson slots as columns.";
+  }
+
+  async function saveBoard() {
+    if (!supportsFileAutoSave()) {
+      const boardFile = JSON.stringify(makeBackup(), null, 2);
+      downloadFile(boardFile, "lesson-sequence-board.json", "application/json;charset=utf-8");
+      statusEl.textContent = "Board saved as a JSON download.";
+      return;
+    }
+
+    try {
+      if (!savedBoardFileHandle) {
+        savedBoardFileHandle = await window.showSaveFilePicker({
+          suggestedName:"lesson-sequence-board.json",
+          types:[{
+            description:"Lesson Sequence Board JSON",
+            accept:{"application/json":[".json"]}
+          }]
+        });
+        await storeSavedFileHandle(savedBoardFileHandle);
+        updateSaveButton();
+      }
+      await writeBoardToSelectedFile({requestPermission:true, announce:true});
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        statusEl.textContent = "Could not choose a JSON file. Your board is still saved in this browser.";
+      }
+    }
+  }
+
+  function loadBoard(file) {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      try {
+        const restoredState = stateFromBackup(JSON.parse(reader.result));
+        if (state.weeks.length && !confirm("Load this saved board and replace the current board?")) return;
+
+        state = restoredState;
+        weeksInput.value = state.weeks.length || 10;
+        lessonsInput.value = state.lessonsPerWeek;
+        saveState("Board loaded");
+        render();
+      } catch (err) {
+        alert("Could not load this file. Choose a valid Lesson Sequence Board save file.");
+      }
+    };
+
+    reader.readAsText(file);
+  }
+
+  createBtn.addEventListener("click", () => {
+    const weekCount = Math.max(1, Math.min(52, Number(weeksInput.value) || 1));
+    const lessonsPerWeek = Math.max(1, Math.min(12, Number(lessonsInput.value) || 1));
+
+    if (state.weeks.length &&
+        !confirm("Create a new board? This will replace the current sequence.")) return;
+
+    createPlanner(weekCount, lessonsPerWeek);
+  });
+
+  document.getElementById("addWeekBtn").addEventListener("click", addWeek);
+  document.getElementById("exportPdfBtn").addEventListener("click", exportPdf);
+  document.getElementById("exportBtn").addEventListener("click", exportExcel);
+  saveBtn.addEventListener("click", saveBoard);
+  themeToggle.addEventListener("click", () => {
+    const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    applyTheme(nextTheme);
+    storeTheme(nextTheme);
+  });
+
+  document.querySelectorAll("[data-placeholder-link]").forEach(link => {
+    link.addEventListener("click", event => event.preventDefault());
+  });
+
+  document.getElementById("loadBtn").addEventListener("click", () => {
+    document.getElementById("jsonFileInput").click();
+  });
+
+  document.getElementById("jsonFileInput").addEventListener("change", e => {
+    const file = e.target.files?.[0];
+    if (file) loadBoard(file);
+    e.target.value = "";
+  });
+
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    if (!confirm("Clear the saved board from this browser?")) return;
+
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    state = { lessonsPerWeek:5, weeks:[], rowHeights:[] };
+    weeksInput.value = 10;
+    lessonsInput.value = 5;
+    statusEl.textContent = "Saved board cleared.";
+    render();
+  });
+
+  const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (isValidState(parsed)) {
+        state = normaliseRowHeights(parsed);
+        weeksInput.value = state.weeks.length || 10;
+        lessonsInput.value = state.lessonsPerWeek || 5;
+        statusEl.textContent = "Saved board loaded from this browser.";
+      }
+    } catch {}
+  }
+
+  function runSelfTests() {
+    const results = [];
+    const assert = (condition, name) => {
+      if (!condition) throw new Error(name);
+      results.push(name);
+    };
+
+    const fixture = {
+      lessonsPerWeek: 2,
+      weeks: [[
+        {type:"lesson", id:"lesson-a", title:"Introduction", description:"A complete description"},
+        {type:"empty"}
+      ]]
+    };
+    assert(isValidState(fixture), "Board validator accepts a valid board");
+    assert(!isValidState({...fixture, lessonsPerWeek:13}), "Board validator rejects invalid slot counts");
+    assert(isValidState({...fixture, rowHeights:[260]}), "Board validator accepts a saved row height");
+    assert(!isValidState({...fixture, rowHeights:[100]}), "Board validator rejects an invalid row height");
+    assert(normaliseRowHeights(cloneState(fixture)).rowHeights[0] === null, "Older boards receive default row heights");
+
+    const excelWorksheet = buildExcelWorksheetXml(fixture);
+    assert(excelWorksheet.includes('<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'), "Excel export creates an XLSX worksheet");
+    assert(excelWorksheet.includes(">L1<") && excelWorksheet.includes(">L2<"), "Excel export uses lesson-slot columns");
+    assert(excelWorksheet.includes(">W1<"), "Excel export uses week rows");
+    assert(!excelWorksheet.includes(">Slot<") && !excelWorksheet.includes(">Type<"), "Excel export does not use the legacy flat-table layout");
+    assert(excelWorksheet.includes("Introduction"), "Excel export includes lesson titles");
+    assert(excelWorksheet.includes('s="4"') && excelWorksheet.includes('s="5"'), "Excel export preserves lesson and empty-slot formatting");
+    const excelWorkbook = buildExcelWorkbook(fixture);
+    assert(excelWorkbook instanceof Blob && excelWorkbook.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" && excelWorkbook.size > 0, "Excel export creates a valid XLSX download");
+
+    const restored = stateFromBackup({
+      format: BACKUP_FORMAT,
+      version: BACKUP_VERSION,
+      exportedAt: "2026-01-01T00:00:00.000Z",
+      state: fixture
+    });
+    assert(JSON.stringify(restored) === JSON.stringify(fixture), "JSON backup restores the full board without data loss");
+
+    document.title = "Lesson Sequence Board - Tests Passed";
+    document.querySelector("main").innerHTML = `
+      <h1>Lesson Sequence Board tests</h1>
+      <p class="helper-text">${results.length} automated checks passed.</p>
+      <ul>${results.map(result => `<li>${escapeHtml(result)}</li>`).join("")}</ul>
+    `;
+  }
+
+  applyTheme(getInitialTheme());
+
+  if (new URLSearchParams(window.location.search).has("test")) {
+    runSelfTests();
+  } else {
+    render();
+    restoreFileAutoSave();
+  }
+})();
+</script>
+</body>
+</html>
