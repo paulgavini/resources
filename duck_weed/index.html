@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f6f8f4">
+    <meta name="description" content="Measure visible duckweed area from a photo.">
+    <title>Measure this photo · Pondnotes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Pondnotes photo measurement">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>pond<span class="brand-light">notes</span></span>
+      </a>
+      <p class="creator-links">
+        By Paul Gavini using CODEX
+        <span aria-hidden="true">&middot;</span>
+        <a href="https://www.youtube.com/@paulgavini">YouTube</a>
+        <span aria-hidden="true">&middot;</span>
+        <a href="https://paulgavini.github.io/resources/">Website</a>
+        <span aria-hidden="true">&middot;</span>
+        <a href="help.html">Help</a>
+      </p>
+    </header>
+
+    <main class="page-shell">
+      <section class="page-heading">
+        <div>
+          <p class="eyebrow">DUCKWEED PHOTO TOOL</p>
+          <h1>Measure this photo</h1>
+          <p class="page-intro">Estimate visible duckweed area and dish coverage. Adjust the outline and colour mask, then copy the results into your spreadsheet.</p>
+        </div>
+        <div class="photo-actions">
+          <button class="button button-quiet" id="camera-button" type="button">Use camera</button>
+          <button class="button button-primary" id="upload-button" type="button">Upload photo</button>
+          <input id="photo-file" type="file" accept="image/*" hidden>
+        </div>
+      </section>
+
+      <section id="measurement-layout" class="measurement-layout" aria-label="Photo measurement workspace">
+        <div class="image-column">
+          <div class="image-toolbar" role="group" aria-label="Image zoom controls">
+            <span class="image-toolbar-label">Image zoom</span>
+            <div class="zoom-controls">
+              <button class="zoom-button" id="zoom-out" type="button" aria-label="Zoom out" disabled>−</button>
+              <button class="zoom-fit" id="zoom-fit" type="button" aria-label="Fit image to view" disabled>Fit</button>
+              <button class="zoom-button" id="zoom-in" type="button" aria-label="Zoom in" disabled>+</button>
+            </div>
+          </div>
+          <div class="image-editor-wrap">
+            <canvas id="image-canvas" aria-label="Photo analysis preview"></canvas>
+            <div id="image-placeholder" class="image-placeholder">
+              <span class="placeholder-icon" aria-hidden="true">＋</span>
+              <strong>Choose a top-down photo</strong>
+              <p>Keep the complete inside rim in view.</p>
+              <button class="button button-primary" id="placeholder-upload" type="button">Upload photo</button>
+            </div>
+          </div>
+          <p class="image-help">Drag the dotted dish boundary to move it. Drag the round handle to resize it. When zoomed in, drag outside the circle to pan the photo.</p>
+        </div>
+
+        <aside class="controls-column" aria-label="Measurement controls">
+          <section class="control-card calibration-card">
+            <p class="eyebrow">DISH SIZE</p>
+            <h2>Calibrate the photo</h2>
+            <p>Fit the circle to the inside edge, then enter the dish’s measured inside diameter.</p>
+            <label class="field-label" for="dish-diameter">Inside diameter</label>
+            <div class="input-with-unit"><input id="dish-diameter" type="number" min="10" max="1000" step="0.1" placeholder="e.g. 100" inputmode="decimal" disabled><span>mm</span></div>
+            <p id="calibration-help" class="field-help">Coverage is available without a diameter. Enter it to calculate area in cm².</p>
+            <p id="calibration-error" class="inline-error" role="status" hidden></p>
+          </section>
+
+          <section class="control-card colour-card" aria-label="Automatic duckweed colour mask">
+            <div class="colour-card-heading">
+              <div><p class="eyebrow">PIXEL SELECTION</p><h2>Colour mask</h2></div>
+              <button id="colour-mask-toggle" class="colour-mask-toggle is-on" type="button" role="switch" aria-checked="true" disabled>On</button>
+            </div>
+            <p id="colour-mask-status" class="mask-status" aria-live="polite">Upload a photo to preview the automatic mask.</p>
+            <div class="threshold-title-row">
+              <p class="field-label threshold-title">Adjust HSB thresholds</p>
+              <button class="button button-suggest" id="auto-threshold-button" type="button" aria-label="Redo automatic HSB threshold suggestion" disabled>Auto-suggest</button>
+            </div>
+            <label class="threshold-control" for="hue-min">Hue from <output id="hue-min-value">38°</output><input id="hue-min" type="range" min="0" max="180" value="38" disabled></label>
+            <label class="threshold-control" for="hue-max">Hue to <output id="hue-max-value">165°</output><input id="hue-max" type="range" min="100" max="360" value="165" disabled></label>
+            <label class="threshold-control" for="saturation-min">Saturation min <output id="saturation-value">30%</output><input id="saturation-min" type="range" min="0" max="100" value="30" disabled></label>
+            <label class="threshold-control" for="brightness-min">Brightness min <output id="brightness-value">25%</output><input id="brightness-min" type="range" min="0" max="100" value="25" disabled></label>
+            <p class="field-help">The highlight follows these thresholds. Exclude reflections and background pixels as closely as possible.</p>
+          </section>
+
+          <section class="results-card" aria-live="polite" aria-label="Photo measurement results">
+            <p class="eyebrow">MEASURED FROM PHOTO</p>
+            <div class="result-row"><div><span>Visible duckweed area</span><small>Thresholded pixels, calibrated to dish size</small></div><strong><span id="result-area">—</span> <small>cm²</small></strong></div>
+            <div class="result-row"><div><span>Dish covered</span><small>Share of the outlined dish interior</small></div><strong><span id="result-coverage">—</span> <small>%</small></strong></div>
+            <div class="result-row result-subtle"><div><span>Dish area</span><small>Calculated from the inside diameter</small></div><strong><span id="result-dish-area">—</span> <small>cm²</small></strong></div>
+          </section>
+        </aside>
+      </section>
+
+      <footer class="page-footer">Colour and coverage estimate visible surface only. Reflections, lighting, overlapping fronds, and camera angle can affect results; photo colour is not a direct measurement of photosynthesis.</footer>
+    </main>
+
+    <dialog id="camera-dialog" class="camera-dialog">
+      <div class="dialog-top"><span class="eyebrow">CAMERA</span><button class="icon-close" type="button" data-close-camera aria-label="Close camera">×</button></div>
+      <h2>Take a photo</h2>
+      <p class="field-help">Hold the camera above the dish and keep the complete inside rim in frame.</p>
+      <div class="video-wrap"><video id="camera-video" autoplay playsinline></video></div>
+      <p id="camera-message" class="camera-message">Camera access requires permission and a secure page (HTTPS or localhost).</p>
+      <div class="dialog-actions"><button class="button button-quiet" type="button" data-close-camera>Cancel</button><button class="button button-primary" id="capture-photo" type="button" disabled>Capture photo</button></div>
+    </dialog>
+  </body>
+</html>

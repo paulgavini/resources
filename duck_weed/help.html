@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f6f8f4">
+    <meta name="description" content="How to measure visible duckweed area and dish coverage from a photo.">
+    <title>Help · Pondnotes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="Pondnotes photo measurement home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>pond<span class="brand-light">notes</span></span>
+      </a>
+      <a class="button button-quiet" href="index.html">Back to the photo tool</a>
+    </header>
+
+    <main class="page-shell help-shell">
+      <section class="page-heading">
+        <div>
+          <p class="eyebrow">DUCKWEED PHOTO TOOL</p>
+          <h1>Help and practice photos</h1>
+          <p class="help-intro">Use this guide to estimate the visible duckweed area and the percentage of a dish covered in a photo. The image is processed in your browser and is not saved by the app.</p>
+        </div>
+      </section>
+
+      <div class="help-grid">
+        <section class="help-card" aria-labelledby="steps-heading">
+          <h2 id="steps-heading">Measure a photo</h2>
+          <ol class="help-steps">
+            <li>Choose <strong>Upload photo</strong> to select an image from your device, or choose <strong>Use camera</strong> to take a top-down photo. Keep the full inside rim of the dish visible.</li>
+            <li>Check the dotted circle around the dish. Drag its edge to move it and use the round handle to resize it until it follows the inside rim.</li>
+            <li>Enter the dish's measured inside diameter in millimetres. This is needed to calculate area in cm²; coverage percentage can be shown without it.</li>
+            <li>Inspect the colour mask. Adjust the HSB sliders to include duckweed and exclude background, reflections, and other pixels. Use <strong>Auto-suggest</strong> to suggest thresholds again from the current photo.</li>
+            <li>Use the mask toggle to show or hide the highlight. Review the visible area and coverage results, then copy them into your spreadsheet.</li>
+          </ol>
+        </section>
+
+        <section class="help-card" aria-labelledby="samples-heading">
+          <h2 id="samples-heading">Download sample photos</h2>
+          <p>Download a sample to your device, then return to the photo tool and upload it for practice. These example images are for exploring the controls and mask; they do not include a scale marker or a known dish diameter.</p>
+          <ul class="sample-list">
+            <li><a href="sample_folder/duckweed_01.png" download="duckweed_01.png">Download sample photo 1 <span>PNG</span></a></li>
+            <li><a href="sample_folder/duckweed_02.png" download="duckweed_02.png">Download sample photo 2 <span>PNG</span></a></li>
+            <li><a href="sample_folder/duckweed_03.png" download="duckweed_03.png">Download sample photo 3 <span>PNG</span></a></li>
+            <li><a href="sample_folder/duckweed_04.png" download="duckweed_04.png">Download sample photo 4 <span>PNG</span></a></li>
+            <li><a href="sample_folder/duckweed_05.png" download="duckweed_05.png">Download sample photo 5 <span>PNG</span></a></li>
+          </ul>
+        </section>
+
+        <section class="help-card" aria-labelledby="tips-heading">
+          <h2 id="tips-heading">Getting useful estimates</h2>
+          <p>Use a matte, even background and repeatable diffuse lighting. Fit the circle and inspect the mask before recording a result. Glare, shadows, reflections, overlapping fronds, camera angle, and threshold settings can all affect the estimate.</p>
+          <p class="help-note">The tool measures visible surface area only. Photo colour is not a direct measurement of photosynthesis, and a high coverage percentage does not show how much biomass is present once the dish is nearly covered.</p>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>
