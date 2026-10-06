@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f3f6fa" />
+    <title>Weekly Planner</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div class="brand-mark" aria-hidden="true">P</div>
+        <div class="heading-group">
+          <p class="eyebrow">YOUR TEACHING YEAR</p>
+          <h1>Weekly planner</h1>
+        </div>
+        <div class="author-links" aria-label="About the planner">
+          <span>By Paul Gavini</span>
+          <span aria-hidden="true">·</span>
+          <a href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener noreferrer">YouTube</a>
+          <span aria-hidden="true">·</span>
+          <a href="https://paulgavini.github.io/" target="_blank" rel="noopener noreferrer">Website</a>
+          <span aria-hidden="true">·</span>
+          <a href="help.html" target="_blank" rel="noopener">Help</a>
+        </div>
+        <div class="save-tools">
+          <div class="file-save-status" id="file-save-status" aria-live="polite">
+            <span class="file-save-dot" aria-hidden="true"></span>
+            <span id="file-save-label">No file linked — use Save As or Load</span>
+          </div>
+          <div class="file-actions">
+            <button class="file-button" id="new-planner-button" type="button">New</button>
+            <button class="file-button" id="save-as-button" type="button">Save As</button>
+            <button class="file-button" id="load-button" type="button">Load</button>
+            <button class="file-button" id="export-excel-button" type="button">Export Excel</button>
+            <button class="file-button" id="reload-file-button" type="button" hidden>Reload</button>
+          </div>
+          <div class="file-browser-note">For Chrome and Edge browsers</div>
+          <div class="file-browser-note">When switching computers, wait for sync, then refresh or click Reload.</div>
+        </div>
+      </header>
+
+      <div class="planner-workspace" id="planner-workspace" inert>
+      <nav class="term-tabs" id="term-tabs" aria-label="Planner terms"></nav>
+
+      <section class="planner-toolbar" aria-label="Term settings">
+        <div class="term-date-control">
+          <label for="term-start">Term starts on</label>
+          <input id="term-start" type="date" />
+          <span class="field-hint" id="date-hint">Choose a Monday</span>
+        </div>
+        <div class="week-controls" aria-label="Adjust number of weeks">
+          <span class="week-count" id="week-count">6 weeks</span>
+          <button class="week-button" id="remove-week" type="button" aria-label="Remove the last week" title="Remove the last week">−</button>
+          <button class="week-button week-button-add" id="add-week" type="button" aria-label="Add a week" title="Add a week">+</button>
+          <span class="week-control-divider" aria-hidden="true"></span>
+          <button class="history-button" id="undo-button" type="button" title="Undo the last planner change" disabled>Undo</button>
+          <button class="history-button" id="redo-button" type="button" title="Redo the last undone planner change" disabled>Redo</button>
+        </div>
+      </section>
+
+      <details class="subject-panel" id="subject-panel">
+        <summary>
+          <span class="summary-title">Manage subjects</span>
+          <span class="summary-description">Add recurring lessons or change the days they are taught</span>
+          <span class="summary-chevron" aria-hidden="true">⌄</span>
+        </summary>
+        <div class="subject-panel-content">
+          <div class="term-copy-controls">
+            <div class="term-copy-source">
+              <label for="copy-term-source">Copy subjects and weekday order from</label>
+              <select id="copy-term-source"></select>
+            </div>
+            <button class="secondary-button" id="copy-term-button" type="button">Copy schedule</button>
+            <p class="term-copy-note">Copies recurring subjects and order only. Keeps this term’s dates, week count, and day notes; replaces its lessons, one-off moves, and lesson notes.</p>
+          </div>
+          <form id="subject-form" class="subject-form">
+            <div class="subject-name-field">
+              <label for="subject-name">Subject name</label>
+              <input id="subject-name" type="text" maxlength="50" placeholder="e.g. 10 Connect" required />
+            </div>
+            <fieldset class="weekday-fieldset">
+              <legend>Taught on</legend>
+              <div class="weekday-checks" id="new-subject-days"></div>
+            </fieldset>
+            <button class="primary-button" type="submit">Add subject</button>
+          </form>
+          <div class="subject-list-heading">
+            <h2>Subjects in <span id="subject-list-term">Term 1</span></h2>
+            <span id="subject-total" class="subject-total"></span>
+          </div>
+          <div class="subject-list" id="subject-list"></div>
+          <p class="empty-subjects" id="empty-subjects">No subjects yet. Add a subject above to fill its taught days across this term.</p>
+        </div>
+      </details>
+
+      <section class="grid-section" aria-label="Weekly lesson planner">
+        <table class="planner-grid" id="planner-grid">
+            <thead>
+              <tr>
+                <th class="week-heading" scope="col">WK</th>
+                <th scope="col">Monday</th>
+                <th scope="col">Tuesday</th>
+                <th scope="col">Wednesday</th>
+                <th scope="col">Thursday</th>
+                <th scope="col">Friday</th>
+              </tr>
+            </thead>
+            <tbody id="planner-body"></tbody>
+        </table>
+        <p class="grid-hint"><span class="hint-icon" aria-hidden="true">↔</span> Drag lessons within a weekday to change their sequence across the term, or to another weekday to move that occurrence. Select a lesson to add notes; drag a day note to move it between days or place it between lessons.</p>
+      </section>
+
+      <footer class="app-footer">
+        <span>Link a JSON file to enable automatic saving.</span>
+        <span>Term schedules are independent.</span>
+      </footer>
+      </div>
+    </main>
+    <dialog class="lesson-dialog" id="note-dialog" aria-labelledby="note-dialog-title">
+      <form id="note-form">
+        <div class="dialog-topline">
+          <div>
+            <p class="eyebrow" id="note-dialog-eyebrow">LESSON NOTES</p>
+            <h2 id="note-dialog-title">Lesson</h2>
+            <p class="dialog-date" id="note-dialog-date"></p>
+          </div>
+          <button class="dialog-close" id="close-note-dialog" type="button" aria-label="Close">×</button>
+        </div>
+        <label class="note-label" id="note-dialog-label" for="note-text">Notes for this occurrence</label>
+        <textarea id="note-text" maxlength="10000" rows="7" placeholder="Add notes…"></textarea>
+        <div class="dialog-actions">
+          <button class="secondary-button" id="cancel-note" type="button">Cancel</button>
+          <button class="primary-button" id="save-note-button" type="submit">Save notes</button>
+        </div>
+      </form>
+    </dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js" defer></script>
+  </body>
+</html>

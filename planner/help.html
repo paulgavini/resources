@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f3f6fa" />
+    <title>Weekly Planner Help</title>
+    <style>
+      :root { color-scheme: light; font-family: "Segoe UI", Arial, sans-serif; color: #1b2a3a; background: #f3f6fa; }
+      * { box-sizing: border-box; }
+      body { margin: 0; line-height: 1.6; }
+      main { width: min(900px, 92%); margin: 28px auto; padding: 32px clamp(20px, 5vw, 56px); background: white; border: 1px solid #dce3eb; border-radius: 14px; box-shadow: 0 12px 34px rgba(35, 55, 75, .07); }
+      h1, h2 { line-height: 1.25; }
+      h1 { margin-top: 0; color: #056776; }
+      h2 { margin-top: 2em; font-size: 1.25rem; }
+      p, li { max-width: 72ch; }
+      a { color: #056776; }
+      .intro, .tip { padding: 12px 16px; border-left: 4px solid #0b8795; background: #eff9fa; }
+      .warning { padding: 16px; border: 1px solid #e5d7a8; border-radius: 8px; background: #fffaf0; }
+      .back { display: inline-block; margin-top: 1.5em; }
+      @media print { :root { background: white; } main { width: 100%; margin: 0; border: 0; box-shadow: none; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Weekly Planner Help</h1>
+      <p class="intro">This guide explains the planner in simple steps. Your planner is kept in a <strong>.json file</strong>. Keep that file somewhere you can find it, such as your approved OneDrive folder.</p>
+
+      <p class="tip"><strong>Want to use the example planner?</strong> Use the <strong>right mouse button</strong> on this link: <a href="Weekly_Planner_Demo_2026.json">2026 four-term demonstration planner (.json)</a>. Choose <strong>Save link as…</strong> from the menu and save the file to your computer. Then return to the planner, choose <strong>Load</strong>, and select the file you saved.</p>
+
+      <h2>Start with a planner</h2>
+      <ol>
+        <li><strong>Save As</strong> makes a new planner file. Choose a folder you can find again. The app remembers the file in this browser and saves your changes to it.</li>
+        <li><strong>Load</strong> opens a planner file you already have. Choose the .json file when asked.</li>
+        <li><strong>New</strong> starts a blank planner with four terms. It asks before replacing the planner currently on screen. Save a copy first if you want to keep the current planner separately.</li>
+        <li><strong>Export Excel</strong> downloads an .xlsx workbook with one sheet per term. Each lesson and day note has its own row, with dates, lesson order, and notes. Exporting does not change your planner file.</li>
+      </ol>
+      <p class="tip">Look at the message beside the green dot in the top right. It shows which file is connected and when it was last saved. A green dot means the last save completed.</p>
+
+      <h2>Use the same planner on another computer</h2>
+      <ol>
+        <li>Keep your .json planner file in a cloud-synced folder, such as OneDrive, if your organisation allows it.</li>
+        <li>On the other computer, open the planner page and select <strong>Load</strong>. Choose the same .json file. Allow the browser to access it if asked.</li>
+        <li>When returning to a computer, wait until the cloud service has finished syncing. Refresh the planner page, then use <strong>Reload</strong> if it is offered. Check that the correct file name appears before editing.</li>
+      </ol>
+      <p>Each computer may ask you to choose or allow access to the file. If the browser says another copy of the file changed, reload the latest copy before continuing. Avoid editing the same planner on two computers at the same time, as one computer's later save could replace the other's changes.</p>
+      <p>For ongoing automatic saving to a chosen file, use a recent version of Chrome or Microsoft Edge. If the browser only downloads a file or asks you to choose a file each time, use <strong>Save As</strong> to download a copy and <strong>Load</strong> to open it again. In that mode, save and keep the downloaded copy yourself.</p>
+
+      <h2>Terms, dates, and weeks</h2>
+      <ul>
+        <li>Select <strong>Term 1</strong>, <strong>Term 2</strong>, <strong>Term 3</strong>, or <strong>Term 4</strong> across the top. Each term has its own subjects and timetable.</li>
+        <li>Choose the term's starting Monday using <strong>Term starts on</strong>. The planner dates then run Monday to Friday. Days before today have a different background colour.</li>
+        <li>Use <strong>+</strong> to add a week at the end. Use <strong>−</strong> to remove the last week. At least one week stays in the term.</li>
+        <li>Use <strong>Undo</strong> and <strong>Redo</strong> beside the week controls to reverse or restore up to 100 recent planner changes. Keyboard shortcuts are Ctrl+Z and Ctrl+Y on Windows, or Command+Z and Command+Shift+Z on Mac. Loading a planner or starting <strong>New</strong> clears the undo history.</li>
+      </ul>
+
+      <h2>Add or change subjects</h2>
+      <ol>
+        <li>Open <strong>Manage subjects</strong>.</li>
+        <li>Type the subject name, for example “10 Connect”.</li>
+        <li>Select every weekday when it is taught, then choose <strong>Add subject</strong>.</li>
+      </ol>
+      <p>The planner places that subject on the selected weekdays in each week. Add it separately in each term where it is taught, or copy another term's schedule using the instructions below. Use the subject list to change its name, weekdays, or remove it.</p>
+      <p>To reuse a schedule, choose <strong>Copy subjects and weekday order from</strong> and select another term, then choose <strong>Copy schedule</strong>. This copies recurring subjects and weekday order only. It replaces the current term's subjects, lessons, one-off lesson moves, and lesson notes. It keeps the current term's start date, number of weeks, and day notes. The planner asks you to confirm first.</p>
+
+      <h2>Move lessons and change their order</h2>
+      <ul>
+        <li>Drag a lesson to another weekday to move just that lesson occurrence.</li>
+        <li>Drag a lesson up or down within its weekday to change the usual order for that weekday across every week in the selected term.</li>
+        <li>Select a lesson to open its notes. Type or change the notes and choose <strong>Save notes</strong>. Lesson notes belong to that lesson in that week.</li>
+      </ul>
+
+      <h2>Add a note to a day</h2>
+      <p>Choose the small <strong>+</strong> inside a day to add a separate note for that date. You can drag a day note to another day, or drag it up and down to choose where it sits among that day's lessons. A day note is separate from lesson notes.</p>
+      <p>Use the small box on the right side of a day note to mark it complete. A tick appears when it is checked. Click it again to mark the note incomplete.</p>
+
+      <h2>Quick fixes</h2>
+      <ul>
+        <li><strong>No file linked:</strong> choose Save As to create a file, or Load to open an existing one.</li>
+        <li><strong>Browser asks for file access:</strong> allow access to the selected file so the planner can read and save it. If access was removed, choose Load again.</li>
+        <li><strong>Changes are missing on another computer:</strong> wait for OneDrive or your cloud service to finish syncing, then refresh the planner and load or reload the file.</li>
+        <li><strong>File will not load:</strong> confirm you selected the planner .json file, not the planner web page. Keep a backup copy before making large changes.</li>
+      </ul>
+
+      <h2>Disclaimer</h2>
+      <div class="warning">
+        <p>This planner and this help guide are provided “as is” and “as available”, without a promise or warranty that they will always be available, accurate, secure, or free of errors, or suitable for a particular purpose.</p>
+        <p>To the fullest extent permitted by applicable law, the creator and operator of this planner are not responsible for financial loss, lost or damaged data, missed dates or deadlines, interruption to work, or other loss resulting from using or being unable to use the planner.</p>
+        <p>Keep backup copies of important planner files and check important dates and information. Do not use this planner as the only record for urgent or critical obligations. Nothing in this disclaimer excludes, restricts, or changes any right or guarantee that applicable law does not allow to be excluded, restricted, or changed.</p>
+      </div>
+    </main>
+  </body>
+</html>
