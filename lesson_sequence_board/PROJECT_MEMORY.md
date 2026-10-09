@@ -2,71 +2,70 @@
 
 ## Project Overview
 
-Lesson Sequence Board is a standalone browser application for arranging a sequence of lessons across configurable weeks and lesson slots. It is designed for simple, private, offline-first planning rather than full school administration.
+Lesson Sequence Board is a standalone, offline-capable browser app for arranging lessons in a configurable week-by-lesson grid.
 
 ## Current Architecture
 
-The project consists of two standalone HTML documents. `lesson_sequence_board.html` contains the application, with embedded CSS for responsive and dark-mode layouts and JavaScript for rendering, state changes, browser storage, theme preference, drag-and-drop with explicit before-target zones, formatted Excel export, and JSON save/load. `help.html` is a self-contained guide that follows the saved theme preference.
+- `lesson_sequence_board.html` is the complete application: markup, responsive CSS, board rendering, save/load, validation, undo/redo, and Excel generation.
+- `help.html` is a standalone user guide.
+- There is no build system, framework, package manager, or server.
 
 ## Current State
 
-Users can create or reset a board with 1-52 weeks and 1-12 slots per week; add empty slots or whole weeks; edit lesson titles and descriptions; resize each week row by dragging its dotted handle and reset it with a double-click; insert after a lesson, delete, undo the most recent deletion with Ctrl/Cmd+Z, or drag/reorder lessons using a blue left-edge drop zone to place a lesson before another; export a formatted Excel workbook; and save or load a full-fidelity JSON board file. Changes persist automatically in browser storage and, after the user chooses a JSON file in Chrome or Edge, also auto-save to that file; Save As selects a new auto-save destination. The header displays Graph Paper-style creator information and an accessible light/dark theme control that remembers the choice locally.
+Users can create boards with 1–52 weeks and 1–12 lessons per week, add weeks and lessons, edit lesson title and description in a dialog, reorder cards by dragging, delete or insert lessons, and undo/redo up to 100 changes per session. Cards show the lesson number, bold title beneath it, and the description. The + and − actions sit in the top-right of each lesson cell; empty cells have an Add Lesson control.
+
+Week rows automatically fit their tallest cell, with an 80 px minimum and about one line of space after the content. Descriptions are not truncated. Dragging a week divider saves a manual row height; double-clicking restores automatic sizing. Lesson-slot headings remain sticky while scrolling.
+
+On supported Chrome and Edge setups, a linked JSON file is the source of truth. The app restores its local file handle at startup, auto-saves edits after a short debounce, compares the current file against its last loaded version before writing, and locks editing when permission is lost or an external change is detected until Reload. Each computer needs its own browser link to the synced JSON file; users should wait for sync before resuming edits. Browsers without file picker support can import JSON and download copies, but cannot auto-save to a linked file. Excel export creates a separate timestamped `.xlsx` workbook.
+
+The app uses a planner-inspired, light-only visual style. The Help link opens in a new tab; Help includes instructions to right-click and save the Year 10 motion demo JSON before loading it.
 
 ## Important Files
 
-- `lesson_sequence_board.html` - application entry point and the complete UI, styling, self-test route, and client-side logic.
-- `help.html` - standalone user guide, linked from the app header and styled to follow the saved theme preference.
-- `AGENTS.md` - durable instructions for maintaining project memory.
-- `PROJECT_MEMORY.md` - concise persistent record of the project's current state.
+- `lesson_sequence_board.html` - application entry point and all application code.
+- `help.html` - user guide and demo JSON link.
+- `year_10_science_motion_6_weeks.json` - complete Year 10 Science motion demo: 24 lessons, 6 weeks, 4 slots per week, automatic row heights.
+- `AGENTS.md` - durable project-maintenance instructions.
+- `PROJECT_MEMORY.md` - current project reference.
 
 ## Technical Decisions
 
-- No build system, package manager, framework, or server is present; open the HTML file in a modern browser to run it.
-- Board state has the shape `{ lessonsPerWeek, weeks, rowHeights }`; each slot is either `{ type: "empty" }` or a lesson with a generated `id`, `title`, and `description`. `rowHeights` holds an optional saved height for each week and remains backward-compatible with older saved boards.
-- Lesson numbering is calculated from current physical grid order rather than stored as data.
-- Browser persistence uses `localStorage` key `lessonSequenceBoard_v1`; the previous `lessonPlanner_v2` key is read for backward compatibility.
-- Theme preference uses `localStorage` key `lessonSequenceBoardTheme`; when no preference is saved, the initial theme follows the device colour-scheme preference.
-- In Chrome and Edge, an optional File System Access API target is retained in IndexedDB after the first Save action. Local storage remains the primary autosave; file writes are debounced, never prompt during edits, and silently defer when permission is unavailable.
-- Excel export creates a native `.xlsx` workbook named `lesson-sequence-board.xlsx` without external libraries. It preserves the board grid with weeks as rows, lesson slots as columns, lesson/empty-cell styling, wrapped lesson text, frozen headers, and landscape worksheet settings.
-- Save files use a versioned `lesson-sequence-board` JSON envelope and retain state exactly, including lesson IDs and empty slots.
+- Board state has the shape `{ lessonsPerWeek, weeks, rowHeights }`. Each cell is either `{ type: "empty" }` or a lesson with a unique `id`, `title`, and `description`. Lesson numbers are derived from current grid order.
+- JSON saves use the `lesson-sequence-board` format, version 1, and preserve lesson IDs, empty cells, and optional row heights. `_fileMeta` tracks save time and revision. Planner JSON files use a different schema and are not interchangeable.
+- Linked file handles are stored in IndexedDB, separately per browser profile/computer. Before saving, the app compares the file text with the text last loaded or saved; mismatch blocks the write and requires Reload.
+- Legacy browser-stored board data is read only for migration and cleared after JSON save/load. The app does not write current board contents to localStorage.
+- Automatic row sizing uses content-based CSS grid tracks with an 80 px minimum. Saved row heights are limited to 80–720 px; a `null` row height means automatic sizing.
+- Excel export builds a native `.xlsx` workbook without external libraries. It keeps weeks as rows and lesson slots as columns, with a frozen header and wrapped cell text.
+- The app declares light color scheme and ignores retired saved theme preferences.
 
 ## Dependencies and External Services
 
-None. The app uses standard browser APIs, including DOM APIs, localStorage, FileReader, Blob, and native drag-and-drop.
+None. The app uses browser APIs including DOM, IndexedDB, localStorage for legacy migration only, File System Access, FileReader, Blob, and native drag-and-drop.
 
 ## Development and Deployment
 
-No build or deployment process is defined. Open `lesson_sequence_board.html` directly in a modern browser. Append `?test` to the URL to run the built-in browser self-tests for Excel workbook construction, board validation, and JSON save-file round-tripping.
+Open `lesson_sequence_board.html` in a modern browser. Add `?test` to run the built-in checks for board validation, JSON round-tripping, and Excel workbook creation. There is no build or deployment process defined.
 
 ## Constraints and Conventions
 
-- Preserve the single-file, dependency-free implementation unless a deliberate architecture change is requested.
-- The board is verified to work offline: it has no remote URLs, external assets, or network API calls.
-- Preserve the versioned JSON save-file format and Excel grid layout when changing the board data model.
-- Preserve the current hierarchy: 14px bold lesson titles, 12px lesson descriptions, 14px board toolbar controls, and 12px creator/theme header controls.
-- Update this memory after material project changes, per `AGENTS.md`.
+- Keep the app standalone, dependency-free, and offline-capable.
+- Keep the planner folder read-only when using it as a design reference; make project changes only in `lesson_sequence_board`.
+- Preserve JSON compatibility and the existing Excel grid layout when changing board data.
+- Preserve responsive layout, visible focus states, sticky lesson headings, session undo/redo, manual row resizing, and file conflict protection.
+- Update this memory after material project changes, following `AGENTS.md`.
 
 ## Known Issues
 
-- The built-in self-tests cover board validation, JSON save-file round-tripping, and Excel workbook construction; no full browser interaction test suite is present.
+The built-in checks cover data validation, JSON save-file round-tripping, and Excel workbook creation; there is no full browser interaction test suite.
 
 ## Active TODOs
 
-No explicit TODOs are recorded in the repository.
+No explicit TODOs are recorded.
 
 ## Recent Significant Changes
 
-- Renamed the product and entry point from Lesson Planner to Lesson Sequence Board.
-- Replaced lesson-shift arrows and in-card + Before controls with blue drag-before target zones.
-- Replaced CSV exchange and JSON Backup/Restore labels with formatted Excel export and simple Save/Load actions. The Excel export now produces a native `.xlsx` file rather than legacy SpreadsheetML XML.
-- Removed textarea resizing and added per-week row resizing with double-click reset to the generated default height.
-- Replaced coloured Unicode button symbols with embedded monochrome SVG outline icons, so the interface stays offline and has a consistent IDE-style appearance.
-- Repaired a JavaScript syntax error in the row-height validation introduced with row resizing; the application now loads again.
-- The create action is black before a board exists and changes to a red Reset Board warning after creation; reset still requires confirmation.
-- Added optional Chrome/Edge JSON file auto-save after an explicit initial Save file selection, while retaining local browser autosave and a JSON-download fallback for unsupported browsers.
-- Added Graph Paper-style creator information, a locally persisted light/dark theme toggle, and the current board typography hierarchy.
-- Removed the board's nested horizontal scrolling: its lesson columns now flex to the available page width, including on narrow screens.
-- Added session-only Ctrl/Cmd+Z support for restoring the most recently deleted lesson; any later board change supersedes that undo.
-- Added Save As, which always opens the Chrome/Edge file picker, then makes the chosen JSON file the active auto-save destination; unsupported browsers download a dated JSON copy.
-- Removed PDF export and its print-specific board layout; formatted Excel is the sole board export format.
-- Added a standalone in-project Help page covering board setup, editing, organisation, saving, exports, and offline use.
+- Reorganized the app header and board setup panel to follow the Weekly Planner layout.
+- Added the loadable 24-lesson Year 10 Science motion demo and a Save link as guide in Help.
+- Updated lesson cards with stacked bold titles and top-right +/− actions.
+- Switched default week rows to content-fit sizing, full descriptions, and an 80 px minimum while retaining manual resize.
+- Aligned JSON file handling with the planner’s sync-aware workflow, including conflict detection, Reload recovery, and per-computer file links.

@@ -3,44 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="light">
 <meta name="description" content="Help for Lesson Sequence Board.">
 <title>Lesson Sequence Board Help</title>
 <style>
   :root{
-    --bg:#f3f4f6;
+    color-scheme:light;
+    --bg:#f3f6fa;
     --panel:#fff;
-    --border:#d1d5db;
-    --text:#111827;
-    --muted:#6b7280;
-    --accent:#2563eb;
-    --accent-soft:#eff6ff;
-  }
-
-  :root[data-theme="dark"]{
-    --bg:#111827;
-    --panel:#1f2937;
-    --border:#4b5563;
-    --text:#f9fafb;
-    --muted:#cbd5e1;
-    --accent:#60a5fa;
-    --accent-soft:#1e3a5f;
+    --border:#dce3eb;
+    --border-strong:#cbd5e0;
+    --text:#1b2a3a;
+    --muted:#69788a;
+    --accent:#087f91;
+    --accent-soft:#e4f7f8;
+    --shadow:0 12px 34px rgba(35,55,75,.07);
+    font-family:"DM Sans","Segoe UI",sans-serif;
+    font-synthesis:none;
+    text-rendering:optimizeLegibility;
+    -webkit-font-smoothing:antialiased;
   }
 
   *{box-sizing:border-box}
 
   body{
     margin:0;
-    font-family:Arial, Helvetica, sans-serif;
-    background:var(--bg);
+    min-width:320px;
+    font-family:"DM Sans","Segoe UI",sans-serif;
+    background:radial-gradient(ellipse at 8% -12%, rgba(14,165,180,.08), transparent 34rem),var(--bg);
     color:var(--text);
     line-height:1.5;
   }
 
   .page{
-    width:min(900px, calc(100% - 32px));
+    width:min(1060px, 95%);
     margin:0 auto;
-    padding:28px 0 48px;
+    padding:30px 0 48px;
   }
 
   .page-header{
@@ -48,37 +46,46 @@
     flex-wrap:wrap;
     align-items:center;
     justify-content:space-between;
-    gap:16px;
-    margin-bottom:24px;
+    gap:13px;
+    margin-bottom:16px;
   }
 
+  .brand-mark{display:grid;width:43px;height:43px;flex:0 0 43px;place-items:center;border-radius:13px;background:linear-gradient(145deg,#0b8795,#056575);box-shadow:0 7px 15px rgba(5,103,118,.22);color:#fff;font:800 21px "Manrope",sans-serif}
+  .heading-group{flex:1}
+  .eyebrow{margin:0 0 2px;color:var(--accent);font-size:10px;font-weight:700;letter-spacing:.15em}
+
   h1, h2{line-height:1.2}
-  h1{margin:0;font-size:28px}
-  h2{margin:0 0 10px;font-size:19px}
+  h1{margin:0;font:700 25px/1.2 "Manrope","Segoe UI",sans-serif;letter-spacing:-.04em}
+  h2{margin:0 0 10px;font:700 16px/1.2 "Manrope","Segoe UI",sans-serif}
   p{margin:0 0 12px}
 
   .back-link{
     display:inline-block;
-    border:1px solid var(--border);
-    border-radius:4px;
-    padding:8px 10px;
-    color:var(--text);
+    border:1px solid #d8e0e8;
+    border-radius:8px;
+    padding:7px 10px;
+    color:#385164;
+    font-size:11px;
     text-decoration:none;
-    font-size:14px;
+    white-space:nowrap;
   }
 
-  .back-link:hover{background:var(--accent-soft);border-color:var(--accent)}
-  .back-link:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  .back-link:hover{background:#f6fbfc;border-color:#8baebb}
+  .back-link:focus-visible{outline:3px solid rgba(8,127,145,.3);outline-offset:2px}
+
+  .demo-link{color:var(--accent);font-size:12px;font-weight:700;text-underline-offset:2px}
+  .demo-link:focus-visible{outline:3px solid rgba(8,127,145,.3);outline-offset:2px}
 
   .intro, section{
     background:var(--panel);
     border:1px solid var(--border);
-    border-radius:6px;
-    padding:20px;
-    margin-bottom:14px;
+    border-radius:11px;
+    padding:19px 21px;
+    margin-bottom:12px;
+    box-shadow:0 4px 15px rgba(35,55,75,.035);
   }
 
-  .intro{border-left:4px solid var(--accent)}
+  .intro{border-left:4px solid var(--accent);background:linear-gradient(110deg,#fff,#f4fbfb)}
   .intro p{margin-bottom:0;color:var(--muted)}
 
   .steps{
@@ -91,29 +98,29 @@
 
   .tip{
     background:var(--accent-soft);
-    border-radius:4px;
+    border-radius:8px;
     padding:12px;
     margin-top:14px;
   }
 
   kbd{
     border:1px solid var(--border);
-    border-radius:3px;
-    background:var(--panel);
+    border-radius:5px;
+    background:#fbfcfd;
     padding:1px 5px;
     font-family:inherit;
     font-size:.9em;
   }
 
   @media (max-width:600px){
-    .page{width:min(100% - 20px, 900px);padding-top:16px}
+    .page{width:95%;padding-top:19px}
     .page-header{align-items:flex-start}
-    h1{font-size:24px}
-    .intro, section{padding:16px}
+    h1{font-size:22px}
+    .intro, section{padding:15px}
   }
 
   @media print{
-    :root{--bg:#fff;--panel:#fff;--border:#9ca3af;--text:#111827;--muted:#4b5563;--accent:#2563eb;--accent-soft:#eff6ff}
+    :root{--bg:#fff;--panel:#fff;--border:#9ca3af;--text:#111827;--muted:#4b5563;--accent:#087f91;--accent-soft:#e4f7f8}
     body{font-size:10pt;background:#fff}
     .page{width:auto;padding:0}
     .back-link{display:none}
@@ -124,13 +131,23 @@
 <body>
 <main class="page">
   <header class="page-header">
-    <h1>Lesson Sequence Board Help</h1>
+    <div class="brand-mark" aria-hidden="true">L</div>
+    <div class="heading-group">
+      <p class="eyebrow">LESSON SEQUENCE BOARD</p>
+      <h1>Help and guidance</h1>
+    </div>
     <a class="back-link" href="lesson_sequence_board.html">Back to board</a>
   </header>
 
   <div class="intro">
-    <p>Use Lesson Sequence Board to arrange lesson ideas across weeks and lesson slots. Your work stays on this device unless you explicitly save or export it.</p>
+    <p>Use Lesson Sequence Board to arrange lessons across weeks and lesson slots. Link a JSON file to save changes automatically, or download a JSON or Excel copy when you need one.</p>
   </div>
+
+  <section aria-labelledby="demo-heading">
+    <h2 id="demo-heading">Try the example board</h2>
+    <p>New to the board? The example contains a complete Year 10 Science motion unit with 24 lessons across six weeks. Right-click the link and choose <strong>Save link as…</strong>, then use <strong>Load</strong> on the board to open the saved JSON file.</p>
+    <a class="demo-link" href="year_10_science_motion_6_weeks.json">Year 10 Science motion demo (.json)</a>
+  </section>
 
   <section aria-labelledby="start-heading">
     <h2 id="start-heading">Start a board</h2>
@@ -144,11 +161,10 @@
   <section aria-labelledby="edit-heading">
     <h2 id="edit-heading">Edit and organise lessons</h2>
     <ul class="steps">
-      <li>Type a lesson title and a short description directly into a lesson card. Changes save automatically in this browser.</li>
-      <li>Use the <strong>+</strong> button between cards to insert a lesson after a selected lesson.</li>
-      <li>Drag a lesson by its handle. Drop it on the blue left-edge target of another card to place it before that lesson.</li>
-      <li>Drag the dotted line beneath a week label to resize that week. Double-click the line to restore its default height.</li>
-      <li>Select the bin button in a lesson card to delete that lesson.</li>
+      <li>Select a lesson card to open its editor. Edit the title and description, then select <strong>Save lesson</strong>; <strong>Cancel</strong>, Escape, or clicking outside the dialog discards unsaved edits. Saved text appears on the card and auto-saves to a linked JSON file. If no file is linked, use Save As to keep changes.</li>
+      <li>Each lesson card shows its bold title below the lesson number. Use the <strong>+</strong> control in the top-right of a lesson cell to insert a lesson after it, or <strong>−</strong> to delete that lesson.</li>
+      <li>Drag any part of a lesson card to move it. Drop on the teal left-edge target of another card to place the lesson before it.</li>
+      <li>Week rows automatically fit the tallest lesson in that week, leaving about one text line beneath the content. Drag the dotted line beneath a week label to set a custom height; double-click it to return to automatic sizing.</li>
     </ul>
   </section>
 
@@ -156,39 +172,28 @@
     <h2 id="board-heading">Manage the board</h2>
     <ul class="steps">
       <li><strong>Add Week</strong> appends a new week with the current number of lesson slots.</li>
-      <li><strong>Clear</strong> removes the saved board from this browser after confirmation.</li>
-      <li><strong>Dark mode</strong> switches the colour theme. The preference is remembered on this device.</li>
+      <li><strong>New</strong> starts a blank board and disconnects the current JSON file. Pending changes are saved when possible; confirm before leaving unsaved changes behind.</li>
+      <li><strong>Clear</strong> removes all lessons from the current board after confirmation. If a JSON file is linked, the cleared board auto-saves to it.</li>
+      <li><strong>Undo</strong> and <strong>Redo</strong> reverse or restore up to 100 board changes. You can also use Ctrl+Z / Cmd+Z to undo and Ctrl+Y / Cmd+Shift+Z to redo. Shortcuts are ignored while typing in a text field.</li>
     </ul>
   </section>
 
   <section aria-labelledby="save-heading">
     <h2 id="save-heading">Save, load, and export</h2>
     <ul class="steps">
-      <li><strong>Save</strong> creates a full JSON copy of the board. In Chrome and Edge, choosing a file once enables automatic updates to that selected file. Use <strong>Save As</strong> to choose a different filename or location; that file then becomes the automatic save file.</li>
-      <li><strong>Load</strong> restores a compatible JSON board file and replaces the current board after confirmation.</li>
-      <li><strong>Export Excel</strong> downloads a formatted workbook with weeks as rows and lesson slots as columns.</li>
+      <li><strong>Save As</strong> chooses a JSON file and makes it the automatic save file in supported Chrome and Edge browsers. Later board changes auto-save to that file.</li>
+      <li><strong>Load</strong> opens a compatible JSON board file and replaces the current board. In supported browsers, the loaded file becomes the automatic save file. If unsaved changes are present, you’ll be asked before they are replaced.</li>
+      <li>If browser file access is unavailable, Save As downloads a JSON copy and Load imports a copy. Changes after import need another download; ongoing file auto-save is unavailable in that browser.</li>
+      <li><strong>Export Excel</strong> downloads a dated, formatted workbook with weeks as rows and lesson slots as columns. It does not change the JSON board file.</li>
     </ul>
-    <p class="tip"><strong>Tip:</strong> Use Save before clearing browser data, changing browsers, or moving to another device.</p>
+    <p class="tip"><strong>Tip:</strong> Keep the linked JSON file in a synced folder if you use the board on more than one computer. The board checks for outside file changes before saving and asks you to reload if the file changed.</p>
   </section>
 
   <section aria-labelledby="privacy-heading">
     <h2 id="privacy-heading">Privacy and offline use</h2>
-    <p>The board has no account, server, or external service. It works offline and stores automatic saves in this browser. Save a JSON file when you need a portable backup.</p>
+    <p>The board has no account, server, or external service. It works offline. The linked JSON file is the source of truth, while the browser remembers its local file handle. Excel exports are separate copies.</p>
   </section>
 </main>
 
-<script>
-(() => {
-  const savedTheme = (() => {
-    try { return localStorage.getItem("lessonSequenceBoardTheme"); }
-    catch { return null; }
-  })();
-  const theme = savedTheme === "dark" || savedTheme === "light"
-    ? savedTheme
-    : window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  document.documentElement.dataset.theme = theme;
-  document.documentElement.style.colorScheme = theme;
-})();
-</script>
 </body>
 </html>

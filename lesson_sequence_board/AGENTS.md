@@ -35,6 +35,10 @@ Keep `AGENTS.md` focused on instructions and relatively stable project conventio
 
 Do not turn it into a development diary.
 
+## Workspace boundary
+
+When consulting the sibling planner folder as a design reference, keep it read-only. Make project changes only in lesson_sequence_board.
+
 ## Persistent memory
 
 Use `PROJECT_MEMORY.md` as the project's persistent working memory.

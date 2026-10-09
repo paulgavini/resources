@@ -1,0 +1,178 @@
+{
+  "format": "lesson-sequence-board",
+  "version": 1,
+  "exportedAt": "2026-10-09T10:49:08.113Z",
+  "state": {
+    "lessonsPerWeek": 4,
+    "weeks": [
+      [
+        {
+          "type": "lesson",
+          "id": "year10-motion-01",
+          "title": "Describing motion",
+          "description": "Use a reference point to describe an object's position and how it changes over time. Distinguish an observation of motion from the choice of observer."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-02",
+          "title": "Distance and displacement",
+          "description": "Compare total distance travelled with displacement from start to finish. Show displacement as a straight-line change in position with direction."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-03",
+          "title": "Scalars and vectors",
+          "description": "Sort motion quantities into scalars and vectors. Represent displacement and velocity with direction, and explain why direction matters in motion problems."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-04",
+          "title": "Speed and velocity",
+          "description": "Calculate average speed from distance and time, then compare it with average velocity. Show working and include suitable units and direction."
+        }
+      ],
+      [
+        {
+          "type": "lesson",
+          "id": "year10-motion-05",
+          "title": "Speed equation practice",
+          "description": "Rearrange speed = distance ? time to solve for each quantity. Solve multi-step word problems and check units and significant figures."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-06",
+          "title": "Converting speed units",
+          "description": "Convert between metres per second and kilometres per hour. Estimate everyday speeds and use conversions to compare journeys fairly."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-07",
+          "title": "Measuring speed fairly",
+          "description": "Measure the time taken to travel a known distance. Identify controlled variables, repeat trials, and calculate a reliable average speed."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-08",
+          "title": "Reliability and uncertainty",
+          "description": "Compare repeated measurements, identify anomalous results, and describe timing and distance uncertainties. Suggest practical changes that improve data quality."
+        }
+      ],
+      [
+        {
+          "type": "lesson",
+          "id": "year10-motion-09",
+          "title": "Position-time graphs",
+          "description": "Plot position against time using labelled axes and an appropriate scale. Place data accurately and describe the motion represented by a graph."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-10",
+          "title": "Reading graph gradients",
+          "description": "Relate the gradient of a position-time graph to velocity. Calculate gradients from straight sections and compare the motion of different objects."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-11",
+          "title": "Motion in stages",
+          "description": "Interpret flat, straight, and changing sections on a position-time graph. Describe when an object is stationary, moving steadily, or changing velocity."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-12",
+          "title": "Relative motion",
+          "description": "Compare the motion of two objects using reference frames and position-time data. Explain how an observer's motion can change the description of an event."
+        }
+      ],
+      [
+        {
+          "type": "lesson",
+          "id": "year10-motion-13",
+          "title": "Velocity-time graphs",
+          "description": "Read velocity from a velocity-time graph and connect the gradient to acceleration. Identify constant velocity, speeding up, and slowing down."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-14",
+          "title": "Calculating acceleration",
+          "description": "Calculate acceleration from change in velocity divided by time. Rearrange the equation, convert units where needed, and interpret positive or negative results."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-15",
+          "title": "Gravity and free fall",
+          "description": "Describe how gravity changes an object's velocity as it falls. Use g ? 9.8 m/s? for calculations and discuss the effect of air resistance."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-16",
+          "title": "Graphing a falling object",
+          "description": "Use motion data or a simulation to plot a falling object's velocity over time. Estimate acceleration from the graph and compare it with gravitational acceleration."
+        }
+      ],
+      [
+        {
+          "type": "lesson",
+          "id": "year10-motion-17",
+          "title": "Newton's first law and inertia",
+          "description": "Use Newton's first law to explain why motion stays unchanged when forces are balanced. Relate inertia to mass with familiar examples."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-18",
+          "title": "Resultant force and F = ma",
+          "description": "Find the resultant force in one dimension and use F = ma to calculate force, mass, or acceleration. State units and explain the direction of acceleration."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-19",
+          "title": "Balanced and unbalanced forces",
+          "description": "Draw force diagrams and determine whether forces are balanced. Predict how the magnitude or direction of motion changes when a resultant force acts."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-20",
+          "title": "Newton's third law",
+          "description": "Identify equal and opposite interaction forces acting on different objects. Use examples such as walking, swimming, and vehicle motion to explain the law."
+        }
+      ],
+      [
+        {
+          "type": "lesson",
+          "id": "year10-motion-21",
+          "title": "Friction and air resistance",
+          "description": "Investigate how friction and drag affect moving objects. Identify factors that change resistive forces and relate them to acceleration."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-22",
+          "title": "Terminal velocity",
+          "description": "Explain how a falling object's weight and air resistance change during a fall. Use a force diagram to show why acceleration reaches zero at terminal velocity."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-23",
+          "title": "Momentum and collisions",
+          "description": "Calculate momentum using p = mv and apply conservation of momentum to simple one-dimensional interactions. Track direction with signs."
+        },
+        {
+          "type": "lesson",
+          "id": "year10-motion-24",
+          "title": "Motion design challenge",
+          "description": "Analyse a motion scenario using graphs, force ideas, or momentum. Present a claim supported by calculations or data, and evaluate the evidence."
+        }
+      ]
+    ],
+    "rowHeights": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "_fileMeta": {
+    "updatedAt": "2026-10-09T10:49:08.113Z",
+    "revision": "l_mv0uexw1_wmp27f"
+  }
+}

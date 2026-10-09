@@ -3,94 +3,109 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="light">
 <title>Lesson Sequence Board</title>
 <style>
   :root{
-    --bg:#f3f4f6;
-    --panel:#ffffff;
-    --border:#d1d5db;
-    --text:#111827;
-    --muted:#6b7280;
-    --accent:#2563eb;
-    --danger:#b91c1c;
-    --focus:#93c5fd;
-    --placeholder:#c4c9d1;
+    color-scheme:light;
+    --bg:#f3f6fa;
+    --panel:#fff;
+    --border:#dce3eb;
+    --border-strong:#cbd5e0;
+    --text:#1b2a3a;
+    --muted:#69788a;
+    --accent:#087f91;
+    --accent-dark:#056776;
+    --accent-soft:#e4f7f8;
+    --danger:#ad4848;
+    --focus:rgba(8,127,145,.3);
+    --placeholder:#8996a3;
     --input-bg:#fff;
-    --hover-bg:#f9fafb;
-    --hover-border:#9ca3af;
-    --primary-bg:#111827;
+    --hover-bg:#f6fbfc;
+    --hover-border:#8baebb;
+    --primary-bg:#087f91;
     --primary-text:#fff;
-    --danger-hover:#991b1b;
-    --card-text:#374151;
-    --empty-bg:#fafafa;
-    --drop-bg:#eff6ff;
-    --drop-overlay:rgba(219,234,254,.75);
-    --shadow:rgba(0,0,0,.1);
-  }
-
-  :root[data-theme="dark"]{
-    --bg:#111827;
-    --panel:#1f2937;
-    --border:#4b5563;
-    --text:#f9fafb;
-    --muted:#cbd5e1;
-    --accent:#60a5fa;
-    --danger:#f87171;
-    --focus:#93c5fd;
-    --placeholder:#94a3b8;
-    --input-bg:#111827;
-    --hover-bg:#374151;
-    --hover-border:#94a3b8;
-    --primary-bg:#f3f4f6;
-    --primary-text:#111827;
-    --danger-hover:#dc2626;
-    --card-text:#e5e7eb;
-    --empty-bg:#18212f;
-    --drop-bg:#1e3a5f;
-    --drop-overlay:rgba(30,58,95,.85);
-    --shadow:rgba(0,0,0,.35);
+    --danger-hover:#963c3c;
+    --card-text:#35475a;
+    --empty-bg:#fbfcfd;
+    --drop-bg:#e4f7f8;
+    --drop-overlay:rgba(8,127,145,.12);
+    --shadow:rgba(35,55,75,.07);
+    font-family:"DM Sans","Segoe UI",sans-serif;
+    font-synthesis:none;
+    text-rendering:optimizeLegibility;
+    -webkit-font-smoothing:antialiased;
   }
 
   *{box-sizing:border-box}
 
   body{
     margin:0;
-    font-family:Arial, Helvetica, sans-serif;
-    background:var(--bg);
+    min-width:320px;
+    font-family:"DM Sans","Segoe UI",sans-serif;
+    background:radial-gradient(ellipse at 8% -12%, rgba(14,165,180,.08), transparent 34rem),var(--bg);
     color:var(--text);
   }
 
   .app{
+    width:95%;
     max-width:1600px;
     margin:0 auto;
-    padding:18px;
+    padding:30px 0 25px;
   }
 
   .app-header{
     display:flex;
     flex-wrap:wrap;
     align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    margin-bottom:14px;
+    gap:13px;
+    margin-bottom:12px;
   }
+
+  .brand-mark{
+    display:grid;
+    width:43px;
+    height:43px;
+    flex:0 0 43px;
+    place-items:center;
+    border-radius:13px;
+    background:linear-gradient(145deg,#0b8795,#056575);
+    box-shadow:0 7px 15px rgba(5,103,118,.22);
+    color:#fff;
+    font:800 21px "Manrope",sans-serif;
+  }
+  .heading-group{flex:0 0 auto}
+  .eyebrow{margin:0 0 2px;color:var(--accent);font-size:10px;font-weight:700;letter-spacing:.15em}
 
   h1{
     margin:0;
-    font-size:26px;
+    font:700 25px/1.2 "Manrope","Segoe UI",sans-serif;
+    letter-spacing:-.04em;
   }
 
   .header-actions{
     display:flex;
     flex-wrap:wrap;
     align-items:center;
-    gap:12px;
+    gap:6px;
+    margin-left:12px;
   }
+
+  .save-tools{display:grid;justify-items:end;gap:5px;margin-left:auto;text-align:right}
+  .file-save-status{display:flex;align-items:center;justify-content:flex-end;gap:7px;min-height:14px;color:#718296;font-size:10px;line-height:1.3}
+  .file-save-dot{width:8px;height:8px;flex:0 0 8px;border-radius:50%;background:#aebbc5}
+  .file-save-status.saved .file-save-dot{background:#28a477}
+  .file-save-status.saving .file-save-dot{background:#e3a22e}
+  .file-save-status.error{color:var(--danger)}
+  .file-save-status.error .file-save-dot{background:var(--danger)}
+  .file-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+  .file-button{padding:5px 10px;border-radius:7px;background:#fff;color:#385164;font-size:11px;white-space:nowrap}
+  .file-browser-note{color:#8492a2;font-size:9px;line-height:1.25}
 
   .creator-line{
     margin:0;
-    font-size:12px;
+    font-size:11px;
+    line-height:1.35;
     color:var(--muted);
   }
 
@@ -98,32 +113,33 @@
     color:var(--accent);
   }
 
-  .theme-toggle{
-    font-size:12px;
-    white-space:nowrap;
-  }
-
   .help-link{
     color:var(--accent);
-    font-size:12px;
+    font-size:11px;
+    text-underline-offset:2px;
   }
 
   .toolbar{
     display:flex;
-    flex-wrap:wrap;
-    gap:10px;
-    align-items:end;
-    font-size:14px;
+    align-items:flex-end;
+    gap:8px;
+    font-size:11px;
     background:var(--panel);
     border:1px solid var(--border);
-    padding:12px;
-    margin-bottom:14px;
+    border-radius:12px;
+    box-shadow:0 4px 12px rgba(35,55,75,.035);
+    padding:12px 16px;
+    margin-bottom:8px;
   }
+
+  .toolbar-group{display:flex;min-width:0;align-items:flex-end;flex-wrap:wrap;gap:8px}
+  .toolbar-group.setup{width:100%}
+  .toolbar-group-label{flex:0 0 100%;color:#8793a0;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
 
   .field{
     display:flex;
     flex-direction:column;
-    gap:5px;
+    gap:6px;
   }
 
   label{
@@ -132,9 +148,8 @@
     color:var(--muted);
   }
 
-  .toolbar label{
-    font-size:14px;
-  }
+  .toolbar label{font-size:12px}
+  .toolbar input{font-size:12px}
 
   input, textarea, button{
     font:inherit;
@@ -159,17 +174,17 @@
 
   input[type="number"],
   input[type="text"]{
-    border:1px solid var(--border);
-    border-radius:4px;
-    padding:8px 9px;
+    border:1px solid var(--border-strong);
+    border-radius:8px;
+    padding:8px 10px;
     background:var(--input-bg);
   }
 
   button{
-    border:1px solid var(--border);
+    border:1px solid #d8e0e8;
     background:var(--input-bg);
-    border-radius:4px;
-    padding:8px 10px;
+    border-radius:8px;
+    padding:7px 10px;
     cursor:pointer;
     color:var(--text);
   }
@@ -179,14 +194,19 @@
     border-color:var(--hover-border);
   }
 
+  button:disabled{opacity:.55;cursor:not-allowed}
+
   button.primary{
     background:var(--primary-bg);
     color:var(--primary-text);
     border-color:var(--primary-bg);
+    font-weight:700;
   }
 
   button.danger{
     color:var(--danger);
+    background:#fff;
+    border-color:#f0dada;
   }
 
   button.warning{
@@ -206,6 +226,8 @@
     gap:6px;
   }
 
+  .toolbar button[hidden]{display:none}
+
   .button-icon{
     width:16px;
     height:16px;
@@ -220,9 +242,11 @@
   .spacer{flex:1}
 
   .status{
+    display:flex;
+    align-items:center;
+    min-height:14px;
     color:var(--muted);
-    font-size:12px;
-    margin-bottom:10px;
+    font-size:10px;
   }
 
   #planner{
@@ -232,15 +256,18 @@
   }
 
   .planner-grid-container{
+    overflow:visible;
     background:var(--panel);
-    border:1px solid var(--border);
+    border:1px solid #e3e8ee;
+    border-radius:13px;
+    box-shadow:0 12px 34px rgba(35,55,75,.07);
     width:100%;
   }
 
   .planner-grid{
     display:grid;
     width:100%;
-    grid-template-columns:40px repeat(auto-fit, minmax(0, 1fr));
+    grid-template-columns:56px repeat(auto-fit, minmax(0, 1fr));
     gap:0;
     border-collapse:collapse;
   }
@@ -248,26 +275,29 @@
   .header-cell{
     position:sticky;
     top:0;
-    background:var(--panel);
+    background:#f8fafc;
     z-index:25;
     text-align:center;
-    padding:8px;
+    padding:10px 6px;
     font-weight:700;
-    font-size:12px;
-    color:var(--muted);
-    border-bottom:2px solid var(--border);
-    border-right:1px solid var(--border);
+    font-size:11px;
+    color:#647488;
+    border-bottom:1px solid #cfd8e2;
+    border-right:1px solid #e0e5eb;
   }
 
   .header-cell:first-child{
     border-left:1px solid var(--border);
     z-index:26;
+    border-top-left-radius:12px;
   }
+
+  .header-cell:last-child{border-top-right-radius:12px}
 
   .row-header{
     position:sticky;
     left:0;
-    background:var(--panel);
+    background:#fbfcfd;
     z-index:20;
     display:flex;
     align-items:center;
@@ -275,8 +305,8 @@
     padding:8px;
     font-weight:700;
     font-size:12px;
-    color:var(--accent);
-    border-right:2px solid var(--border);
+    color:var(--accent-dark);
+    border-right:1px solid var(--border-strong);
     border-bottom:1px solid var(--border);
   }
 
@@ -311,11 +341,14 @@
     border-bottom:none;
   }
 
+  .row-header.last-row-header{border-bottom-left-radius:12px}
+
   .slot{
     min-width:0;
     position:relative;
-    border-bottom:1px solid var(--border);
-    border-right:1px solid var(--border);
+    padding:6px;
+    border-bottom:1px solid #e0e5eb;
+    border-right:1px solid #e0e5eb;
   }
 
   .slot:last-child{
@@ -332,17 +365,26 @@
 
   .lesson-card,
   .empty-slot{
-    min-height:var(--row-min-height, 190px);
+    min-height:var(--row-min-height, 80px);
     height:100%;
-    border:1px solid var(--border);
+    border:1px solid #e1e7ee;
+    border-radius:9px;
     background:var(--panel);
     position:relative;
+    box-shadow:0 2px 7px rgba(35,55,75,.035);
+    transition:border-color .14s ease,box-shadow .14s ease,transform .14s ease;
   }
 
   .lesson-card{
     display:flex;
     flex-direction:column;
+    border:0;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
   }
+
+  .lesson-card:hover{border-color:transparent;box-shadow:none}
 
   .lesson-card.dragging{
     opacity:.45;
@@ -364,93 +406,117 @@
 
   .lesson-head{
     display:flex;
-    align-items:center;
+    flex-direction:column;
+    align-items:stretch;
     padding:7px 8px 3px;
-    gap:7px;
+    gap:2px;
   }
 
   .lesson-number{
-    font-size:12px;
+    flex:0 0 auto;
+    font-size:10px;
     font-weight:700;
-    color:var(--accent);
+    color:var(--accent-dark);
   }
 
-  .drag-handle{
-    margin-left:auto;
-    color:var(--muted);
-    cursor:grab;
-    user-select:none;
-    font-size:17px;
-  }
-
-  .lesson-title{
-    width:100%;
-    min-width:0;
-    border:none !important;
-    border-bottom:1px solid transparent !important;
-    border-radius:0 !important;
-    padding:4px 8px !important;
-    font-size:14px;
-    font-weight:700;
-    outline:none;
-  }
-
-  .lesson-title:focus{
-    border-bottom-color:var(--accent) !important;
-  }
-
-  .lesson-card textarea{
-    flex:1;
-    width:100%;
-    min-width:0;
-    border:none;
-    min-height:44px;
-    resize:none;
-    outline:none;
-    padding:6px 8px;
-    font-size:12px;
-    line-height:1.35;
-    color:var(--card-text);
-    background:var(--input-bg);
-  }
-
-  .lesson-footer{
+  .lesson-open{
     display:flex;
-    align-items:center;
-    justify-content:flex-end;
-    gap:5px;
-    padding:5px 6px 6px;
+    flex:1;
+    flex-direction:column;
+    align-items:stretch;
+    width:100%;
+    min-width:0;
+    padding:0;
+    border:0;
+    border-radius:8px 8px 0 0;
+    background:transparent;
+    color:inherit;
+    cursor:pointer;
+    text-align:left;
   }
+
+  .lesson-open:hover{border-color:transparent;background:#f8fcfc}
+  .lesson-open:focus-visible{outline:3px solid rgba(8,127,145,.3);outline-offset:-3px}
+
+  .lesson-title-preview{
+    display:block;
+    flex:0 0 auto;
+    min-width:0;
+    margin:1px 8px 5px;
+    padding:0 9px;
+    overflow-wrap:anywhere;
+    border:0;
+    background:transparent;
+    color:var(--text);
+    font-size:10px;
+    font-weight:700;
+    text-align:left;
+  }
+
+  .lesson-description-preview{
+    display:block;
+    flex:0 0 auto;
+    min-height:0;
+    margin:0 8px 7px;
+    padding:0 9px;
+    overflow:visible;
+    overflow-wrap:anywhere;
+    border:0;
+    border-radius:0;
+    background:transparent;
+    color:var(--card-text);
+    font-size:10px;
+    line-height:1.4;
+    white-space:pre-wrap;
+  }
+
+  .lesson-title-preview.empty-preview,
+  .lesson-description-preview.empty-preview{color:#8996a3;font-weight:400}
 
   .empty-slot button{
-    font-size:12px;
+    font-size:11px;
     padding:4px 6px;
   }
 
+  .lesson-actions{
+    position:absolute;
+    top:0;
+    right:5px;
+    z-index:12;
+    display:flex;
+    align-items:center;
+    gap:3px;
+  }
+
+  .insert-btn,
   .delete-lesson-btn{
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    width:34px;
-    height:34px;
+    width:24px;
+    height:24px;
     padding:0;
-    border:1px solid var(--border);
-    border-radius:6px;
-    background:var(--input-bg);
-    color:var(--text);
+    border:0;
+    border-radius:5px;
+    background:transparent;
+    font-size:15px;
+    font-weight:600;
+    line-height:1;
+    transition:background .14s ease,border-color .14s ease,color .14s ease;
   }
 
+  .insert-btn{color:var(--accent)}
+  .insert-btn:hover{background:#e8f6f7}
+  .delete-lesson-btn{color:#9a6a6a}
   .delete-lesson-btn:hover{
-    border-color:var(--primary-bg);
-    background:var(--primary-bg);
-    color:var(--primary-text);
+    background:#fff4f4;
+    color:#ad4848;
   }
 
-  .delete-lesson-btn .button-icon{
-    width:18px;
-    height:18px;
-    flex-basis:18px;
-  }
+  .history-controls{display:flex;align-items:center;gap:6px;margin-left:4px;padding-left:10px;border-left:1px solid #e1e7ed}
+  .history-button{min-height:32px;padding:0 9px;border:1px solid #d8e0e8;border-radius:7px;background:#fff;color:#385164;cursor:pointer;font-size:11px;font-weight:600}
+  .history-button:hover:not(:disabled){border-color:#8baebb;background:#f6fbfc}
+  .history-button:disabled{opacity:.45;cursor:not-allowed}
 
   .visually-hidden{
     position:absolute;
@@ -465,9 +531,10 @@
   }
 
   .helper-text{
-    margin:0 0 12px;
+    margin:0 0 8px;
     color:var(--muted);
-    font-size:13px;
+    font-size:10px;
+    line-height:1.35;
   }
 
   .empty-slot{
@@ -476,6 +543,7 @@
     justify-content:center;
     background:var(--empty-bg);
     border-style:dashed;
+    border-radius:9px;
   }
 
   .slot.drag-over-empty .empty-slot{
@@ -487,29 +555,12 @@
     color:var(--accent);
   }
 
-  .insert-btn{
-    position:absolute;
-    top:50%;
-    right:-8px;
-    transform:translateY(-50%);
-    z-index:20;
-    width:16px;
-    height:16px;
-    border-radius:50%;
-    padding:0;
-    font-size:11px;
-    font-weight:700;
-    color:var(--accent);
-    background:var(--input-bg);
-    box-shadow:0 1px 2px var(--shadow);
-  }
-
   .drop-before-zone{
     position:absolute;
     top:0;
     bottom:0;
     left:0;
-    width:18px;
+    width:20px;
     z-index:15;
     border-left:4px solid transparent;
   }
@@ -520,8 +571,8 @@
     top:50%;
     left:5px;
     transform:translateY(-50%);
-    padding:3px 5px;
-    border-radius:3px;
+    padding:4px 6px;
+    border-radius:6px;
     background:var(--accent);
     color:var(--primary-text);
     font-size:10px;
@@ -541,31 +592,79 @@
   }
 
   .empty-state{
-    background:var(--panel);
-    border:1px dashed var(--border);
+    border:1px dashed var(--border-strong);
+    border-radius:12px;
+    background:rgba(255,255,255,.78);
     text-align:center;
     padding:42px 20px;
     color:var(--muted);
   }
 
+  .lesson-dialog{
+    width:min(560px,calc(100% - 32px));
+    max-width:560px;
+    max-height:calc(100% - 32px);
+    padding:0;
+    overflow:auto;
+    border:1px solid #dce5ec;
+    border-radius:16px;
+    background:#fff;
+    box-shadow:0 24px 70px rgba(17,38,56,.25);
+    color:var(--text);
+  }
+  .lesson-dialog::backdrop{background:rgba(26,43,58,.34);backdrop-filter:blur(2px)}
+  .lesson-dialog form{padding:22px}
+  .dialog-topline{display:flex;justify-content:space-between;gap:15px;margin-bottom:20px}
+  .dialog-topline .eyebrow{margin-bottom:5px}
+  .dialog-topline h2{margin:0;font:700 21px "Manrope","Segoe UI",sans-serif;line-height:1.2}
+  .dialog-close{width:32px;height:32px;flex:0 0 32px;padding:0;border:1px solid #e1e7ed;border-radius:8px;background:#fff;color:#657588;font-size:21px;line-height:1}
+  .dialog-close:hover{background:#f4f7f9}
+  .dialog-field{display:grid;gap:6px;margin-bottom:14px}
+  .dialog-field label{color:#56697c;font-size:12px;font-weight:700}
+  .lesson-dialog input,
+  .lesson-dialog textarea{display:block;width:100%;min-width:0;padding:10px 11px;border:1px solid var(--border-strong);border-radius:9px;background:#fff;color:var(--text);font:inherit;font-size:12px;line-height:1.5}
+  .lesson-dialog input:focus,
+  .lesson-dialog textarea:focus{border-color:#77c5cb;outline:3px solid rgba(8,127,145,.13)}
+  .lesson-dialog textarea{min-height:155px;resize:vertical}
+  .dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
+  .dialog-actions .secondary-button{min-height:36px;padding:0 14px;border:1px solid var(--border-strong);border-radius:8px;background:#fff;color:#607184;font-size:11px;font-weight:700}
+  .dialog-actions .secondary-button:hover{background:#f7f9fb}
+  .dialog-actions .primary-button{min-height:36px;padding:0 15px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:11px;font-weight:700}
+  .dialog-actions .primary-button:hover{background:var(--accent-dark)}
+
   .file-input{display:none}
 
   @media (max-width:800px){
-    .app{padding:10px}
-    .app-header{align-items:flex-start}
-    .header-actions{width:100%}
-    .toolbar{align-items:stretch}
-    .field{width:calc(50% - 5px)}
+    .app{width:95%;padding:19px 0 20px}
+    .app-header{flex-wrap:wrap;margin-bottom:10px}
+    .heading-group{flex:1;min-width:200px}
+    .header-actions{margin-left:56px}
+    .save-tools{width:100%;justify-items:start;margin-left:56px;text-align:left}
+    .file-save-status{justify-content:flex-start}
+    .file-actions{justify-content:flex-start}
+    .file-browser-note{text-align:left}
+    .toolbar{padding:12px}
+    .toolbar-group{width:100%;align-items:flex-end}
+    .field{width:calc(50% - 4px)}
     .field input{width:100%}
     .spacer{display:none}
-    .toolbar button{flex:1}
-    .lesson-card,
-    .empty-slot{min-height:var(--row-min-height, 220px)}
-    .lesson-card textarea{min-height:44px}
-    .delete-lesson-btn,
+    .lesson-actions button{width:28px;height:28px;min-height:28px}
     .empty-slot button,
     .toolbar button{min-height:44px}
-    .insert-btn{min-height:24px !important; width:24px; height:24px}
+  }
+
+  @media (max-width:520px){
+    .header-actions{margin-left:0;gap:9px;flex-wrap:wrap}
+    .save-tools{margin-left:0}
+    .creator-line{flex-basis:100%}
+    .file-actions{width:100%;justify-content:flex-start}
+    .file-button{min-height:40px}
+    .toolbar-group.setup>button{min-height:40px}
+    .history-controls{margin-left:0;padding-left:0;border-left:0}
+    .header-cell{padding:8px 3px;font-size:11px}
+    .planner-grid{--week-column-width:42px;grid-template-columns:var(--week-column-width) repeat(auto-fit,minmax(0,1fr))}
+    .slot{padding:4px}
+    .lesson-dialog form{padding:18px}
   }
 
 </style>
@@ -573,7 +672,11 @@
 <body>
 <main class="app">
   <header class="app-header">
-    <h1>Lesson Sequence Board</h1>
+    <div class="brand-mark" aria-hidden="true">L</div>
+    <div class="heading-group">
+      <p class="eyebrow">YOUR TEACHING SEQUENCE</p>
+      <h1>Lesson Sequence Board</h1>
+    </div>
     <div class="header-actions">
       <p class="creator-line">
         By Paul Gavini using CODEX
@@ -582,38 +685,75 @@
         <span aria-hidden="true">&middot;</span>
         <a href="https://paulgavini.github.io/resources/">Website</a>
       </p>
-      <a class="help-link" href="help.html">Help</a>
-      <button id="themeToggle" class="theme-toggle" type="button" aria-pressed="false">Dark mode</button>
+      <a class="help-link" href="help.html" target="_blank" rel="noopener">Help</a>
+    </div>
+    <div class="save-tools" aria-label="Board file actions">
+      <div class="file-save-status" id="file-save-status" aria-live="polite">
+        <span class="file-save-dot" aria-hidden="true"></span>
+        <span id="status" class="status" role="status">No file linked — use Save As or Load.</span>
+      </div>
+      <div class="file-actions">
+        <button id="newBoardBtn" class="file-button" type="button">New</button>
+        <button id="saveAsBtn" class="file-button" type="button">Save As</button>
+        <button id="loadBtn" class="file-button" type="button">Load</button>
+        <button id="exportBtn" class="file-button" type="button">Export Excel</button>
+        <button id="reloadBtn" class="file-button" type="button" hidden>Reload</button>
+      </div>
+      <span class="file-browser-note">For Chrome and Edge browsers</span>
+      <span class="file-browser-note">When switching computers, wait for sync, then refresh or click Reload.</span>
     </div>
   </header>
 
   <div class="toolbar">
-    <div class="field">
-      <label for="weeksInput">Weeks</label>
-      <input id="weeksInput" type="number" min="1" max="52" value="10">
+    <div class="toolbar-group setup" role="group" aria-label="Board setup">
+      <span class="toolbar-group-label">Board setup</span>
+      <div class="field">
+        <label for="weeksInput">Weeks</label>
+        <input id="weeksInput" type="number" min="1" max="52" value="10">
+      </div>
+      <div class="field">
+        <label for="lessonsInput">Lessons per week</label>
+        <input id="lessonsInput" type="number" min="1" max="12" value="5">
+      </div>
+      <button id="createBtn" class="primary"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0 2 5.5"/><path d="M20 4v7h-7"/></svg>Create Board</button>
+      <button id="addWeekBtn"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8M8 12h8"/></svg>Add Week</button>
+      <div class="history-controls" role="group" aria-label="Undo and redo">
+        <button id="undoBtn" class="history-button" type="button" disabled>Undo</button>
+        <button id="redoBtn" class="history-button" type="button" disabled>Redo</button>
+      </div>
+      <button id="clearBtn" class="danger"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>Clear</button>
     </div>
-    <div class="field">
-      <label for="lessonsInput">Lessons per week</label>
-      <input id="lessonsInput" type="number" min="1" max="12" value="5">
-    </div>
 
-    <button id="createBtn" class="primary"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0 2 5.5"/><path d="M20 4v7h-7"/></svg>Create Board</button>
-    <button id="addWeekBtn"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8M8 12h8"/></svg>Add Week</button>
-
-    <div class="spacer"></div>
-
-    <button id="exportBtn"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11M15 9v11"/></svg>Export Excel</button>
-    <button id="saveBtn"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l3 3v15H5z"/><path d="M8 3v6h8V3M8 20v-6h8v6"/></svg>Save</button>
-    <button id="saveAsBtn"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l3 3v15H5z"/><path d="M8 3v6h8V3M8 20v-6h8v6"/><path d="M18 18l3 3M21 18l-3 3"/></svg>Save As</button>
-    <button id="loadBtn"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z"/><path d="M12 12v6M9 15l3 3 3-3"/></svg>Load</button>
-    <button id="clearBtn" class="danger"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>Clear</button>
     <input class="file-input" type="file" id="jsonFileInput" accept=".json,application/json">
   </div>
 
-  <p class="helper-text">Drag a lesson to another lesson's blue left-edge drop zone to place it before that lesson. Drag the dotted line beneath a week label to resize that row, or double-click it to reset. Press Ctrl+Z (Windows) or Cmd+Z (Mac) to restore the most recently deleted lesson. Changes save automatically in this browser. In Chrome or Edge, choose Save once to auto-save to a JSON file, or choose Save As to select a different file.</p>
-  <div id="status" class="status" role="status" aria-live="polite">Changes save automatically in this browser.</div>
+  <p class="helper-text">Select a lesson to edit it, or drag a card to reorder it. Use Undo/Redo and the dotted week divider to resize rows.</p>
   <div id="planner"></div>
 </main>
+
+<dialog class="lesson-dialog" id="lesson-dialog" aria-labelledby="lesson-dialog-title">
+  <form id="lesson-form">
+    <div class="dialog-topline">
+      <div>
+        <p class="eyebrow">LESSON DETAILS</p>
+        <h2 id="lesson-dialog-title">Edit lesson</h2>
+      </div>
+      <button class="dialog-close" id="close-lesson-dialog" type="button" aria-label="Close">&times;</button>
+    </div>
+    <div class="dialog-field">
+      <label for="lesson-title-input">Lesson title</label>
+      <input id="lesson-title-input" type="text" placeholder="Enter a lesson title">
+    </div>
+    <div class="dialog-field">
+      <label for="lesson-description-input">Description</label>
+      <textarea id="lesson-description-input" rows="7" placeholder="Add a short description"></textarea>
+    </div>
+    <div class="dialog-actions">
+      <button class="secondary-button" id="cancel-lesson-edit" type="button">Cancel</button>
+      <button class="primary-button" type="submit">Save lesson</button>
+    </div>
+  </form>
+</dialog>
 
 <script>
 (() => {
@@ -624,15 +764,28 @@
   const FILE_HANDLE_KEY = "activeBoardFile";
   const BACKUP_FORMAT = "lesson-sequence-board";
   const BACKUP_VERSION = 1;
-  const THEME_STORAGE_KEY = "lessonSequenceBoardTheme";
+  const HISTORY_LIMIT = 100;
   const plannerEl = document.getElementById("planner");
   const createBtn = document.getElementById("createBtn");
-  const saveBtn = document.getElementById("saveBtn");
+  const undoBtn = document.getElementById("undoBtn");
+  const redoBtn = document.getElementById("redoBtn");
+  const newBoardBtn = document.getElementById("newBoardBtn");
   const saveAsBtn = document.getElementById("saveAsBtn");
+  const loadBtn = document.getElementById("loadBtn");
+  const reloadBtn = document.getElementById("reloadBtn");
+  const exportBtn = document.getElementById("exportBtn");
+  const clearBtn = document.getElementById("clearBtn");
+  const setupGroup = document.querySelector(".toolbar-group.setup");
   const weeksInput = document.getElementById("weeksInput");
   const lessonsInput = document.getElementById("lessonsInput");
   const statusEl = document.getElementById("status");
-  const themeToggle = document.getElementById("themeToggle");
+  const fileSaveStatusEl = document.getElementById("file-save-status");
+  const lessonDialog = document.getElementById("lesson-dialog");
+  const lessonForm = document.getElementById("lesson-form");
+  const lessonDialogTitle = document.getElementById("lesson-dialog-title");
+  const lessonTitleInput = document.getElementById("lesson-title-input");
+  const lessonDescriptionInput = document.getElementById("lesson-description-input");
+  let editingLessonId = null;
 
   let state = {
     lessonsPerWeek: 5,
@@ -640,41 +793,22 @@
     rowHeights: []
   };
 
+  let undoStack = [];
+  let redoStack = [];
+  let lastHistorySnapshot = JSON.stringify(state);
   let dragSourceId = null;
-  let deletedLessonUndoState = null;
+  let suppressCardClickUntil = 0;
   let savedBoardFileHandle = null;
+  let fileHandlePersisted = false;
   let fileSaveTimer = null;
   let fileSaveChain = Promise.resolve();
-
-  function applyTheme(theme) {
-    const isDark = theme === "dark";
-    document.documentElement.dataset.theme = isDark ? "dark" : "light";
-    document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-    themeToggle.setAttribute("aria-pressed", String(isDark));
-    themeToggle.textContent = isDark ? "Light mode" : "Dark mode";
-  }
-
-  function getSavedTheme() {
-    try {
-      return localStorage.getItem(THEME_STORAGE_KEY);
-    } catch {
-      return null;
-    }
-  }
-
-  function storeTheme(theme) {
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, theme);
-    } catch {
-      // The selected theme still applies for this visit when storage is unavailable.
-    }
-  }
-
-  function getInitialTheme() {
-    const savedTheme = getSavedTheme();
-    if (savedTheme === "dark" || savedTheme === "light") return savedTheme;
-    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
+  let fileBaseSignatures = new WeakMap();
+  let fileConflict = false;
+  let fileDirty = false;
+  let stateGeneration = 0;
+  let fileRestoreComplete = false;
+  let importedFileName = null;
+  let recoveredBrowserCopy = false;
 
   const makeId = () =>
     "l_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,8);
@@ -688,7 +822,7 @@
     description
   });
 
-  const MIN_ROW_HEIGHT = 160;
+  const MIN_ROW_HEIGHT = 80;
   const MAX_ROW_HEIGHT = 720;
 
   function normaliseRowHeights(candidate) {
@@ -755,7 +889,8 @@
   }
 
   function supportsFileAutoSave() {
-    return "showSaveFilePicker" in window && "indexedDB" in window;
+    return window.isSecureContext && typeof window.showSaveFilePicker === "function" &&
+      typeof window.showOpenFilePicker === "function" && "indexedDB" in window;
   }
 
   function openFileHandleDatabase() {
@@ -795,71 +930,336 @@
     }
   }
 
-  async function hasFileWritePermission(handle, requestPermission=false) {
-    const options = {mode:"readwrite"};
-    if (await handle.queryPermission(options) === "granted") return true;
-    return requestPermission && await handle.requestPermission(options) === "granted";
+  async function clearStoredFileHandle() {
+    const database = await openFileHandleDatabase();
+    try {
+      await new Promise((resolve, reject) => {
+        const request = database.transaction(FILE_HANDLE_STORE, "readwrite")
+          .objectStore(FILE_HANDLE_STORE).delete(FILE_HANDLE_KEY);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+      fileHandlePersisted = false;
+    } finally {
+      database.close();
+    }
   }
 
-  function updateSaveButton() {
+  async function hasFileWritePermission(handle, requestPermission=false) {
+    if (!handle || typeof handle.queryPermission !== "function") return false;
+    const options = {mode:"readwrite"};
+    if (await handle.queryPermission(options) === "granted") return true;
+    return requestPermission && typeof handle.requestPermission === "function" &&
+      await handle.requestPermission(options) === "granted";
+  }
+
+  function displayFileName(name) {
+    return name.replace(/\.json$/i, "");
+  }
+
+  function formatSavedTime(isoTime) {
+    if (!isoTime) return "";
+    const date = new Date(isoTime);
+    return Number.isNaN(date.getTime()) ? "" : date.toLocaleString(undefined, {dateStyle:"medium", timeStyle:"short"});
+  }
+
+  function createFileSnapshot() {
+    const savedAt = new Date().toISOString();
+    const backup = {
+      ...makeBackup(),
+      _fileMeta:{updatedAt:savedAt, revision:makeId()}
+    };
+    return {text:JSON.stringify(backup, null, 2), savedAt, stateSignature:JSON.stringify(state)};
+  }
+
+  function clearBrowserBoardCopy() {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+      recoveredBrowserCopy = false;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function setFileStatus(message, isError=false) {
+    statusEl.textContent = message;
+    fileSaveStatusEl.classList.toggle("error", isError);
+    fileSaveStatusEl.classList.toggle("saving", !isError && /^(Saving to |Unsaved changes)/.test(message));
+    fileSaveStatusEl.classList.toggle("saved", !isError && message.startsWith("Saved to "));
+  }
+
+  function setWorkspaceLocked(locked) {
+    plannerEl.inert = locked;
+    setupGroup.inert = locked;
+    clearBtn.disabled = locked;
+    exportBtn.disabled = locked;
+  }
+
+  function setUnlinkedStatus() {
+    if (importedFileName) {
+      setFileStatus(supportsFileAutoSave()
+        ? `Imported ${importedFileName} — use Save As to link it for automatic saving`
+        : `Imported ${importedFileName} — browser file auto-save is unavailable; use Save As to download changes`);
+    } else if (recoveredBrowserCopy) {
+      setFileStatus("Recovered board from an older browser save — use Save As to keep it in a file");
+    } else if (!supportsFileAutoSave()) {
+      setFileStatus("Browser file auto-save is unavailable — use Save As to download a JSON copy");
+    } else {
+      setFileStatus("No file linked — use Save As or Load");
+    }
+  }
+
+  function updateFileActionTitles() {
     if (!supportsFileAutoSave()) {
-      saveBtn.title = "Download a JSON copy of this board";
+      newBoardBtn.title = "Start a new blank board";
       saveAsBtn.title = "Download a dated JSON copy of this board";
       return;
     }
-    saveBtn.title = savedBoardFileHandle
-      ? "Auto-saving to the selected JSON file. Click to save now or re-authorize access."
-      : "Choose a JSON file. Future changes will save to it automatically.";
-    saveAsBtn.title = "Choose a different JSON filename. Future changes will save to it automatically.";
+    newBoardBtn.title = "Start a new blank board and disconnect the current JSON file.";
+    saveAsBtn.title = "Choose a different JSON filename for auto-save.";
   }
 
-  async function writeBoardToSelectedFile({requestPermission=false, announce=false}={}) {
-    if (!savedBoardFileHandle) return false;
+  function markFileConflict(handle) {
+    if (savedBoardFileHandle !== handle) return;
+    fileConflict = true;
+    setWorkspaceLocked(true);
+    reloadBtn.hidden = false;
+    setFileStatus(`File changed since it was loaded — reload ${displayFileName(handle.name)} before saving`, true);
+  }
+
+  async function writeBoardToSelectedFile({requestPermission=false, announce=false, force=false}={}) {
+    const handle = savedBoardFileHandle;
+    if (!handle || (fileConflict && !force)) return false;
     const write = async () => {
       try {
-        if (!await hasFileWritePermission(savedBoardFileHandle, requestPermission)) {
-          if (announce) statusEl.textContent = "File access was not granted. Your board is still saved in this browser.";
+        if (!await hasFileWritePermission(handle, requestPermission)) {
+          if (savedBoardFileHandle === handle) {
+            setWorkspaceLocked(true);
+            reloadBtn.hidden = false;
+            setFileStatus(`Permission needed to save ${displayFileName(handle.name)} — click Reload to reconnect`, true);
+          }
           return false;
         }
-        const writable = await savedBoardFileHandle.createWritable();
-        await writable.write(JSON.stringify(makeBackup(), null, 2));
+        if (!force) {
+          const expectedText = fileBaseSignatures.get(handle);
+          if (typeof expectedText !== "string" || await (await handle.getFile()).text() !== expectedText) {
+            markFileConflict(handle);
+            return false;
+          }
+        }
+        const snapshot = createFileSnapshot();
+        const writable = await handle.createWritable();
+        await writable.write(snapshot.text);
         await writable.close();
-        if (announce) statusEl.textContent = `Saved to ${savedBoardFileHandle.name}.`;
+        fileBaseSignatures.set(handle, snapshot.text);
+        if (savedBoardFileHandle === handle) {
+          fileConflict = false;
+          if (JSON.stringify(state) === snapshot.stateSignature) fileDirty = false;
+          setWorkspaceLocked(false);
+          reloadBtn.hidden = false;
+          if (!clearBrowserBoardCopy()) {
+            setFileStatus(`Saved to ${displayFileName(handle.name)}, but the old browser copy could not be cleared`, true);
+          } else {
+            const reconnectHint = fileHandlePersisted ? "" : " — Load it again next time";
+            setFileStatus(`Saved to ${displayFileName(handle.name)} · ${formatSavedTime(snapshot.savedAt)}${reconnectHint}`);
+          }
+        }
         return true;
       } catch (error) {
-        if (announce) statusEl.textContent = "Could not write the JSON file. Your board is still saved in this browser.";
+        if (savedBoardFileHandle === handle) {
+          setWorkspaceLocked(true);
+          reloadBtn.hidden = false;
+          setFileStatus(`Could not save ${displayFileName(handle.name)}: ${error.message || "file error"}`, true);
+        }
         return false;
       }
     };
-    fileSaveChain = fileSaveChain.then(write, write);
+    fileSaveChain = fileSaveChain.catch(() => {}).then(write);
     return fileSaveChain;
   }
 
   function queueFileAutoSave() {
-    if (!savedBoardFileHandle) return;
+    if (!savedBoardFileHandle || fileConflict || !fileDirty) return;
     clearTimeout(fileSaveTimer);
-    fileSaveTimer = setTimeout(() => writeBoardToSelectedFile(), 500);
+    const handle = savedBoardFileHandle;
+    const generation = stateGeneration;
+    fileSaveTimer = setTimeout(() => {
+      if (handle !== savedBoardFileHandle || generation !== stateGeneration) return;
+      setFileStatus(`Saving to ${displayFileName(handle.name)}…`);
+      writeBoardToSelectedFile();
+    }, 180);
+  }
+
+  async function loadSelectedFile(handle, {requestPermission=false, permissionGranted=null, startup=false}={}) {
+    try {
+      const file = await handle.getFile();
+      const rawText = await file.text();
+      const restoredState = stateFromBackup(JSON.parse(rawText));
+      if (startup && recoveredBrowserCopy && JSON.stringify(state) !== JSON.stringify(restoredState) &&
+          !confirm("This linked file differs from the board saved in this browser. Load the linked file? Choose Cancel to keep the browser copy and unlink this file.")) {
+        savedBoardFileHandle = null;
+        fileHandlePersisted = false;
+        try { await clearStoredFileHandle(); } catch {}
+        fileBaseSignatures = new WeakMap();
+        reloadBtn.hidden = true;
+        setWorkspaceLocked(false);
+        setFileStatus("Kept the browser-saved board because it differs from the linked file. Use Save As to choose its JSON file.");
+        return false;
+      }
+      savedBoardFileHandle = handle;
+      try {
+        await storeSavedFileHandle(handle);
+        fileHandlePersisted = true;
+      } catch {
+        fileHandlePersisted = false;
+        setFileStatus(`Linked for this session: ${displayFileName(handle.name)} (browser could not remember it)`, true);
+      }
+      const canWrite = permissionGranted === true ||
+        (permissionGranted !== false && await hasFileWritePermission(handle, requestPermission));
+      updateFileActionTitles();
+      state = restoredState;
+      weeksInput.value = state.weeks.length || 10;
+      lessonsInput.value = state.lessonsPerWeek;
+      resetHistory();
+      fileBaseSignatures.set(handle, rawText);
+      fileConflict = false;
+      fileDirty = false;
+      importedFileName = null;
+      clearBrowserBoardCopy();
+      reloadBtn.hidden = false;
+      render();
+      if (canWrite) {
+        setWorkspaceLocked(false);
+        const savedAt = (() => {
+          try { return JSON.parse(rawText)._fileMeta?.updatedAt || ""; } catch { return ""; }
+        })();
+        const savedLabel = formatSavedTime(savedAt);
+        setFileStatus(savedLabel
+          ? `Loaded ${displayFileName(handle.name)} · last saved ${savedLabel}`
+          : `Loaded ${displayFileName(handle.name)} · ready to save`);
+      } else {
+        setWorkspaceLocked(true);
+        setFileStatus(`Click Reload to open the latest ${displayFileName(handle.name)} before editing`, true);
+      }
+      return canWrite;
+    } catch (error) {
+      if (savedBoardFileHandle === handle) {
+        setWorkspaceLocked(true);
+        reloadBtn.hidden = false;
+      }
+      setFileStatus(`Could not read ${displayFileName(handle.name)}: ${error.message || "invalid board JSON"}`, true);
+      return false;
+    }
   }
 
   async function restoreFileAutoSave() {
-    if (!supportsFileAutoSave()) {
-      updateSaveButton();
-      return;
-    }
+    setWorkspaceLocked(true);
+    setFileStatus("Checking for a linked board file…");
     try {
+      if (!supportsFileAutoSave()) {
+        savedBoardFileHandle = null;
+        fileHandlePersisted = false;
+        reloadBtn.hidden = true;
+        setWorkspaceLocked(false);
+        setUnlinkedStatus();
+        return;
+      }
       savedBoardFileHandle = await readSavedFileHandle();
-    } catch {}
-    updateSaveButton();
+      fileHandlePersisted = Boolean(savedBoardFileHandle);
+      if (!savedBoardFileHandle) {
+        reloadBtn.hidden = true;
+        setWorkspaceLocked(false);
+        setUnlinkedStatus();
+        return;
+      }
+      reloadBtn.hidden = false;
+      if (!await hasFileWritePermission(savedBoardFileHandle)) {
+        setFileStatus(`Click Reload to open the latest ${displayFileName(savedBoardFileHandle.name)} before editing`, true);
+        return;
+      }
+      await loadSelectedFile(savedBoardFileHandle, {permissionGranted:true, startup:true});
+    } catch (error) {
+      if (savedBoardFileHandle) {
+        reloadBtn.hidden = false;
+        setFileStatus(`Could not reconnect ${displayFileName(savedBoardFileHandle.name)}: ${error.message || "permission needed"}`, true);
+      } else {
+        reloadBtn.hidden = true;
+        setWorkspaceLocked(false);
+        setUnlinkedStatus();
+      }
+    } finally {
+      fileRestoreComplete = true;
+      updateFileActionTitles();
+    }
   }
 
-  function saveState(message="Saved", {preserveDeletedLessonUndo=false}={}) {
-    if (!preserveDeletedLessonUndo) deletedLessonUndoState = null;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    localStorage.removeItem(LEGACY_STORAGE_KEY);
+  function historySnapshot() {
+    return JSON.stringify(state);
+  }
+
+  function resetHistory() {
+    undoStack = [];
+    redoStack = [];
+    lastHistorySnapshot = historySnapshot();
+    updateHistoryButtons();
+  }
+
+  function updateHistoryButtons() {
+    undoBtn.disabled = undoStack.length === 0;
+    redoBtn.disabled = redoStack.length === 0;
+  }
+
+  function saveState(message="Saved") {
+    const currentSnapshot = historySnapshot();
+    if (currentSnapshot !== lastHistorySnapshot) {
+      undoStack.push(lastHistorySnapshot);
+      if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+      redoStack = [];
+      lastHistorySnapshot = currentSnapshot;
+    }
+    updateHistoryButtons();
+    fileDirty = true;
+    stateGeneration += 1;
+    clearTimeout(fileSaveTimer);
+    if (fileConflict) {
+      setFileStatus("File changed since it was loaded — reload before saving", true);
+      return;
+    }
+    if (!savedBoardFileHandle) {
+      if (importedFileName) {
+        setFileStatus(`${message} — use Save As to keep changes`);
+      } else if (!supportsFileAutoSave()) {
+        setFileStatus(`${message} — use Save As to download a JSON copy`);
+      } else {
+        setFileStatus(`${message} — use Save As to link a JSON file`);
+      }
+      return;
+    }
+    setFileStatus(`Unsaved changes — saving to ${displayFileName(savedBoardFileHandle.name)}…`);
     queueFileAutoSave();
-    statusEl.textContent =
-      message + " \u2022 " +
-      new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+  }
+
+  function applyHistoryChange(fromStack, toStack, actionName) {
+    const snapshot = fromStack.pop();
+    if (!snapshot) return;
+    toStack.push(historySnapshot());
+    if (toStack.length > HISTORY_LIMIT) toStack.shift();
+    state = normaliseRowHeights(JSON.parse(snapshot));
+    lastHistorySnapshot = historySnapshot();
+    weeksInput.value = state.weeks.length || 10;
+    lessonsInput.value = state.lessonsPerWeek;
+    saveState(`${actionName} complete`);
+    render();
+  }
+
+  function undoChange() {
+    applyHistoryChange(undoStack, redoStack, "Undo");
+  }
+
+  function redoChange() {
+    applyHistoryChange(redoStack, undoStack, "Redo");
   }
 
   function createPlanner(weekCount, lessonsPerWeek) {
@@ -870,7 +1270,7 @@
       ),
       rowHeights: Array.from({length:weekCount}, () => null)
     };
-    saveState("Planner created");
+    saveState("Board created");
     render();
   }
 
@@ -897,6 +1297,29 @@
       if (si !== -1) return {wi, si, item:state.weeks[wi][si]};
     }
     return null;
+  }
+
+  function openLessonEditor(id) {
+    const found = findItem(id);
+    if (!found || found.item.type !== "lesson") return;
+    editingLessonId = id;
+    lessonDialogTitle.textContent = `Edit Lesson ${lessonNumberMap().get(id)}`;
+    lessonTitleInput.value = found.item.title;
+    lessonDescriptionInput.value = found.item.description;
+    lessonDialog.showModal();
+    lessonTitleInput.focus();
+  }
+
+  function saveLessonEditor(event) {
+    event.preventDefault();
+    const found = editingLessonId ? findItem(editingLessonId) : null;
+    if (found && found.item.type === "lesson") {
+      found.item.title = lessonTitleInput.value;
+      found.item.description = lessonDescriptionInput.value;
+      saveState("Lesson updated");
+    }
+    lessonDialog.close();
+    render();
   }
 
   function ensureCapacity(requiredLessonCount) {
@@ -988,26 +1411,15 @@
 
   function deleteLesson(id) {
     if (!findItem(id)) return;
-    deletedLessonUndoState = cloneState(state);
     const lessons = getLessons().filter(x => x.id !== id);
     rebuildFromLessonSequence(lessons);
-    saveState("Lesson deleted. Press Ctrl+Z or Cmd+Z to undo.", {preserveDeletedLessonUndo:true});
-    render();
-  }
-
-  function undoDeletedLesson() {
-    if (!deletedLessonUndoState) return;
-    state = normaliseRowHeights(cloneState(deletedLessonUndoState));
-    deletedLessonUndoState = null;
-    weeksInput.value = state.weeks.length || 10;
-    lessonsInput.value = state.lessonsPerWeek;
-    saveState("Lesson restored");
+    saveState("Lesson deleted");
     render();
   }
 
   function addWeek() {
     if (state.weeks.length >= 52) {
-      statusEl.textContent = "A board can have up to 52 weeks.";
+      setFileStatus("A board can have up to 52 weeks.", true);
       return;
     }
     state.weeks.push(
@@ -1031,7 +1443,7 @@
   function applyRowHeights(grid) {
     const rows = state.weeks.map((_, index) => {
       const height = state.rowHeights[index];
-      return height === null ? "minmax(190px, auto)" : `${height}px`;
+      return height === null ? "minmax(80px, max-content)" : `${height}px`;
     });
     grid.style.gridTemplateRows = ["auto", ...rows].join(" ");
   }
@@ -1110,7 +1522,7 @@
     const grid = document.createElement("div");
     grid.className = "planner-grid";
 
-    grid.style.gridTemplateColumns = `40px repeat(${state.lessonsPerWeek}, minmax(0, 1fr))`;
+    grid.style.gridTemplateColumns = `var(--week-column-width, 56px) repeat(${state.lessonsPerWeek}, minmax(0, 1fr))`;
     applyRowHeights(grid);
 
     const headerRow = document.createElement("div");
@@ -1131,6 +1543,7 @@
     state.weeks.forEach((week, wi) => {
       const rowHeader = document.createElement("div");
       rowHeader.className = "row-header";
+      if (wi === state.weeks.length - 1) rowHeader.classList.add("last-row-header");
       rowHeader.textContent = `W${wi + 1}`;
       addRowResizeHandle(rowHeader, wi, grid);
       grid.appendChild(rowHeader);
@@ -1176,33 +1589,26 @@
           card.setAttribute("role", "group");
           card.setAttribute("aria-label", `Lesson ${numMap.get(item.id)}`);
 
+          const titleIsEmpty = !item.title.trim();
+          const descriptionIsEmpty = !item.description.trim();
           card.innerHTML = `
-            <div class="lesson-head">
-              <span class="lesson-number">Lesson ${numMap.get(item.id)}</span>
-              <span class="drag-handle" title="Drag lesson" aria-hidden="true">&#9776;</span>
-            </div>
-            <input class="lesson-title" type="text" placeholder="Lesson title"
-              value="${escapeHtml(item.title)}" data-field="title" data-id="${item.id}">
-            <textarea placeholder="Short description"
-              data-field="description" data-id="${item.id}">${escapeHtml(item.description)}</textarea>
-            <div class="lesson-footer">
-              <button class="delete-lesson-btn" data-delete="${item.id}" title="Delete lesson" aria-label="Delete Lesson ${numMap.get(item.id)}"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg></button>
+            <button class="lesson-open" type="button" data-edit-lesson="${item.id}"
+              aria-label="Edit Lesson ${numMap.get(item.id)} title and description">
+              <div class="lesson-head">
+                <span class="lesson-number">Lesson ${numMap.get(item.id)}</span>
+              </div>
+              <span class="lesson-title-preview${titleIsEmpty ? " empty-preview" : ""}">${escapeHtml(titleIsEmpty ? "Untitled lesson" : item.title)}</span>
+              <span class="lesson-description-preview${descriptionIsEmpty ? " empty-preview" : ""}">${escapeHtml(descriptionIsEmpty ? "Select to add a short description" : item.description)}</span>
+            </button>
+            <div class="lesson-actions" role="group" aria-label="Lesson ${numMap.get(item.id)} actions">
+              <button class="insert-btn" type="button" data-insert-after="${item.id}" title="Add a lesson after this one" aria-label="Add a lesson after Lesson ${numMap.get(item.id)}">+</button>
+              <button class="delete-lesson-btn" type="button" data-delete="${item.id}" title="Delete this lesson" aria-label="Delete Lesson ${numMap.get(item.id)}">&minus;</button>
             </div>
           `;
 
-          const lessonNumber = numMap.get(item.id);
-          const titleInput = card.querySelector(".lesson-title");
-          const descriptionInput = card.querySelector("textarea");
-          const dragHandle = card.querySelector(".drag-handle");
-
-          titleInput.id = `lesson-title-${item.id}`;
-          titleInput.setAttribute("aria-label", `Lesson ${lessonNumber} title`);
-          descriptionInput.id = `lesson-description-${item.id}`;
-          descriptionInput.setAttribute("aria-label", `Lesson ${lessonNumber} description`);
-          dragHandle.innerHTML = "&#9776;";
-          dragHandle.setAttribute("aria-hidden", "true");
           card.addEventListener("dragstart", e => {
             dragSourceId = item.id;
+            suppressCardClickUntil = Date.now() + 500;
             card.classList.add("dragging");
             e.dataTransfer.effectAllowed = "move";
           });
@@ -1259,12 +1665,6 @@
           });
           slot.appendChild(dropBefore);
 
-          const plus = document.createElement("button");
-          plus.className = "insert-btn";
-          plus.title = "Insert lesson after";
-          plus.textContent = "+";
-          plus.dataset.insertAfter = item.id;
-          slot.appendChild(plus);
         }
 
         grid.appendChild(slot);
@@ -1278,12 +1678,10 @@
   }
 
   function bindUI() {
-    document.querySelectorAll("[data-field]").forEach(el => {
-      el.addEventListener("input", () => {
-        const found = findItem(el.dataset.id);
-        if (!found || found.item.type !== "lesson") return;
-        found.item[el.dataset.field] = el.value;
-        saveState();
+    document.querySelectorAll("[data-edit-lesson]").forEach(button => {
+      button.addEventListener("click", () => {
+        if (Date.now() < suppressCardClickUntil) return;
+        openLessonEditor(button.dataset.editLesson);
       });
     });
 
@@ -1312,7 +1710,7 @@
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 0);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   function xmlEscape(value) {
@@ -1477,28 +1875,16 @@
   }
 
   function exportExcel() {
-    const workbook = buildExcelWorkbook(state);
-    downloadFile(workbook, "lesson-sequence-board.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    statusEl.textContent = "Board-grid Excel workbook exported. It uses weeks as rows and lesson slots as columns.";
-  }
-
-  async function saveBoard() {
-    if (!supportsFileAutoSave()) {
-      const boardFile = JSON.stringify(makeBackup(), null, 2);
-      downloadFile(boardFile, "lesson-sequence-board.json", "application/json;charset=utf-8");
-      statusEl.textContent = "Board saved as a JSON download.";
-      return;
-    }
-
+    if (!fileRestoreComplete) return;
     try {
-      if (!savedBoardFileHandle) {
-        await chooseBoardFile("lesson-sequence-board.json");
-      }
-      await writeBoardToSelectedFile({requestPermission:true, announce:true});
+      const workbook = buildExcelWorkbook(state);
+      const now = new Date();
+      const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      const time = `${String(now.getHours()).padStart(2, "0")}-${String(now.getMinutes()).padStart(2, "0")}`;
+      downloadFile(workbook, `Lesson_Sequence_Board_Export_${date}_${time}.xlsx`, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      setFileStatus("Excel workbook downloaded. It uses weeks as rows and lesson slots as columns.");
     } catch (error) {
-      if (error?.name !== "AbortError") {
-        statusEl.textContent = "Could not choose a JSON file. Your board is still saved in this browser.";
-      }
+      setFileStatus(`Excel export failed: ${error.message || "could not create workbook"}`, true);
     }
   }
 
@@ -1510,47 +1896,160 @@
         accept:{"application/json":[".json"]}
       }]
     });
-    await storeSavedFileHandle(savedBoardFileHandle);
-    updateSaveButton();
+    fileConflict = false;
+    try {
+      await storeSavedFileHandle(savedBoardFileHandle);
+      fileHandlePersisted = true;
+    } catch {
+      fileHandlePersisted = false;
+      setFileStatus(`Linked for this session: ${displayFileName(savedBoardFileHandle.name)} (browser could not remember it)`, true);
+    }
+    reloadBtn.hidden = false;
+    updateFileActionTitles();
   }
 
   async function saveBoardAs() {
-    const datedName = `lesson-sequence-board-${new Date().toISOString().slice(0, 10)}.json`;
+    if (!fileRestoreComplete) return;
+    const now = new Date();
+    const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const time = `${String(now.getHours()).padStart(2, "0")}-${String(now.getMinutes()).padStart(2, "0")}`;
+    const datedName = `lesson-sequence-board-${date}-${time}.json`;
     if (!supportsFileAutoSave()) {
-      downloadFile(JSON.stringify(makeBackup(), null, 2), datedName, "application/json;charset=utf-8");
-      statusEl.textContent = "Board saved as a dated JSON download.";
+      const snapshot = createFileSnapshot();
+      downloadFile(snapshot.text, datedName, "application/json;charset=utf-8");
+      fileDirty = false;
+      clearBrowserBoardCopy();
+      importedFileName = null;
+      setFileStatus(`Downloaded ${datedName.replace(/\.json$/i, "")} · ${formatSavedTime(snapshot.savedAt)} — download again after further edits`);
       return;
     }
 
     try {
       await chooseBoardFile(datedName);
-      await writeBoardToSelectedFile({requestPermission:true, announce:true});
+      await writeBoardToSelectedFile({requestPermission:true, announce:true, force:true});
     } catch (error) {
       if (error?.name !== "AbortError") {
-        statusEl.textContent = "Could not choose a JSON file. Your board is still saved in this browser.";
+        setFileStatus(`Could not choose a JSON file: ${error.message || "file error"}`, true);
       }
     }
   }
 
-  function loadBoard(file) {
+  async function startNewBoard() {
+    if (!fileRestoreComplete) return;
+    if (!confirm("Start a new blank board? Unsaved changes will be discarded. If a file is linked, pending changes will be saved when possible and then disconnected. Use Save As first if you want a separate copy.")) return;
+
+    setWorkspaceLocked(true);
+    clearTimeout(fileSaveTimer);
+    let pendingChangesSaved = !fileDirty;
+    if (savedBoardFileHandle && fileDirty && !fileConflict) {
+      pendingChangesSaved = await writeBoardToSelectedFile();
+      await fileSaveChain;
+      setWorkspaceLocked(true);
+    }
+
+    try {
+      if ("indexedDB" in window) await clearStoredFileHandle();
+    } catch (error) {
+      setWorkspaceLocked(fileConflict);
+      setFileStatus("Could not disconnect the linked file: " + (error.message || "browser storage error"), true);
+      return;
+    }
+
+    savedBoardFileHandle = null;
+    fileHandlePersisted = false;
+    fileBaseSignatures = new WeakMap();
+    fileConflict = false;
+    fileDirty = false;
+    importedFileName = null;
+    clearBrowserBoardCopy();
+    state = {lessonsPerWeek:5, weeks:[], rowHeights:[]};
+    weeksInput.value = 10;
+    lessonsInput.value = 5;
+    resetHistory();
+    reloadBtn.hidden = true;
+    render();
+    setWorkspaceLocked(false);
+    setUnlinkedStatus();
+    setFileStatus(pendingChangesSaved
+      ? "New blank board started. Use Save As to create its JSON file."
+      : "New blank board started. Previous unsaved changes were not saved. Use Save As to create its JSON file.",
+      !pendingChangesSaved);
+  }
+
+  async function loadBoardFile(file) {
+    if (fileDirty && !confirm("Load another board and discard the current unsaved changes? Use Save As first if you want to keep them.")) return;
+    const previousHandle = savedBoardFileHandle;
+    clearTimeout(fileSaveTimer);
     const reader = new FileReader();
 
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const restoredState = stateFromBackup(JSON.parse(reader.result));
-        if (state.weeks.length && !confirm("Load this saved board and replace the current board?")) return;
-
+        if ("indexedDB" in window) await clearStoredFileHandle();
+        clearTimeout(fileSaveTimer);
+        savedBoardFileHandle = null;
+        fileHandlePersisted = false;
+        fileBaseSignatures = new WeakMap();
+        fileConflict = false;
+        fileDirty = false;
+        reloadBtn.hidden = true;
+        importedFileName = displayFileName(file.name);
+        updateFileActionTitles();
         state = restoredState;
         weeksInput.value = state.weeks.length || 10;
         lessonsInput.value = state.lessonsPerWeek;
-        saveState("Board loaded");
+        resetHistory();
+        clearBrowserBoardCopy();
+        setWorkspaceLocked(false);
         render();
+        setUnlinkedStatus();
       } catch (err) {
-        alert("Could not load this file. Choose a valid Lesson Sequence Board save file.");
+        setFileStatus(`Could not load this file: ${err.message || "choose a valid Lesson Sequence Board save file"}`, true);
+        if (previousHandle && savedBoardFileHandle === previousHandle && fileDirty) queueFileAutoSave();
       }
+    };
+    reader.onerror = () => {
+      setFileStatus("Could not read the selected JSON file.", true);
+      if (previousHandle && savedBoardFileHandle === previousHandle && fileDirty) queueFileAutoSave();
     };
 
     reader.readAsText(file);
+  }
+
+  async function loadBoardFromPicker() {
+    if (!fileRestoreComplete) return;
+    if (fileDirty && !confirm("Load another board and discard the current unsaved changes? Use Save As first if you want to keep them.")) return;
+    if (!supportsFileAutoSave()) {
+      document.getElementById("jsonFileInput").click();
+      return;
+    }
+    try {
+      const [handle] = await window.showOpenFilePicker({
+        multiple:false,
+        types:[{description:"Lesson Sequence Board JSON", accept:{"application/json":[".json"]}}]
+      });
+      clearTimeout(fileSaveTimer);
+      const previousHandle = savedBoardFileHandle;
+      const permissionGranted = await hasFileWritePermission(handle, true).catch(() => false);
+      const loaded = await loadSelectedFile(handle, {permissionGranted});
+      if (!loaded && previousHandle && savedBoardFileHandle === previousHandle && fileDirty) queueFileAutoSave();
+    } catch (error) {
+      if (error?.name !== "AbortError") setFileStatus(`Load failed: ${error.message || "file error"}`, true);
+    }
+  }
+
+  async function reloadLinkedFile() {
+    if (!fileRestoreComplete) return;
+    if (!savedBoardFileHandle) return loadBoardFromPicker();
+    if (fileDirty && !confirm("Reload the latest file and discard unsaved changes on this page? Choose Save As first if you want a copy.")) return;
+    try {
+      clearTimeout(fileSaveTimer);
+      const permissionGranted = await hasFileWritePermission(savedBoardFileHandle, true);
+      await loadSelectedFile(savedBoardFileHandle, {permissionGranted});
+    } catch (error) {
+      setWorkspaceLocked(true);
+      setFileStatus(`Could not reconnect ${displayFileName(savedBoardFileHandle.name)}: ${error.message || "permission needed"}`, true);
+    }
   }
 
   createBtn.addEventListener("click", () => {
@@ -1565,60 +2064,76 @@
 
   document.getElementById("addWeekBtn").addEventListener("click", addWeek);
   document.getElementById("exportBtn").addEventListener("click", exportExcel);
-  saveBtn.addEventListener("click", saveBoard);
+  undoBtn.addEventListener("click", undoChange);
+  redoBtn.addEventListener("click", redoChange);
+  newBoardBtn.addEventListener("click", startNewBoard);
   saveAsBtn.addEventListener("click", saveBoardAs);
-  themeToggle.addEventListener("click", () => {
-    const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-    applyTheme(nextTheme);
-    storeTheme(nextTheme);
+  lessonForm.addEventListener("submit", saveLessonEditor);
+  document.getElementById("cancel-lesson-edit").addEventListener("click", () => lessonDialog.close());
+  document.getElementById("close-lesson-dialog").addEventListener("click", () => lessonDialog.close());
+  lessonDialog.addEventListener("click", event => {
+    if (event.target === lessonDialog) lessonDialog.close();
   });
-
+  lessonDialog.addEventListener("close", () => {
+    editingLessonId = null;
+  });
   document.addEventListener("keydown", event => {
-    const isUndoShortcut = (event.ctrlKey || event.metaKey) &&
-      !event.shiftKey && event.key.toLowerCase() === "z";
+    const hasModifier = (event.ctrlKey || event.metaKey) && !event.altKey;
+    const key = event.key.toLowerCase();
+    const isUndoShortcut = hasModifier && !event.shiftKey && key === "z";
+    const isRedoShortcut = hasModifier &&
+      ((event.shiftKey && key === "z") || (!event.shiftKey && key === "y"));
     const activeElement = document.activeElement;
     const isEditingText = activeElement instanceof HTMLInputElement ||
       activeElement instanceof HTMLTextAreaElement || activeElement?.isContentEditable;
 
-    if (!isUndoShortcut || !deletedLessonUndoState || isEditingText) return;
+    if ((!isUndoShortcut && !isRedoShortcut) || isEditingText || lessonDialog.open) return;
     event.preventDefault();
-    undoDeletedLesson();
+    if (isRedoShortcut) redoChange();
+    else undoChange();
   });
 
-  document.getElementById("loadBtn").addEventListener("click", () => {
-    document.getElementById("jsonFileInput").click();
-  });
+  loadBtn.addEventListener("click", loadBoardFromPicker);
+  reloadBtn.addEventListener("click", reloadLinkedFile);
 
   document.getElementById("jsonFileInput").addEventListener("change", e => {
     const file = e.target.files?.[0];
-    if (file) loadBoard(file);
+    if (file) loadBoardFile(file);
     e.target.value = "";
   });
 
-  document.getElementById("clearBtn").addEventListener("click", () => {
-    if (!confirm("Clear the saved board from this browser?")) return;
+  clearBtn.addEventListener("click", () => {
+    if (!confirm("Clear all lessons from this board?")) return;
 
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(LEGACY_STORAGE_KEY);
     state = { lessonsPerWeek:5, weeks:[], rowHeights:[] };
     weeksInput.value = 10;
     lessonsInput.value = 5;
-    statusEl.textContent = "Saved board cleared.";
+    saveState("Board cleared");
     render();
   });
 
-  const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      if (isValidState(parsed)) {
-        state = normaliseRowHeights(parsed);
-        weeksInput.value = state.weeks.length || 10;
-        lessonsInput.value = state.lessonsPerWeek || 5;
-        statusEl.textContent = "Saved board loaded from this browser.";
-      }
-    } catch {}
-  }
+  window.addEventListener("beforeunload", event => {
+    if (!fileDirty) return;
+    event.preventDefault();
+    event.returnValue = "";
+  });
+
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (isValidState(parsed)) {
+          state = normaliseRowHeights(parsed);
+          weeksInput.value = state.weeks.length || 10;
+          lessonsInput.value = state.lessonsPerWeek || 5;
+          recoveredBrowserCopy = true;
+        }
+      } catch {}
+    }
+  } catch {}
+  resetHistory();
+  updateFileActionTitles();
 
   function runSelfTests() {
     const results = [];
@@ -1637,7 +2152,7 @@
     assert(isValidState(fixture), "Board validator accepts a valid board");
     assert(!isValidState({...fixture, lessonsPerWeek:13}), "Board validator rejects invalid slot counts");
     assert(isValidState({...fixture, rowHeights:[260]}), "Board validator accepts a saved row height");
-    assert(!isValidState({...fixture, rowHeights:[100]}), "Board validator rejects an invalid row height");
+    assert(!isValidState({...fixture, rowHeights:[40]}), "Board validator rejects an invalid row height");
     assert(normaliseRowHeights(cloneState(fixture)).rowHeights[0] === null, "Older boards receive default row heights");
 
     const excelWorksheet = buildExcelWorksheetXml(fixture);
@@ -1656,7 +2171,8 @@
       exportedAt: "2026-01-01T00:00:00.000Z",
       state: fixture
     });
-    assert(JSON.stringify(restored) === JSON.stringify(fixture), "JSON backup restores the full board without data loss");
+    const expectedRestored = normaliseRowHeights(cloneState(fixture));
+    assert(JSON.stringify(restored) === JSON.stringify(expectedRestored), "JSON backup restores the full board without data loss");
 
     document.title = "Lesson Sequence Board - Tests Passed";
     document.querySelector("main").innerHTML = `
@@ -1665,8 +2181,6 @@
       <ul>${results.map(result => `<li>${escapeHtml(result)}</li>`).join("")}</ul>
     `;
   }
-
-  applyTheme(getInitialTheme());
 
   if (new URLSearchParams(window.location.search).has("test")) {
     runSelfTests();
