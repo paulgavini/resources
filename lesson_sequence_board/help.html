@@ -75,6 +75,19 @@
 
   .demo-link{color:var(--accent);font-size:12px;font-weight:700;text-underline-offset:2px}
   .demo-link:focus-visible{outline:3px solid rgba(8,127,145,.3);outline-offset:2px}
+  .demo-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+  .copy-button{
+    border:1px solid #d8e0e8;
+    border-radius:8px;
+    padding:7px 10px;
+    background:#fff;
+    color:#385164;
+    font:700 11px "DM Sans","Segoe UI",sans-serif;
+    cursor:pointer;
+  }
+  .copy-button:hover{background:#f6fbfc;border-color:#8baebb}
+  .copy-button:focus-visible{outline:3px solid rgba(8,127,145,.3);outline-offset:2px}
+  .copy-status{color:var(--muted);font-size:11px}
 
   .intro, section{
     background:var(--panel);
@@ -146,13 +159,43 @@
   <section aria-labelledby="demo-heading">
     <h2 id="demo-heading">Try the example board</h2>
     <p>New to the board? The example contains a complete Year 10 Science motion unit with 24 lessons across six weeks. Right-click the link and choose <strong>Save link as…</strong>, then use <strong>Load</strong> on the board to open the saved JSON file.</p>
-    <a class="demo-link" href="year_10_science_motion_6_weeks.json">Year 10 Science motion demo (.json)</a>
+    <div class="demo-actions">
+      <a class="demo-link" href="year_10_science_motion_6_weeks.json">Year 10 Science motion demo (.json)</a>
+      <button class="copy-button" id="copy-ai-prompt" type="button" aria-describedby="copy-ai-status">Copy AI Prompt</button>
+      <span class="copy-status" id="copy-ai-status" aria-live="polite"></span>
+    </div>
+    <script type="text/plain" id="ai-prompt">
+Convert my draft teaching sequence into a downloadable JSON file compatible with the Lesson Sequence Board application.
+
+Application:
+https://paulgavini.github.io/resources/lesson_sequence_board/lesson_sequence_board.html
+
+JSON template:
+https://paulgavini.github.io/resources/lesson_sequence_board/year_10_science_motion_6_weeks.json
+
+Instructions:
+1. Retrieve and examine the example JSON file. Use its structure as the exact template for the new file.
+2. Analyse my draft teaching sequence and determine the number of weeks and lessons per week.
+3. Preserve the original lesson order, topics, practical activities, assessments and other important details.
+4. Create clear, concise lesson titles and place supporting information in the description fields.
+5. Preserve the required JSON structure, including format, version, state, lessonsPerWeek, details, weeks and rowHeights.
+6. Each lesson must have type, a unique id, title and description.
+7. Adjust the number of weeks and lessons per week to match my draft. Include empty positions only where necessary.
+8. Do not invent lessons or remove information from the original sequence.
+9. Use Australian English spelling.
+10. Validate the JSON syntax and ensure it follows the example file's structure.
+11. Generate a downloadable .json file ready for direct import into the Lesson Sequence Board. If file generation is unavailable, provide the complete JSON in a code block for saving manually.
+
+Draft lesson sequence:
+[PASTE YOUR LESSON SEQUENCE HERE OR ATTACH A DOCUMENT]
+    </script>
   </section>
 
   <section aria-labelledby="start-heading">
     <h2 id="start-heading">Start a board</h2>
     <ol class="steps">
       <li>Choose the number of <strong>Weeks</strong> and <strong>Lessons per week</strong>.</li>
+      <li>Add course or unit context in <strong>Details</strong>. The text is saved with the board and auto-saves while you type when a JSON file is linked.</li>
       <li>Select <strong>Create Board</strong>. If a board already exists, this becomes <strong>Reset Board</strong> and asks for confirmation before replacing it.</li>
       <li>Select <strong>Add lesson</strong> in an empty slot to begin planning.</li>
     </ol>
@@ -194,6 +237,42 @@
     <p>The board has no account, server, or external service. It works offline. The linked JSON file is the source of truth, while the browser remembers its local file handle. Excel exports are separate copies.</p>
   </section>
 </main>
+
+<script>
+  const copyAiPromptButton = document.getElementById("copy-ai-prompt");
+  const aiPrompt = document.getElementById("ai-prompt").textContent.trim();
+  const copyAiStatus = document.getElementById("copy-ai-status");
+
+  function copyWithFallback(text) {
+    const temporaryInput = document.createElement("textarea");
+    temporaryInput.value = text;
+    temporaryInput.setAttribute("readonly", "");
+    temporaryInput.style.position = "fixed";
+    temporaryInput.style.opacity = "0";
+    document.body.appendChild(temporaryInput);
+    temporaryInput.select();
+    const copied = document.execCommand("copy");
+    temporaryInput.remove();
+    if (!copied) throw new Error("Clipboard copy failed");
+  }
+
+  copyAiPromptButton.addEventListener("click", async () => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(aiPrompt);
+        } catch {
+          copyWithFallback(aiPrompt);
+        }
+      } else {
+        copyWithFallback(aiPrompt);
+      }
+      copyAiStatus.textContent = "Prompt copied. Paste it into your AI assistant.";
+    } catch {
+      copyAiStatus.textContent = "Copy unavailable. Try a browser that allows clipboard access.";
+    }
+  });
+</script>
 
 </body>
 </html>

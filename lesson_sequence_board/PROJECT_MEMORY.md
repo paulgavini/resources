@@ -18,7 +18,7 @@ Week rows automatically fit their tallest cell, with an 80 px minimum and about 
 
 On supported Chrome and Edge setups, a linked JSON file is the source of truth. The app restores its local file handle at startup, auto-saves edits after a short debounce, compares the current file against its last loaded version before writing, and locks editing when permission is lost or an external change is detected until Reload. Each computer needs its own browser link to the synced JSON file; users should wait for sync before resuming edits. Browsers without file picker support can import JSON and download copies, but cannot auto-save to a linked file. Excel export creates a separate timestamped `.xlsx` workbook.
 
-The app uses a planner-inspired, light-only visual style. The Help link opens in a new tab; Help includes instructions to right-click and save the Year 10 motion demo JSON before loading it.
+The app uses a planner-inspired, light-only visual style. The Help link opens in a new tab; Help includes instructions to save the Year 10 motion demo JSON, a reusable AI prompt with a copy button, and setup guidance.
 
 ## Important Files
 
@@ -66,6 +66,7 @@ No explicit TODOs are recorded.
 
 - Reorganized the app header and board setup panel to follow the Weekly Planner layout.
 - Added the loadable 24-lesson Year 10 Science motion demo and a Save link as guide in Help.
+- Added a Copy AI Prompt button beside the demo JSON link in Help.
 - Updated lesson cards with stacked bold titles and top-right +/− actions.
 - Added a board-level Details field beside its text area in setup, with debounced auto-save while typing and blank defaults for older JSON boards.
 - Switched default week rows to content-fit sizing, full descriptions, and an 80 px minimum while retaining manual resize.
