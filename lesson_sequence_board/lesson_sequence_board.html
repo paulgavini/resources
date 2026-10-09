@@ -133,8 +133,14 @@
   }
 
   .toolbar-group{display:flex;min-width:0;align-items:flex-end;flex-wrap:wrap;gap:8px}
-  .toolbar-group.setup{width:100%}
+  .toolbar-group.setup{display:grid;width:100%;grid-template-columns:minmax(0,1fr) minmax(280px,40%);align-items:start;column-gap:20px;row-gap:12px}
   .toolbar-group-label{flex:0 0 100%;color:#8793a0;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+  .toolbar-group.setup>.toolbar-group-label{grid-column:1/-1}
+  .setup-controls{display:flex;min-width:0;align-items:flex-end;flex-wrap:wrap;gap:8px}
+  .board-details-field{display:flex;grid-column:2;grid-row:2;width:100%;min-width:0;align-items:center;gap:10px;margin:0}
+  .field.board-details-field{flex-direction:row}
+  .board-details-field label{flex:0 0 auto}
+  .toolbar .board-details-field textarea{flex:1 1 auto;width:100%;min-width:0;min-height:72px;resize:vertical;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px;background:var(--input-bg);color:var(--text);font-size:12px;line-height:1.4}
 
   .field{
     display:flex;
@@ -645,8 +651,11 @@
     .file-browser-note{text-align:left}
     .toolbar{padding:12px}
     .toolbar-group{width:100%;align-items:flex-end}
+    .toolbar-group.setup{grid-template-columns:minmax(0,1fr);align-items:stretch}
+    .setup-controls{width:100%}
     .field{width:calc(50% - 4px)}
     .field input{width:100%}
+    .board-details-field{grid-column:1;grid-row:auto;width:100%}
     .spacer{display:none}
     .lesson-actions button{width:28px;height:28px;min-height:28px}
     .empty-slot button,
@@ -659,7 +668,7 @@
     .creator-line{flex-basis:100%}
     .file-actions{width:100%;justify-content:flex-start}
     .file-button{min-height:40px}
-    .toolbar-group.setup>button{min-height:40px}
+    .setup-controls>button{min-height:40px}
     .history-controls{margin-left:0;padding-left:0;border-left:0}
     .header-cell{padding:8px 3px;font-size:11px}
     .planner-grid{--week-column-width:42px;grid-template-columns:var(--week-column-width) repeat(auto-fit,minmax(0,1fr))}
@@ -707,21 +716,27 @@
   <div class="toolbar">
     <div class="toolbar-group setup" role="group" aria-label="Board setup">
       <span class="toolbar-group-label">Board setup</span>
-      <div class="field">
-        <label for="weeksInput">Weeks</label>
-        <input id="weeksInput" type="number" min="1" max="52" value="10">
+      <div class="setup-controls">
+        <div class="field">
+          <label for="weeksInput">Weeks</label>
+          <input id="weeksInput" type="number" min="1" max="52" value="10">
+        </div>
+        <div class="field">
+          <label for="lessonsInput">Lessons per week</label>
+          <input id="lessonsInput" type="number" min="1" max="12" value="5">
+        </div>
+        <button id="createBtn" class="primary"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0 2 5.5"/><path d="M20 4v7h-7"/></svg>Create Board</button>
+        <button id="addWeekBtn"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8M8 12h8"/></svg>Add Week</button>
+        <div class="history-controls" role="group" aria-label="Undo and redo">
+          <button id="undoBtn" class="history-button" type="button" disabled>Undo</button>
+          <button id="redoBtn" class="history-button" type="button" disabled>Redo</button>
+        </div>
+        <button id="clearBtn" class="danger"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>Clear</button>
       </div>
-      <div class="field">
-        <label for="lessonsInput">Lessons per week</label>
-        <input id="lessonsInput" type="number" min="1" max="12" value="5">
+      <div class="field board-details-field">
+        <label for="board-details-input">Details</label>
+        <textarea id="board-details-input" rows="3" placeholder="Add notes or context for this sequence"></textarea>
       </div>
-      <button id="createBtn" class="primary"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0 2 5.5"/><path d="M20 4v7h-7"/></svg>Create Board</button>
-      <button id="addWeekBtn"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 8v8M8 12h8"/></svg>Add Week</button>
-      <div class="history-controls" role="group" aria-label="Undo and redo">
-        <button id="undoBtn" class="history-button" type="button" disabled>Undo</button>
-        <button id="redoBtn" class="history-button" type="button" disabled>Redo</button>
-      </div>
-      <button id="clearBtn" class="danger"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>Clear</button>
     </div>
 
     <input class="file-input" type="file" id="jsonFileInput" accept=".json,application/json">
@@ -778,6 +793,8 @@
   const setupGroup = document.querySelector(".toolbar-group.setup");
   const weeksInput = document.getElementById("weeksInput");
   const lessonsInput = document.getElementById("lessonsInput");
+  const boardDetailsInput = document.getElementById("board-details-input");
+  let boardDetailsSaveTimer = null;
   const statusEl = document.getElementById("status");
   const fileSaveStatusEl = document.getElementById("file-save-status");
   const lessonDialog = document.getElementById("lesson-dialog");
@@ -790,7 +807,8 @@
   let state = {
     lessonsPerWeek: 5,
     weeks: [],
-    rowHeights: []
+    rowHeights: [],
+    details: ""
   };
 
   let undoStack = [];
@@ -827,6 +845,7 @@
 
   function normaliseRowHeights(candidate) {
     const supplied = Array.isArray(candidate.rowHeights) ? candidate.rowHeights : [];
+    candidate.details = typeof candidate.details === "string" ? candidate.details : "";
     candidate.rowHeights = candidate.weeks.map((_, index) => {
       const height = supplied[index];
       return Number.isInteger(height) && height >= MIN_ROW_HEIGHT && height <= MAX_ROW_HEIGHT
@@ -845,7 +864,8 @@
           (!Array.isArray(candidate.rowHeights) ||
            candidate.rowHeights.length !== candidate.weeks.length ||
            !candidate.rowHeights.every(height => height === null ||
-             (Number.isInteger(height) && height >= MIN_ROW_HEIGHT && height <= MAX_ROW_HEIGHT))))) return false;
+             (Number.isInteger(height) && height >= MIN_ROW_HEIGHT && height <= MAX_ROW_HEIGHT)))) ||
+        (candidate.details !== undefined && typeof candidate.details !== "string")) return false;
 
     const lessonIds = new Set();
     return candidate.weeks.every(week =>
@@ -1263,12 +1283,14 @@
   }
 
   function createPlanner(weekCount, lessonsPerWeek) {
+    const details = state.details;
     state = {
       lessonsPerWeek,
       weeks: Array.from({length:weekCount}, () =>
         Array.from({length:lessonsPerWeek}, () => makeEmpty())
       ),
-      rowHeights: Array.from({length:weekCount}, () => null)
+      rowHeights: Array.from({length:weekCount}, () => null),
+      details
     };
     saveState("Board created");
     render();
@@ -1506,6 +1528,7 @@
   function render() {
     plannerEl.innerHTML = "";
     normaliseRowHeights(state);
+    boardDetailsInput.value = state.details;
     updateCreateButton();
 
     if (!state.weeks.length) {
@@ -1962,7 +1985,7 @@
     fileDirty = false;
     importedFileName = null;
     clearBrowserBoardCopy();
-    state = {lessonsPerWeek:5, weeks:[], rowHeights:[]};
+    state = {lessonsPerWeek:5, weeks:[], rowHeights:[], details:""};
     weeksInput.value = 10;
     lessonsInput.value = 5;
     resetHistory();
@@ -2068,6 +2091,22 @@
   redoBtn.addEventListener("click", redoChange);
   newBoardBtn.addEventListener("click", startNewBoard);
   saveAsBtn.addEventListener("click", saveBoardAs);
+  function saveBoardDetails() {
+    clearTimeout(boardDetailsSaveTimer);
+    boardDetailsSaveTimer = null;
+    state.details = boardDetailsInput.value;
+    saveState("Board details updated");
+  }
+
+  boardDetailsInput.addEventListener("input", () => {
+    state.details = boardDetailsInput.value;
+    fileDirty = true;
+    stateGeneration += 1;
+    setFileStatus("Unsaved changes — saving details…");
+    clearTimeout(boardDetailsSaveTimer);
+    boardDetailsSaveTimer = setTimeout(saveBoardDetails, 450);
+  });
+  boardDetailsInput.addEventListener("change", saveBoardDetails);
   lessonForm.addEventListener("submit", saveLessonEditor);
   document.getElementById("cancel-lesson-edit").addEventListener("click", () => lessonDialog.close());
   document.getElementById("close-lesson-dialog").addEventListener("click", () => lessonDialog.close());
@@ -2105,7 +2144,7 @@
   clearBtn.addEventListener("click", () => {
     if (!confirm("Clear all lessons from this board?")) return;
 
-    state = { lessonsPerWeek:5, weeks:[], rowHeights:[] };
+    state = { lessonsPerWeek:5, weeks:[], rowHeights:[], details:"" };
     weeksInput.value = 10;
     lessonsInput.value = 5;
     saveState("Board cleared");

@@ -30,7 +30,7 @@ The app uses a planner-inspired, light-only visual style. The Help link opens in
 
 ## Technical Decisions
 
-- Board state has the shape `{ lessonsPerWeek, weeks, rowHeights }`. Each cell is either `{ type: "empty" }` or a lesson with a unique `id`, `title`, and `description`. Lesson numbers are derived from current grid order.
+- Board state has the shape `{ lessonsPerWeek, weeks, rowHeights, details }`. `details` stores board-level notes from the Board setup panel. Each cell is either `{ type: "empty" }` or a lesson with a unique `id`, `title`, and `description`. Lesson numbers are derived from current grid order.
 - JSON saves use the `lesson-sequence-board` format, version 1, and preserve lesson IDs, empty cells, and optional row heights. `_fileMeta` tracks save time and revision. Planner JSON files use a different schema and are not interchangeable.
 - Linked file handles are stored in IndexedDB, separately per browser profile/computer. Before saving, the app compares the file text with the text last loaded or saved; mismatch blocks the write and requires Reload.
 - Legacy browser-stored board data is read only for migration and cleared after JSON save/load. The app does not write current board contents to localStorage.
@@ -67,5 +67,6 @@ No explicit TODOs are recorded.
 - Reorganized the app header and board setup panel to follow the Weekly Planner layout.
 - Added the loadable 24-lesson Year 10 Science motion demo and a Save link as guide in Help.
 - Updated lesson cards with stacked bold titles and top-right +/− actions.
+- Added a board-level Details field beside its text area in setup, with debounced auto-save while typing and blank defaults for older JSON boards.
 - Switched default week rows to content-fit sizing, full descriptions, and an 80 px minimum while retaining manual resize.
 - Aligned JSON file handling with the planner’s sync-aware workflow, including conflict detection, Reload recovery, and per-computer file links.
