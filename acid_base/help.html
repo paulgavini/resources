@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="How to use the Acid–Base Titration Simulator and interpret its results.">
+  <title>Acid–Base Titration Simulator Help</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3f6fa;
+      --panel: #fff;
+      --border: #dce3eb;
+      --text: #1b2a3a;
+      --muted: #69788a;
+      --accent: #087f91;
+      --accent-dark: #056776;
+      --accent-soft: #e4f7f8;
+      --shadow: 0 4px 15px rgba(35,55,75,.035);
+      font-family: "DM Sans", "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: radial-gradient(ellipse at 8% -12%, rgba(14,165,180,.08), transparent 34rem), var(--bg);
+      color: var(--text);
+      line-height: 1.52;
+    }
+    .page { width: min(980px, 95%); margin: 0 auto; padding: 28px 0 44px; }
+    .page-header { display: flex; align-items: center; gap: 13px; margin-bottom: 15px; }
+    .brand-mark {
+      display: grid; width: 43px; height: 43px; flex: 0 0 43px; place-items: center;
+      border-radius: 13px; background: linear-gradient(145deg,#0b8795,#056575);
+      box-shadow: 0 7px 15px rgba(5,103,118,.18); color: #fff;
+      font: 800 17px "DM Sans", "Segoe UI", sans-serif;
+    }
+    .eyebrow { margin: 0 0 2px; color: var(--accent); font-size: 10px; font-weight: 700; letter-spacing: .15em; }
+    h1 { margin: 0; font-size: 25px; line-height: 1.2; letter-spacing: -.04em; }
+    h2 { margin: 0 0 9px; color: var(--accent-dark); font-size: 16px; line-height: 1.25; }
+    p { margin: 0 0 10px; }
+    .back-link { margin-left: auto; border: 1px solid #d8e0e8; border-radius: 8px; padding: 7px 10px; color: #385164; font-size: 11px; text-decoration: none; white-space: nowrap; }
+    .back-link:hover { background: #f6fbfc; border-color: #8baebb; }
+    .back-link:focus-visible, a:focus-visible { outline: 3px solid rgba(8,127,145,.3); outline-offset: 2px; }
+    section, .intro { margin-bottom: 10px; padding: 16px 18px; border: 1px solid var(--border); border-radius: 11px; background: var(--panel); box-shadow: var(--shadow); }
+    .intro { border-left: 4px solid var(--accent); background: linear-gradient(110deg,#fff,#f4fbfb); color: var(--muted); }
+    .intro p:last-child, section p:last-child { margin-bottom: 0; }
+    ol, ul { margin: 0; padding-left: 21px; }
+    li { margin: 0 0 6px; }
+    li:last-child { margin-bottom: 0; }
+    .tip { margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); color: #28505b; font-size: 13px; }
+    .indicator-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px 20px; }
+    .indicator-list li { padding-right: 5px; }
+    code { border-radius: 4px; background: #f2f6f8; padding: 1px 4px; font: .95em ui-monospace, Consolas, monospace; }
+    a { color: var(--accent-dark); text-underline-offset: 2px; }
+    footer { padding: 3px 2px; color: var(--muted); font-size: 11px; }
+    @media (max-width: 620px) {
+      .page { padding-top: 19px; }
+      .page-header { align-items: flex-start; flex-wrap: wrap; }
+      .back-link { margin-left: 56px; }
+      h1 { font-size: 21px; }
+      section, .intro { padding: 14px; }
+      .indicator-list { grid-template-columns: 1fr; }
+    }
+    @media print {
+      body { background: #fff; }
+      .page { width: auto; padding: 0; }
+      .back-link { display: none; }
+      section, .intro { break-inside: avoid; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="page-header">
+      <div class="brand-mark" aria-hidden="true">pH</div>
+      <div>
+        <p class="eyebrow">ACID–BASE TITRATION SIMULATOR</p>
+        <h1>Help and guidance</h1>
+      </div>
+      <a class="back-link" href="acid_base_titration_simulator_combined.html">← Back to simulator</a>
+    </header>
+
+    <div class="intro">
+      <p>Use the simulator to explore how pH changes as an acid or base is titrated. Choose the solutions, adjust their concentrations and volumes, then follow the curve and indicator color as titrant is added.</p>
+    </div>
+
+    <section>
+      <h2>Set up a titration</h2>
+      <ol>
+        <li>Choose whether the flask contains an acid or a base. The simulator fills the solution lists for that direction.</li>
+        <li>Select the flask solution and burette titrant. Each option is labelled strong or weak. All base choices, including the weak organic bases, are available as flask solutions or as titrants.</li>
+        <li>Enter the flask concentration and volume, then the titrant concentration. Concentrations are in mol/L (M); volumes are in mL.</li>
+        <li>Choose an indicator if you want its color to appear on the current graph point. The shaded band marks its transition range; universal indicator instead colors the graph background by pH.</li>
+      </ol>
+      <div class="tip">Weak-base titrants are included for comparison. Their equivalence region may be less sharp than a titration using a strong hydroxide.</div>
+    </section>
+
+    <section>
+      <h2>Move through the curve</h2>
+      <ul>
+        <li>Drag the volume slider or enter a titrant volume directly.</li>
+        <li>Use <strong>− step</strong> and <strong>+ step</strong> to change the volume by the selected step size.</li>
+        <li>Press <strong>Play</strong> to add titrant repeatedly. Press <strong>Pause</strong> (the same button) to stop. <strong>Reset</strong> returns to zero added volume.</li>
+        <li>Hover over the graph to read the pH at another volume. The gold dashed lines mark predicted equivalence volumes.</li>
+      </ul>
+      <div class="tip"><strong>Tip:</strong> Reduce the step size near a steep part of the curve to see the pH change in finer increments.</div>
+    </section>
+
+    <section>
+      <h2>Export the full calculated curve</h2>
+      <ul>
+        <li>Press <strong>Export CSV</strong> above the graph to download the complete calculated curve for the current setup.</li>
+        <li>The file starts at 0 mL and continues to the graph's automatically selected maximum volume, using the step size you set. The final graph volume is included even when it does not land exactly on a step.</li>
+        <li>The export recalculates every point; it does not depend on how far you have moved the slider or played the titration.</li>
+        <li>Columns include added titrant volume, calculated pH, curve region, dominant species, total volume, the selected chemicals and concentrations, indicator and color, and predicted equivalence volumes.</li>
+      </ul>
+      <div class="tip">A smaller step size creates more rows and a smoother data table. For example, a 0.1 mL step produces ten rows per millilitre of the graph range.</div>
+    </section>
+
+    <section>
+      <h2>Read the results</h2>
+      <ul>
+        <li><strong>Current pH</strong> gives the model estimate at the selected volume. <strong>Curve region</strong> describes the current titration stage.</li>
+        <li><strong>Equivalence volume</strong> shows the nearest predicted equivalence point. The summary and marker table list the predicted points and half-equivalence volumes.</li>
+        <li>At a half-equivalence point, pH is approximately equal to the relevant pK<sub>a</sub> for an ideal weak-acid buffer. For weak bases, the listed pK<sub>a</sub> belongs to the conjugate acid.</li>
+        <li><strong>Dominant species</strong> names the most abundant acid/base form tracked by the model at the current pH.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Indicators in the simulator</h2>
+      <ul class="indicator-list">
+        <li><strong>Universal indicator:</strong> approximate red/orange in acid, green near neutral, and blue/violet in alkali. It shows a broad pH color scale, not a sharp titration endpoint.</li>
+        <li><strong>Litmus:</strong> red below about pH 5, purple through pH 5–8, and blue above about pH 8.</li>
+        <li><strong>Methyl red:</strong> red below pH 4.4, orange through pH 4.4–6.2, and yellow above pH 6.2.</li>
+        <li><strong>Methyl orange:</strong> red below pH 3.1, orange through pH 3.1–4.4, and yellow above pH 4.4.</li>
+        <li><strong>Bromothymol blue:</strong> yellow below pH 6.0, green through pH 6.0–7.6, and blue above pH 7.6.</li>
+        <li><strong>Phenolphthalein:</strong> colorless below pH 8.2, pink through pH 8.2–10.0, and stronger pink above pH 10.</li>
+      </ul>
+      <div class="tip">A suitable titration indicator changes color within the steep section of the curve near the equivalence point. Universal indicator is useful for estimating pH, but its broad range makes it less suitable for spotting a precise titration endpoint.</div>
+    </section>
+
+    <section>
+      <h2>Model assumptions</h2>
+      <ul>
+        <li>The simulator uses ideal, concentration-based acid–base equilibrium calculations at 25 °C. It does not correct for ion activity or other non-ideal solution effects.</li>
+        <li>Strong acids are treated as fully dissociated, and soluble strong hydroxides as fully dissociated sources of OH<sup>−</sup>.</li>
+        <li>Carbonate is represented with the carbonic acid/bicarbonate/carbonate equilibria, but CO<sub>2</sub> exchange with the air is not modeled.</li>
+        <li>Indicator colors are visual approximations. Commercial universal indicator mixtures can differ in their exact color sequence.</li>
+      </ul>
+      <p class="tip">Use the results to compare trends and understand titration behavior. They are not a substitute for experimental measurements or a high-precision equilibrium model.</p>
+    </section>
+
+    <footer>Acid–Base Titration Simulator · By Paul Gavini</footer>
+  </main>
+</body>
+</html>

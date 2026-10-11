@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acid–Base Titration Lab</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172b3b;
+      --muted: #607384;
+      --line: #d9e4eb;
+      --paper: #fff;
+      --wash: #f3f7fa;
+      --blue: #176b87;
+      --deep: #123e54;
+      --gold: #d68d19;
+      --shadow: 0 12px 34px rgba(25, 56, 75, .08);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #edf3f6; color: var(--ink); font: 15px/1.48 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    header { background: var(--deep); color: white; padding: 25px max(22px, calc((100vw - 1480px)/2)); }
+    header .eyebrow { margin: 0 0 5px; color: #a9d8e3; font-size: .75rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(1.65rem, 3vw, 2.3rem); letter-spacing: -.035em; }
+    header p { max-width: 860px; margin: 7px 0 0; color: #d3e4e9; }
+    .shell { max-width: 1480px; margin: auto; padding: 20px; display: grid; grid-template-columns: 350px minmax(0,1fr); gap: 18px; align-items: start; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 17px; box-shadow: var(--shadow); }
+    .controls { padding: 17px; position: sticky; top: 14px; }
+    .group { padding: 13px; margin-bottom: 12px; border: 1px solid var(--line); border-radius: 13px; background: #fbfdfe; }
+    .group:last-of-type { margin-bottom: 0; }
+    .group h2 { margin: 0 0 10px; color: var(--deep); font-size: .95rem; }
+    label { display: block; margin: 0 0 5px; font-size: .82rem; font-weight: 750; }
+    select, input[type=number] { width: 100%; height: 39px; padding: 8px 10px; border: 1px solid #c8d6df; border-radius: 9px; background: white; color: var(--ink); font: inherit; }
+    input[type=range] { width: 100%; accent-color: var(--blue); }
+    .field { margin-bottom: 10px; }
+    .field:last-child { margin-bottom: 0; }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .hint { color: var(--muted); font-size: .77rem; }
+    .button-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; margin-top: 10px; }
+    button { min-height: 38px; padding: 8px 9px; border: 1px solid #c8d6df; border-radius: 9px; background: #edf4f7; color: var(--deep); font: inherit; font-weight: 750; cursor: pointer; }
+    button:hover { background: #e2eef2; }
+    button.primary { border-color: var(--blue); background: var(--blue); color: white; }
+    button.primary:hover { background: #115c75; }
+    button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid #79c6dd; outline-offset: 2px; }
+    .output { min-width: 0; display: grid; gap: 14px; }
+    .metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; }
+    .metric { min-height: 104px; padding: 14px; }
+    .metric-label { color: var(--muted); font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .metric-value { margin-top: 7px; color: var(--deep); font-size: 1.38rem; font-weight: 780; line-height: 1.2; overflow-wrap: anywhere; }
+    .metric-value.compact { font-size: 1rem; }
+    .chart-panel { padding: 16px; }
+    .chart-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .chart-head h2 { margin: 0; color: var(--deep); font-size: 1.1rem; }
+    .chart-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+    .export-btn { min-height: 32px; padding: 6px 10px; background: #fff; font-size: 11px; white-space: nowrap; }
+    .indicator-chip { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 999px; background: #f8fbfc; color: var(--muted); font-size: .8rem; }
+    .indicator-dot { width: 20px; height: 20px; flex: none; border: 2px solid white; border-radius: 50%; background: #b8d4e1; box-shadow: 0 0 0 1px #9cb2be; }
+    .graph-wrap { position: relative; min-height: 340px; overflow: hidden; border: 1px solid var(--line); border-radius: 13px; background: #fcfeff; }
+    canvas { width: 100%; height: 430px; display: block; touch-action: pan-y; }
+    .graph-readout { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 9px 11px; border-top: 1px solid var(--line); background: #f7fafc; color: #395467; font-size: .83rem; }
+    .graph-readout strong { color: var(--deep); }
+    .details { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .detail { padding: 15px; }
+    .detail h2 { margin: 0 0 10px; color: var(--deep); font-size: 1rem; }
+    .detail p { margin: 7px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+    th, td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: .72rem; letter-spacing: .05em; text-transform: uppercase; }
+    .pill { display: inline-block; padding: 3px 8px; border-radius: 99px; background: #e7f2f6; color: #145a73; font-size: .76rem; font-weight: 800; }
+    .notice { margin-top: 10px; padding: 10px 12px; border-left: 3px solid var(--gold); border-radius: 7px; background: #fff8e9; color: #604a27; font-size: .82rem; }
+    .species { min-height: 45px; }
+    .prompts { margin: 0; padding-left: 20px; color: #42596a; }
+    .prompts li { margin: 6px 0; }
+    footer { color: var(--muted); font-size: .78rem; padding: 2px 4px 12px; }
+    @media (max-width: 1060px) { .shell { grid-template-columns: 1fr; } .controls { position: static; } .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; } }
+    @media (max-width: 690px) { .shell { padding: 12px; } header { padding: 21px 16px; } .controls-grid, .details { grid-template-columns: 1fr; } .metrics { grid-template-columns: 1fr 1fr; } .metric { min-height: 88px; } canvas { height: 340px; } .chart-head { align-items: flex-start; flex-direction: column; } }
+    /* Minimal teal treatment adapted from the lesson sequence board. */
+    :root {
+      --ink: #1b2a3a;
+      --muted: #69788a;
+      --line: #dce3eb;
+      --paper: #fff;
+      --wash: #f3f6fa;
+      --blue: #087f91;
+      --deep: #056776;
+      --gold: #d68d19;
+      --shadow: 0 4px 12px rgba(35,55,75,.045);
+    }
+    body {
+      min-width: 320px;
+      background: radial-gradient(ellipse at 8% -12%, rgba(14,165,180,.07), transparent 34rem), var(--wash);
+      color: var(--ink);
+      font-family: "DM Sans", "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      width: 95%;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 27px 0 10px;
+      background: transparent;
+      color: var(--ink);
+    }
+    .brand-mark {
+      display: grid;
+      width: 43px;
+      height: 43px;
+      flex: 0 0 43px;
+      place-items: center;
+      border-radius: 13px;
+      background: linear-gradient(145deg, #0b8795, #056575);
+      box-shadow: 0 7px 15px rgba(5,103,118,.18);
+      color: #fff;
+      font: 800 17px "DM Sans", "Segoe UI", sans-serif;
+    }
+    .heading-group { min-width: 0; }
+    .app-header .eyebrow {
+      margin: 0 0 2px;
+      color: var(--blue);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .15em;
+    }
+    .app-header h1 {
+      margin: 0;
+      color: var(--ink);
+      font: 700 25px/1.2 "DM Sans", "Segoe UI", sans-serif;
+      letter-spacing: -.04em;
+    }
+    .app-header .subtitle {
+      max-width: 900px;
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .creator-line {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    .creator-line a, .help-link {
+      color: var(--blue);
+      text-underline-offset: 2px;
+    }
+    .help-link { margin-left: 2px; }
+    .shell {
+      width: 95%;
+      max-width: 1600px;
+      padding: 12px 0 25px;
+      grid-template-columns: minmax(300px, 340px) minmax(0,1fr);
+      gap: 14px;
+    }
+    .panel {
+      border-color: var(--line);
+      border-radius: 13px;
+      box-shadow: var(--shadow);
+    }
+    .controls { padding: 13px; top: 12px; }
+    .group {
+      padding: 12px;
+      margin-bottom: 9px;
+      border-color: var(--line);
+      border-radius: 10px;
+      background: #fbfcfd;
+    }
+    .group h2, .chart-head h2, .detail h2 { color: var(--deep); }
+    label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    select, input[type=number] {
+      border-color: #cbd5e0;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+    input[type=range] { accent-color: var(--blue); }
+    button {
+      min-height: 34px;
+      padding: 7px 9px;
+      border-color: #d8e0e8;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 12px;
+    }
+    button:hover { background: #f6fbfc; border-color: #8baebb; }
+    button.primary { background: var(--blue); border-color: var(--blue); }
+    button.primary:hover { background: var(--deep); }
+    button:focus-visible, select:focus-visible, input:focus-visible {
+      outline: 3px solid rgba(8,127,145,.3);
+      outline-offset: 2px;
+    }
+    .metric { min-height: 92px; padding: 12px; }
+    .metric-label { font-size: 10px; letter-spacing: .06em; }
+    .metric-value { color: var(--deep); font-size: 1.26rem; }
+    .metric-value.compact { font-size: .93rem; }
+    .chart-panel { padding: 13px; }
+    .indicator-chip { border-radius: 9px; font-size: 11px; }
+    .indicator-dot { width: 17px; height: 17px; }
+    .graph-wrap { border-radius: 10px; }
+    .details { gap: 10px; }
+    .detail { padding: 13px; }
+    table { font-size: 12px; }
+    th { font-size: 10px; }
+    .notice { border-radius: 7px; font-size: 11px; }
+    footer { font-size: 10px; }
+    .shell { gap: 10px; }
+    .output { gap: 8px; }
+    .metrics { gap: 7px; }
+    .details { gap: 7px; }
+    .group { margin-bottom: 6px; }
+    .group h2 { margin-bottom: 8px; }
+    @media (max-width: 1060px) {
+      .app-header, .shell { width: 95%; }
+      .shell { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 690px) {
+      .app-header { align-items: flex-start; padding: 20px 0 8px; }
+      .app-header h1 { font-size: 21px; }
+      .brand-mark { width: 38px; height: 38px; flex-basis: 38px; border-radius: 11px; }
+      .shell { width: calc(100% - 24px); padding-top: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand-mark" aria-hidden="true">pH</div>
+    <div class="heading-group">
+      <p class="eyebrow">INTERACTIVE CHEMISTRY LAB</p>
+      <h1>Acid–Base Titration Simulator</h1>
+      <p class="subtitle">Explore titration curves, buffer regions, equivalence points, and indicator changes. Choose which solution is in the flask and follow the pH as titrant is added.</p>
+      <nav class="creator-line" aria-label="Project links">
+        By Paul Gavini <span aria-hidden="true">·</span>
+        <a href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener">YouTube</a> <span aria-hidden="true">·</span>
+        <a href="https://paulgavini.github.io/resources/" target="_blank" rel="noopener">Website</a>
+        <a class="help-link" href="help.html" target="_blank" rel="noopener">Help</a>
+      </nav>
+    </div>
+  </header>
+  <div class="shell">
+    <aside class="panel controls" aria-label="Titration controls">
+      <div class="controls-grid">
+        <section class="group">
+          <h2>1. Choose the experiment</h2>
+          <div class="field"><label for="mode">Titration direction</label><select id="mode"><option value="acid">Acid in flask + base titrant</option><option value="base">Base in flask + acid titrant</option></select></div>
+          <div class="field"><label for="analyte">Solution in the flask</label><select id="analyte"></select></div>
+          <div class="field"><label for="titrant">Titrant in the burette</label><select id="titrant"></select></div>
+        </section>
+        <section class="group">
+          <h2>2. Set the amounts</h2>
+          <div class="cols">
+            <div class="field"><label for="analyteConc">Flask concentration (M)</label><input id="analyteConc" type="number" min="0.001" max="2" step="0.01" value="0.10"></div>
+            <div class="field"><label for="analyteVol">Flask volume (mL)</label><input id="analyteVol" type="number" min="1" max="250" step="1" value="25"></div>
+            <div class="field"><label for="titrantConc">Titrant concentration (M)</label><input id="titrantConc" type="number" min="0.001" max="2" step="0.01" value="0.10"></div>
+            <div class="field"><label for="stepSize">Step size (mL)</label><input id="stepSize" type="number" min="0.1" max="20" step="0.1" value="1"></div>
+          </div>
+          <div class="field"><label for="indicator">Indicator</label><select id="indicator"><option value="none">No indicator</option><option value="universal" selected>Universal indicator</option><option value="litmus">Litmus</option><option value="methylRed">Methyl red</option><option value="phenolphthalein">Phenolphthalein</option><option value="methylOrange">Methyl orange</option><option value="bromothymolBlue">Bromothymol blue</option></select></div>
+        </section>
+        <section class="group">
+          <h2>3. Move through the titration</h2>
+          <div class="field"><label for="addedVol">Titrant added (mL)</label><input id="addedVol" type="number" min="0" max="100" step="0.1" value="0"><input id="volumeSlider" type="range" min="0" max="100" step="0.1" value="0"><div class="hint" id="volumeHint">Move the slider, use a step button, or play the titration.</div></div>
+          <div class="button-row"><button id="minusBtn" type="button" aria-label="Subtract one step">− step</button><button id="plusBtn" type="button" aria-label="Add one step">+ step</button><button class="primary" id="playBtn" type="button">Play</button><button id="resetBtn" type="button">Reset</button></div>
+        </section>
+      </div>
+      <div class="notice" id="setupNote"></div>
+    </aside>
+
+    <main class="output">
+      <section class="metrics" aria-label="Current titration values">
+        <div class="panel metric"><div class="metric-label">Current pH</div><div class="metric-value" id="phValue">—</div></div>
+        <div class="panel metric"><div class="metric-label">Curve region</div><div class="metric-value compact" id="regionValue">—</div></div>
+        <div class="panel metric"><div class="metric-label">Dominant species</div><div class="metric-value compact" id="speciesValue">—</div></div>
+        <div class="panel metric"><div class="metric-label">Equivalence volume</div><div class="metric-value compact" id="eqValue">—</div></div>
+      </section>
+      <section class="panel chart-panel">
+        <div class="chart-head"><h2>Titration curve</h2><div class="chart-tools"><button class="export-btn" id="exportBtn" type="button">Export CSV</button><div class="indicator-chip"><span class="indicator-dot" id="indicatorDot"></span><span id="indicatorReadout">No indicator · pH color shown at current volume</span></div></div></div>
+        <div class="graph-wrap"><canvas id="curveCanvas" aria-label="Graph of pH versus titrant volume"></canvas><div class="graph-readout"><span id="hoverReadout">Use the slider or hover over the graph to inspect a point.</span><span id="graphCurrent"></span></div></div>
+      </section>
+      <section class="details">
+        <article class="panel detail"><h2>System summary</h2><table><tbody>
+          <tr><th>Flask solution</th><td id="analyteSummary"></td></tr><tr><th>Titrant</th><td id="titrantSummary"></td></tr><tr><th>Equivalence point(s)</th><td id="equivalenceSummary"></td></tr><tr><th>Acid/base data</th><td id="pkaSummary"></td></tr><tr><th>Total volume now</th><td id="totalVolume"></td></tr>
+        </tbody></table><div class="notice" id="indicatorNote"></div></article>
+        <article class="panel detail"><h2>Species and curve markers</h2><div class="species" id="speciesExplanation"></div><table><thead><tr><th>Marker</th><th>Volume</th><th>Interpretation</th></tr></thead><tbody id="markerTable"></tbody></table></article>
+        <article class="panel detail"><h2>Student checkpoints</h2><table><thead><tr><th>Added (mL)</th><th>pH</th><th>Region</th></tr></thead><tbody id="checkpointTable"></tbody></table></article>
+        <article class="panel detail"><h2>Explore the curve</h2><ul class="prompts"><li>How does changing concentration shift the equivalence volume?</li><li>At each half-equivalence point, compare pH with the corresponding pK<sub>a</sub>.</li><li>Which indicator transition range overlaps the steepest part of this curve?</li><li>How does carbonate behave differently from hydroxide as a titrant?</li></ul></article>
+      </section>
+      <footer>Ideal, 25 °C equilibrium model. Activity effects, gas exchange, and some real-solution effects are not included; carbonate results are best used for classroom trends. Indicator references: <a href="https://www.sace.sa.edu.au/">SACE Chemistry</a>, <a href="https://chemed.chem.purdue.edu/genchem/demosheets/17.3.html">Purdue indicator ranges</a>, and <a href="https://www2.chem.wisc.edu/deptfiles/genchem/tables/IndicatorTable.htm">University of Wisconsin indicator table</a>. Added-data references: <a href="https://pubchem.ncbi.nlm.nih.gov/compound/Hydrobromic-acid">HBr</a>, <a href="https://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=944">HNO₃</a>, <a href="https://pubchem.ncbi.nlm.nih.gov/compound/lactic-acid">lactic acid</a>, <a href="https://pubchem.ncbi.nlm.nih.gov/compound/ammonia">NH₃/NH₄⁺</a>, <a href="https://pubchem.ncbi.nlm.nih.gov/compound/pyridine">pyridine</a>, <a href="https://pubchem.ncbi.nlm.nih.gov/compound/Lithium-hydroxide">LiOH</a>, <a href="https://pubchem.ncbi.nlm.nih.gov/compound/ethylamine">ethylamine</a>, and <a href="https://pubchem.ncbi.nlm.nih.gov/compound/2-aminoethanol">ethanolamine</a>.</footer>
+    </main>
+  </div>
+<script>
+(() => {
+  'use strict';
+  const chemicals = {
+    hcl: { name: 'Hydrochloric acid (HCl)', kind: 'acid', strong: true, eq: 1, pKas: [], formula: 'HCl', description: 'Strong monoprotic acid.', species: ['HCl','Cl⁻'] },
+    hbr: { name: 'Hydrobromic acid (HBr)', kind: 'acid', strong: true, eq: 1, pKas: [], formula: 'HBr', description: 'Strong monoprotic acid.', species: ['HBr','Br⁻'] },
+    hno3: { name: 'Nitric acid (HNO₃)', kind: 'acid', strong: true, eq: 1, pKas: [], formula: 'HNO₃', description: 'Strong monoprotic acid.', species: ['HNO₃','NO₃⁻'] },
+    acetic: { name: 'Acetic acid (CH₃COOH)', kind: 'acid', eq: 1, pKas: [4.76], formula: 'CH₃COOH', species: ['CH₃COOH','CH₃COO⁻'], description: 'Weak monoprotic acid; common vinegar acid.' },
+    lactic: { name: 'Lactic acid (C₃H₆O₃)', kind: 'acid', eq: 1, pKas: [3.86], formula: 'C₃H₆O₃', species: ['CH₃CH(OH)COOH','CH₃CH(OH)COO⁻'], description: 'Weak monoprotic α-hydroxy acid.' },
+    hf: { name: 'Hydrofluoric acid (HF)', kind: 'acid', eq: 1, pKas: [3.17], formula: 'HF', species: ['HF','F⁻'], description: 'Weak monoprotic acid.' },
+    oxalic: { name: 'Oxalic acid (H₂C₂O₄)', kind: 'acid', eq: 2, pKas: [1.25, 4.27], formula: 'H₂C₂O₄', species: ['H₂C₂O₄','HC₂O₄⁻','C₂O₄²⁻'], description: 'Diprotic acid with separated dissociation steps.' },
+    carbonic: { name: 'Carbonic acid (H₂CO₃)', kind: 'acid', eq: 2, pKas: [6.35, 10.33], formula: 'H₂CO₃', species: ['H₂CO₃','HCO₃⁻','CO₃²⁻'], description: 'Diprotic acid related to the bicarbonate/carbonate system.' },
+    phosphoric: { name: 'Phosphoric acid (H₃PO₄)', kind: 'acid', eq: 3, pKas: [2.15, 7.20, 12.35], formula: 'H₃PO₄', species: ['H₃PO₄','H₂PO₄⁻','HPO₄²⁻','PO₄³⁻'], description: 'Triprotic acid with three stepwise dissociations.' },
+    citric: { name: 'Citric acid (H₃Cit)', kind: 'acid', eq: 3, pKas: [3.13, 4.76, 6.40], formula: 'H₃Cit', species: ['H₃Cit','H₂Cit⁻','HCit²⁻','Cit³⁻'], description: 'Triprotic acid with relatively close pKₐ values.' },
+    naoh: { name: 'Sodium hydroxide (NaOH)', kind: 'base', strong: true, eq: 1, formula: 'NaOH', description: 'Strong hydroxide base.' },
+    koh: { name: 'Potassium hydroxide (KOH)', kind: 'base', strong: true, eq: 1, formula: 'KOH', description: 'Strong hydroxide base.' },
+    lioh: { name: 'Lithium hydroxide (LiOH)', kind: 'base', strong: true, eq: 1, formula: 'LiOH', description: 'Strong hydroxide base.' },
+    carbonate: { name: 'Sodium carbonate (Na₂CO₃)', kind: 'base', eq: 2, pKas: [6.35, 10.33], baseFamily: true, formula: 'Na₂CO₃', description: 'Carbonate accepts two protons overall.' },
+    methylamine: { name: 'Methylamine (CH₃NH₂)', kind: 'base', eq: 1, pKas: [10.64], baseFamily: true, formula: 'CH₃NH₂', species: ['CH₃NH₃⁺','CH₃NH₂'], description: 'Weak organic base; pKₐ shown for CH₃NH₃⁺.' },
+    ammonia: { name: 'Ammonia (NH₃)', kind: 'base', eq: 1, pKas: [9.25], baseFamily: true, formula: 'NH₃', species: ['NH₄⁺','NH₃'], description: 'Weak base; pKₐ shown for its conjugate acid NH₄⁺.' },
+    pyridine: { name: 'Pyridine (C₅H₅N)', kind: 'base', eq: 1, pKas: [5.23], baseFamily: true, formula: 'C₅H₅N', species: ['C₅H₅NH⁺','C₅H₅N'], description: 'Weak aromatic nitrogen base; pKₐ shown for pyridinium.' },
+    ethylamine: { name: 'Ethylamine (CH₃CH₂NH₂)', kind: 'base', eq: 1, pKas: [10.87], baseFamily: true, formula: 'CH₃CH₂NH₂', species: ['CH₃CH₂NH₃⁺','CH₃CH₂NH₂'], description: 'Weak primary organic amine; pKₐ shown for ethylammonium.' },
+    ethanolamine: { name: 'Ethanolamine (HOCH₂CH₂NH₂)', kind: 'base', eq: 1, pKas: [9.50], baseFamily: true, formula: 'C₂H₇NO', species: ['HOCH₂CH₂NH₃⁺','HOCH₂CH₂NH₂'], description: 'Weak amino alcohol; pKₐ shown for protonated ethanolamine at 25 °C.' }
+  };
+  const indicators = {
+    none: { name: 'No indicator', range: 'pH-based marker', color: pH => pH < 3 ? '#e85f55' : pH < 6.2 ? '#e5a23e' : pH < 7.6 ? '#70ae8a' : pH < 10 ? '#7e9fdb' : '#9a65bb', note: 'The graph marker follows a broad pH colour scale.' },
+    universal: { name: 'Universal indicator', range: 'approx. pH 1–14', color: pH => pH < 2 ? '#d92332' : pH < 4 ? '#f36d38' : pH < 6 ? '#f2c744' : pH < 7.5 ? '#68b85a' : pH < 9 ? '#36a9a5' : pH < 11 ? '#387bd0' : '#7554b8', note: 'A mixture of indicators gives an approximate spectrum from red/orange in acid, through green near neutral, to blue/violet in alkali. Exact colours vary by formulation; this is not a sharp-endpoint indicator.' },
+    litmus: { name: 'Litmus', range: 'pH 5.0–8.0', transition: [5.0,8.0], color: pH => pH < 5 ? '#d94d59' : pH < 6.5 ? '#b66691' : pH < 8 ? '#846db4' : '#3979c3', note: 'Red/pink below its transition range, purple through the transition, and blue above pH 8.0.' },
+    methylRed: { name: 'Methyl red', range: 'pH 4.4–6.2', transition: [4.4,6.2], color: pH => pH < 4.4 ? '#d94d48' : pH < 6.2 ? '#e79c3f' : '#e3ca3d', note: 'Red below pH 4.4; orange through the transition range; yellow above pH 6.2.' },
+    phenolphthalein: { name: 'Phenolphthalein', range: 'pH 8.2–10.0', transition: [8.2,10.0], color: pH => pH < 8.2 ? '#f8fbfc' : pH < 10 ? '#edafd1' : '#d94698', note: 'Colourless below pH 8.2; pink through and above its transition range.' },
+    methylOrange: { name: 'Methyl orange', range: 'pH 3.1–4.4', transition: [3.1,4.4], color: pH => pH < 3.1 ? '#df5146' : pH < 4.4 ? '#ed9d42' : '#e9cc37', note: 'Red below pH 3.1; orange through the transition range; yellow above pH 4.4.' },
+    bromothymolBlue: { name: 'Bromothymol blue', range: 'pH 6.0–7.6', transition: [6.0,7.6], color: pH => pH < 6 ? '#e6cf43' : pH < 7.6 ? '#78b876' : '#438ed0', note: 'Yellow below pH 6.0; green through the transition range; blue above pH 7.6.' }
+  };
+  const $ = id => document.getElementById(id);
+  const ui = Object.fromEntries(['mode','analyte','titrant','analyteConc','analyteVol','titrantConc','stepSize','addedVol','volumeSlider','indicator','playBtn','minusBtn','plusBtn','resetBtn','exportBtn','curveCanvas'].map(id => [id, $(id)]));
+  const canvas = ui.curveCanvas, ctx = canvas.getContext('2d');
+  const Kw = 1e-14;
+  let timer = null, curve = [], eqs = [], maxVol = 40, hovered = null;
+  const clamp = (x,a,b) => Math.max(a, Math.min(b,x));
+  const nval = (el, fallback, min, max) => clamp(Number.parseFloat(el.value) || fallback, min, max);
+  const fmt = (x, d=2) => Number.isFinite(x) ? x.toFixed(d) : '—';
+  function chooseOptions(select, ids, selected) {
+    select.replaceChildren(...ids.map(id => { const o = document.createElement('option'); o.value=id; o.textContent=`${chemicals[id].name} — ${chemicals[id].strong?'strong':'weak'} ${chemicals[id].kind}`; return o; }));
+    if (ids.includes(selected)) select.value = selected;
+  }
+  function syncMode(keep=false) {
+    const oldA=ui.analyte.value, oldT=ui.titrant.value;
+    if (ui.mode.value === 'acid') { chooseOptions(ui.analyte,['hcl','hbr','hno3','acetic','lactic','hf','oxalic','carbonic','phosphoric','citric'],keep?oldA:'acetic'); chooseOptions(ui.titrant,['naoh','koh','lioh','carbonate','methylamine','ammonia','pyridine','ethylamine','ethanolamine'],keep?oldT:'naoh'); }
+    else { chooseOptions(ui.analyte,['naoh','koh','lioh','carbonate','methylamine','ammonia','pyridine','ethylamine','ethanolamine'],keep?oldA:'methylamine'); chooseOptions(ui.titrant,['hcl','hbr','hno3','acetic','lactic','hf','oxalic','carbonic','phosphoric','citric'],keep?oldT:'hcl'); }
+    updateAll(true);
+  }
+  const cap = c => c.eq;
+  function eqVolumes() {
+    const a=chemicals[ui.analyte.value], t=chemicals[ui.titrant.value];
+    const ca=nval(ui.analyteConc,.1,.001,2), ct=nval(ui.titrantConc,.1,.001,2), va=nval(ui.analyteVol,25,1,250)/1000;
+    return Array.from({length:cap(a)},(_,i)=>ca*va*(i+1)/(ct*cap(t))*1000);
+  }
+  function mixAt(volMl) {
+    const a=chemicals[ui.analyte.value], t=chemicals[ui.titrant.value];
+    const ca=nval(ui.analyteConc,.1,.001,2), ct=nval(ui.titrantConc,.1,.001,2), va=nval(ui.analyteVol,25,1,250)/1000, vt=Math.max(0,volMl)/1000, total=va+vt;
+    const families=[]; let fixedPos=0, fixedNeg=0;
+    const add=(chem,moles)=>{
+      if (moles <= 0) return;
+      if (chem.strong && chem.kind==='acid') fixedNeg += moles;
+      else if (chem.strong && chem.kind==='base') fixedPos += moles;
+      else if (chem.id==='carbonate') { fixedPos += 2*moles; families.push({z0:0,pKas:chem.pKas,C:moles/total,chem}); }
+      else if (chem.baseFamily) families.push({z0:1,pKas:chem.pKas,C:moles/total,chem});
+      else if (chem.kind==='acid') families.push({z0:0,pKas:chem.pKas,C:moles/total,chem});
+    };
+    add(a,ca*va); add(t,ct*vt);
+    return { families, fixedPos:fixedPos/total, fixedNeg:fixedNeg/total, totalL:total, a, t, ca, ct, va, vt, analyteMoles:ca*va };
+  }
+  function fractions(pH,family) {
+    const H=Math.pow(10,-pH), terms=[1]; let prod=1;
+    for(const pKa of family.pKas){prod*=Math.pow(10,-pKa); terms.push(prod/Math.pow(H,terms.length));}
+    const sum=terms.reduce((x,y)=>x+y,0); return terms.map(x=>x/sum);
+  }
+  function avgCharge(pH,f){ const fr=fractions(pH,f); return fr.reduce((s,x,i)=>s+x*(f.z0-i),0); }
+  function balance(pH,mix) {
+    const H=Math.pow(10,-pH); let q=H+mix.fixedPos-Kw/H-mix.fixedNeg;
+    for(const f of mix.families) q+=f.C*avgCharge(pH,f);
+    return q;
+  }
+  function solvePH(mix) {
+    let a=-1, fa=balance(a,mix), bracket=null, best=-1, bestAbs=Math.abs(fa);
+    for(let p=-.95;p<=15.0001;p+=.05){const fp=balance(p,mix); if(Math.abs(fp)<bestAbs){best=p;bestAbs=Math.abs(fp);} if(fa===0||fa*fp<0){bracket=[a,p,fa];break;} a=p;fa=fp;}
+    if(!bracket) return clamp(best,0,14);
+    let [lo,hi,flo]=bracket;
+    for(let i=0;i<70;i++){const mid=(lo+hi)/2,fm=balance(mid,mix); if(flo*fm<=0)hi=mid;else{lo=mid;flo=fm;}}
+    return clamp((lo+hi)/2,0,14);
+  }
+  function stateAt(v) {
+    const mix=mixAt(v), pH=solvePH(mix), x=mix.analyteMoles>0?(mix.ct*mix.vt*cap(mix.t))/(mix.analyteMoles*cap(mix.a)):0;
+    let region='Initial solution';
+    const tol=1e-5;
+    if(v>0){
+      const k=Math.round(x);
+      if(k>=1 && k<=cap(mix.a) && Math.abs(x-k)<.025) region=`Equivalence point ${k}`;
+      else if(x>cap(mix.a)) region=mix.t.strong?'Excess strong titrant':'Post-equivalence';
+      else {const stage=Math.floor(x); region=stage>0?`Buffer region ${stage+1}`:'Buffer region';}
+    }
+    let dominant='';
+    const family=mix.families.find(f=>f.chem===mix.a) || mix.families.find(f=>f.chem===mix.t);
+    if(family){
+      const f=fractions(pH,family); let idx=0; for(let i=1;i<f.length;i++) if(f[i]>f[idx])idx=i;
+      const chem=family.chem;
+      if(chem.baseFamily && chem.species) dominant=chem.species[idx]||chem.formula;
+      else if(chem.id==='carbonate') dominant=['H₂CO₃','HCO₃⁻','CO₃²⁻'][idx]||'carbonate species';
+      else {dominant=chem.species?.[idx]||chem.formula;}
+    } else if(mix.a.strong && mix.a.kind==='acid') dominant='H₃O⁺ / Cl⁻';
+    else if(mix.a.strong && mix.a.kind==='base') dominant='OH⁻';
+    return {pH,region,dominant,mix};
+  }
+  function chartData() { const points=240; curve=Array.from({length:points+1},(_,i)=>{const x=maxVol*i/points;return{x,y:stateAt(x).pH};}); }
+  function markerRows() {
+    const markers=[];
+    eqs.forEach((v,i)=>{const half=(i===0?v/2:(eqs[i-1]+v)/2);markers.push({name:`Half-equivalence ${i+1}`,v,at:half,text:`pH ≈ pKₐ${i+1}`},{name:`Equivalence ${i+1}`,v,at:v,text:`Neutralising capacity reached`});});
+    $('markerTable').innerHTML=markers.map(m=>`<tr><td>${m.name}</td><td>${fmt(m.at,2)} mL</td><td>${m.text}</td></tr>`).join('')||'<tr><td colspan="3">No markers available.</td></tr>';
+    $('equivalenceSummary').textContent=eqs.map((v,i)=>`EP${i+1}: ${fmt(v,2)} mL`).join(' · ');
+  }
+  function geometry() { const rect=canvas.getBoundingClientRect(), dpr=window.devicePixelRatio||1; const w=Math.max(320,rect.width),h=Math.max(300,rect.height); if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);} ctx.setTransform(dpr,0,0,dpr,0,0); return {w,h,m:{l:55,r:18,t:20,b:46},pw:w-73,ph:h-66}; }
+  function drawChart() {
+    const {w,h,m,pw,ph}=geometry(); const x=x=>m.l+x/maxVol*pw, y=y=>m.t+(14-y)/14*ph;
+    ctx.clearRect(0,0,w,h); ctx.fillStyle='#fcfeff';ctx.fillRect(0,0,w,h);
+    if(ui.indicator.value==='universal'){
+      const spectrum=ctx.createLinearGradient(0,m.t,0,h-m.b);
+      [[0,'#7554b8'],[.22,'#387bd0'],[.38,'#36a9a5'],[.5,'#68b85a'],[.64,'#f2c744'],[.8,'#f36d38'],[1,'#d92332']].forEach(([offset,color])=>spectrum.addColorStop(offset,color));
+      ctx.globalAlpha=.10;ctx.fillStyle=spectrum;ctx.fillRect(m.l,m.t,pw,ph);ctx.globalAlpha=1;
+    }
+    ctx.font='11px system-ui';ctx.textAlign='right';ctx.textBaseline='middle';
+    for(let i=0;i<=14;i+=2){const yy=y(i);ctx.strokeStyle='#e5edf1';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(m.l,yy);ctx.lineTo(w-m.r,yy);ctx.stroke();ctx.fillStyle='#718493';ctx.fillText(String(i),m.l-9,yy);}
+    ctx.textAlign='center';ctx.textBaseline='top';for(let i=0;i<=10;i++){const val=maxVol*i/10,xx=x(val);ctx.strokeStyle='#edf2f5';ctx.beginPath();ctx.moveTo(xx,m.t);ctx.lineTo(xx,h-m.b);ctx.stroke();ctx.fillStyle='#718493';ctx.fillText(fmt(val,0),xx,h-m.b+8);}
+    ctx.strokeStyle='#8b9ba5';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(m.l,m.t);ctx.lineTo(m.l,h-m.b);ctx.lineTo(w-m.r,h-m.b);ctx.stroke();
+    ctx.fillStyle='#3a5565';ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText('Titrant added (mL)',m.l+pw/2,h-18);
+    ctx.save();ctx.translate(15,m.t+ph/2);ctx.rotate(-Math.PI/2);ctx.fillText('pH',0,0);ctx.restore();
+    eqs.forEach((v,i)=>{if(v<=maxVol){const xx=x(v);ctx.strokeStyle='#d28c1e';ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(xx,m.t);ctx.lineTo(xx,h-m.b);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#98651a';ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText(`EP${i+1}`,Math.min(xx+4,w-45),m.t+3);}});
+    // Indicator transition interval is shaded directly across the graph.
+    const indicator=indicators[ui.indicator.value];
+    const range=indicator.transition||null;
+    if(range){const top=y(range[1]),bottom=y(range[0]);ctx.fillStyle='rgba(214,141,25,.09)';ctx.fillRect(m.l,top,pw,bottom-top);ctx.strokeStyle='rgba(214,141,25,.35)';ctx.setLineDash([3,5]);[range[0],range[1]].forEach(v=>{ctx.beginPath();ctx.moveTo(m.l,y(v));ctx.lineTo(w-m.r,y(v));ctx.stroke();});ctx.setLineDash([]);ctx.fillStyle='#8d671f';ctx.font='10px system-ui';ctx.textAlign='right';ctx.textBaseline='bottom';ctx.fillText(`${indicator.name} range`,w-m.r-5,top-3);}
+    ctx.beginPath();curve.forEach((p,i)=>{if(i===0)ctx.moveTo(x(p.x),y(p.y));else ctx.lineTo(x(p.x),y(p.y));});ctx.strokeStyle='#176b87';ctx.lineWidth=3;ctx.lineJoin='round';ctx.stroke();
+    const current=stateAt(nval(ui.addedVol,0,0,maxVol)),cx=x(nval(ui.addedVol,0,0,maxVol)),cy=y(current.pH);const color=indicator.color(current.pH);
+    ctx.beginPath();ctx.arc(cx,cy,8,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.lineWidth=3;ctx.strokeStyle='#fff';ctx.stroke();ctx.lineWidth=1.5;ctx.strokeStyle='#173d50';ctx.stroke();
+    if(hovered!==null){const hx=x(hovered),hy=y(stateAt(hovered).pH);ctx.strokeStyle='rgba(23,62,84,.42)';ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(hx,m.t);ctx.lineTo(hx,h-m.b);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.arc(hx,hy,5,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#173d50';ctx.stroke();}
+    $('indicatorDot').style.background=color;$('indicatorReadout').textContent=`${indicator.name} · ${indicator.range}`;$('graphCurrent').innerHTML=`<strong>${fmt(nval(ui.addedVol,0,0,maxVol),1)} mL</strong> · pH ${fmt(current.pH,2)} · ${current.region}`;
+  }
+  function updateReadouts() {
+    const v=nval(ui.addedVol,0,0,maxVol), s=stateAt(v),a=chemicals[ui.analyte.value],t=chemicals[ui.titrant.value];
+    $('phValue').textContent=fmt(s.pH,2);$('regionValue').textContent=s.region;$('speciesValue').textContent=s.dominant||'Major dissolved species';
+    const nearest=eqs.reduce((best,x,i)=>Math.abs(x-v)<best.d?{d:Math.abs(x-v),i,x}:best,{d:Infinity,i:-1,x:NaN});$('eqValue').textContent=nearest.i<0?'—':`EP${nearest.i+1} · ${fmt(nearest.x,1)} mL`;
+    $('analyteSummary').textContent=`${a.name} (${nval(ui.analyteConc,.1,.001,2).toFixed(3)} M)`;$('titrantSummary').textContent=`${t.name} (${nval(ui.titrantConc,.1,.001,2).toFixed(3)} M)`;
+    const pkaLabel=(chem,where)=>chem.pKas?.length?`${where} ${chem.kind==='base'?'conjugate-acid pKₐ':'pKₐ'}: ${chem.pKas.join(', ')}`:chem.strong?`Strong ${chem.kind}`:'';
+    $('pkaSummary').textContent=[pkaLabel(a,'Flask'),pkaLabel(t,'Titrant')].filter(Boolean).join(' · ')||'—';
+    $('totalVolume').textContent=`${fmt(nval(ui.analyteVol,25,1,250)+v,1)} mL`;$('speciesExplanation').innerHTML=`<span class="pill">${s.region}</span><p>Most abundant tracked species: <strong>${s.dominant||'water ions'}</strong>. ${a.description} ${t.description}</p>`;
+    const profile=indicators[ui.indicator.value];$('indicatorNote').textContent=`${profile.name} (${profile.range}): ${profile.note}`;
+    $('setupNote').textContent=`${a.name} in the flask is being titrated with ${t.name}. The highlighted circle in the graph shows the selected indicator colour at the current pH.`;
+    $('checkpointTable').innerHTML=[0,...eqs.flatMap((x,i)=>[(i===0?x/2:(eqs[i-1]+x)/2),x]),Math.min(maxVol,eqs.at(-1)*1.25)].filter((x,i,arr)=>Number.isFinite(x)&&arr.findIndex(y=>Math.abs(x-y)<.01)===i).map(x=>{const st=stateAt(x);return `<tr><td>${fmt(x,2)}</td><td>${fmt(st.pH,2)}</td><td>${st.region}</td></tr>`;}).join('');
+    drawChart();
+  }
+  function updateAll(rebuild=false) {
+    eqs=eqVolumes(); const suggested=Math.max(20,Math.ceil((eqs.at(-1)||25)*1.65/5)*5);maxVol=Math.min(500,suggested);
+    ui.volumeSlider.max=maxVol;ui.addedVol.max=maxVol;
+    if(rebuild){ui.addedVol.value='0';ui.volumeSlider.value='0';}
+    const v=clamp(nval(ui.addedVol,0,0,maxVol),0,maxVol);ui.addedVol.value=fmt(v,1);ui.volumeSlider.value=String(v);
+    $('volumeHint').textContent=`Graph spans 0–${fmt(maxVol,0)} mL; estimated equivalence at ${eqs.map(x=>fmt(x,1)).join(', ')} mL.`;
+    chartData();markerRows();updateReadouts();
+  }
+  function exportCurveCSV() {
+    const step=nval(ui.stepSize,1,.1,20), a=chemicals[ui.analyte.value], t=chemicals[ui.titrant.value], indicator=indicators[ui.indicator.value];
+    const headers=['Added titrant (mL)','pH','Curve region','Dominant species','Total volume (mL)','Flask solution','Flask concentration (mol/L)','Flask volume (mL)','Titrant','Titrant concentration (mol/L)','Step size (mL)','Indicator','Indicator range','Indicator color','Equivalence volumes (mL)'];
+    const equivalences=eqs.map(v=>fmt(v,4)).join('; ');
+    const csvCell=value=>`"${String(value??'').replace(/"/g,'""')}"`;
+    const rows=[headers.map(csvCell).join(',')];
+    const appendRow=volume=>{
+      const state=stateAt(volume);
+      const values=[fmt(volume,4),fmt(state.pH,4),state.region,state.dominant,nval(ui.analyteVol,25,1,250)+volume,a.name,nval(ui.analyteConc,.1,.001,2),nval(ui.analyteVol,25,1,250),t.name,nval(ui.titrantConc,.1,.001,2),step,indicator.name,indicator.range,indicator.color(state.pH),equivalences];
+      rows.push(values.map(csvCell).join(','));
+    };
+    let last=0;
+    const count=Math.floor(maxVol/step+1e-9);
+    for(let i=0;i<=count;i++){last=Number((i*step).toFixed(8));appendRow(last);}
+    if(last<maxVol-1e-8) appendRow(maxVol);
+    const csv='\uFEFF'+rows.join('\r\n');
+    const slug=value=>value.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+    const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    const link=document.createElement('a');link.href=url;link.download=`titration_curve_${slug(a.name)}_with_${slug(t.name)}.csv`;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  function setVol(v){const n=clamp(v,0,maxVol);ui.addedVol.value=fmt(n,1);ui.volumeSlider.value=String(n);updateReadouts();}
+  function stopPlay(){if(timer){clearInterval(timer);timer=null;}ui.playBtn.textContent='Play';}
+  ui.mode.addEventListener('change',()=>syncMode(false));ui.analyte.addEventListener('change',()=>updateAll(true));ui.titrant.addEventListener('change',()=>updateAll(true));
+  ui.exportBtn.addEventListener('click',exportCurveCSV);
+  ['analyteConc','analyteVol','titrantConc'].forEach(id=>$(id).addEventListener('input',()=>updateAll(true)));
+  ui.stepSize.addEventListener('change',()=>{ui.stepSize.value=fmt(nval(ui.stepSize,1,.1,20),1);});
+  ui.indicator.addEventListener('change',updateReadouts);ui.addedVol.addEventListener('input',()=>setVol(Number(ui.addedVol.value)||0));ui.volumeSlider.addEventListener('input',()=>setVol(Number(ui.volumeSlider.value)||0));
+  ui.minusBtn.addEventListener('click',()=>setVol((Number(ui.addedVol.value)||0)-nval(ui.stepSize,1,.1,20)));ui.plusBtn.addEventListener('click',()=>setVol((Number(ui.addedVol.value)||0)+nval(ui.stepSize,1,.1,20)));
+  ui.resetBtn.addEventListener('click',()=>{stopPlay();setVol(0);});ui.playBtn.addEventListener('click',()=>{if(timer){stopPlay();return;}ui.playBtn.textContent='Pause';timer=setInterval(()=>{const next=(Number(ui.addedVol.value)||0)+nval(ui.stepSize,1,.1,20);if(next>=maxVol){setVol(maxVol);stopPlay();}else setVol(next);},160);});
+  canvas.addEventListener('pointermove',event=>{const r=canvas.getBoundingClientRect(), plotX=clamp((event.clientX-r.left-55)/(r.width-73),0,1);hovered=plotX*maxVol;$('hoverReadout').innerHTML=`Graph point: <strong>${fmt(hovered,2)} mL</strong> · pH <strong>${fmt(stateAt(hovered).pH,2)}</strong>`;drawChart();});canvas.addEventListener('pointerleave',()=>{hovered=null;$('hoverReadout').textContent='Use the slider or hover over the graph to inspect a point.';drawChart();});
+  window.addEventListener('resize',()=>drawChart());
+  syncMode(false);
+})();
+</script>
+</body>
+</html>
