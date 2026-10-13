@@ -3,197 +3,166 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Paul Gavini — Educational Web Apps</title>
-    <meta name="description" content="Hi, I’m Paul Gavini. I build HTML/JS web apps for education.">
+    <title>Paul Gavini | Educational Web Apps</title>
+    <meta name="description" content="Browser-based educational tools for teaching, learning, experimenting, and making.">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    
+    <header class="site-header" id="home">
+      <div class="header-inner">
+        <a class="brand" href="#home"><span class="brand-mark">PG</span><span>Paul Gavini <span class="brand-divider">/</span> Educational Web Apps</span></a>
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="#projects">Projects</a>
+          <a href="#science">Science</a>
+          <a href="#teacher-and-student-aides">Teacher tools</a>
+          <a class="youtube-link" href="https://www.youtube.com/@paulgavini">YouTube <span aria-hidden="true">&nearr;</span></a>
+        </nav>
+      </div>
+    </header>
 
     <main>
-      <section class="hero" id="home">
-        <p class="eyebrow">Paul Gavini</p>
-        <h1>Educational web apps</h1>
-        <div class="hero-actions">
-          <a class="button primary" href="#projects">Browse projects</a>
-          <a class="button" href="#teacher-and-student-aides">Teacher and student aides</a>
+      <section class="hero" aria-label="Introduction">
+        <div class="hero-copy">
+          <p class="eyebrow">Practical tools for curious classrooms</p>
+          <p class="intro">A collection of small web apps for teaching, learning, experimenting, and making. Pick a subject to explore or search for a tool.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#projects">Browse all projects <span aria-hidden="true">&darr;</span></a>
+            <a class="button secondary" href="#teacher-and-student-aides">Teacher tools</a>
+          </div>
         </div>
       </section>
 
-      <section id="projects" class="projects">
-        <div class="section-heading">
-          <p class="section-label">Collections</p>
+      <section class="library" id="projects" aria-labelledby="projects-heading">
+        <div class="library-toolbar">
+          <div class="library-title">
+            <p class="eyebrow">Project library</p>
+            <h2 id="projects-heading">Explore the collection</h2>
+            <p class="library-summary">26 projects, grouped by subject and purpose.</p>
+          </div>
+          <div class="library-controls">
+            <label class="search-wrap"><span class="visually-hidden">Find a project</span><span class="search-icon" aria-hidden="true">&#9906;</span><input id="project-search" type="search" placeholder="Find a project..." autocomplete="off"></label>
+            <nav class="category-nav" aria-label="Filter projects by category">
+              <button type="button" class="filter is-active" data-filter="all" aria-pressed="true">All</button>
+              <button type="button" class="filter" data-filter="science" aria-pressed="false">Science</button>
+              <button type="button" class="filter" data-filter="math" aria-pressed="false">Math</button>
+              <button type="button" class="filter" data-filter="digital-technologies" aria-pressed="false">Digital</button>
+              <button type="button" class="filter" data-filter="teacher-and-student-aides" aria-pressed="false">Teaching</button>
+            </nav>
+          </div>
         </div>
 
-        <nav class="category-nav" aria-label="Project categories">
-          <a href="#science">Science</a>
-          <a href="#math">Math</a>
-          <a href="#digital-technologies">Digital Technologies</a>
-          <a href="#teacher-and-student-aides">Teacher and student aides</a>
-        </nav>
-
-        <section class="category" id="science" aria-labelledby="science-heading">
-          <div class="category-head">
-            <p class="category-label">Science</p>
-            <div>
-              <h3 id="science-heading">Science projects</h3>
-              <p>Investigation, modelling, and audio tools for practical classroom inquiry.</p>
-            </div>
+        <section class="category" id="science" data-category="science" aria-labelledby="science-heading">
+          <div class="category-meta">
+            <div><span class="category-kicker">01 / Investigate</span><h3 id="science-heading">Science</h3></div>
+            <span class="count">7 projects</span>
+            <p>Investigation, modelling, and audio tools for practical classroom inquiry.</p>
           </div>
-          <div class="grid">
-            <a class="card" href="eng_sci_simulator/index.html">
-              <h4>QuakeLab Structural Design Simulator</h4>
-              <p>Design, test, and improve structures against simulated earthquake forces.</p>
-            </a>
-            <a class="card" href="practical_wu/index.html">
-              <h4>Practical Investigation Builder</h4>
-              <p>Plan, analyse, and report science practical investigations.</p>
-            </a>
-            <a class="card" href="evolution_sandbox/index.html">
-              <h4>Evolution Sandbox</h4>
-              <p>Explore emergent patterns and simple rules.</p>
-            </a>
-            <a class="card" href="Oscillioscope/index.html">
-              <h4>Oscillioscope</h4>
-              <p>Explore signals with an oscilloscope view.</p>
-            </a>
-            <a class="card" href="Spectrum%20analyser/index.html.html">
-              <h4>Spectrum analyser</h4>
-              <p>Visualise sound with live audio spectra.</p>
-            </a>
-            <a class="card" href="speed_of_sound/">
-              <h4>Speed of Sound</h4>
-              <p>Measure the speed of sound with microphone timing and guided calculations.</p>
-            </a>
-            <a class="card" href="duck_weed/index.html">
-              <h4>Duckweed Photo Measurement</h4>
-              <p>Estimate visible duckweed area and dish coverage from a photo.</p>
-            </a>
+          <div class="project-grid">
+            <a class="project" href="eng_sci_simulator/index.html"><span><strong>QuakeLab Structural Design Simulator</strong><small>Design, test, and improve structures against simulated earthquake forces.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="practical_wu/index.html"><span><strong>Practical Investigation Builder</strong><small>Plan, analyse, and report science practical investigations.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="evolution_sandbox/index.html"><span><strong>Evolution Sandbox</strong><small>Explore emergent patterns and simple rules.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="Oscillioscope/index.html"><span><strong>Oscillioscope</strong><small>Explore signals with an oscilloscope view.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="Spectrum%20analyser/index.html.html"><span><strong>Spectrum analyser</strong><small>Visualise sound with live audio spectra.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="speed_of_sound/"><span><strong>Speed of Sound</strong><small>Measure sound with microphone timing and guided calculations.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="duck_weed/index.html"><span><strong>Duckweed Photo Measurement</strong><small>Estimate duckweed area and dish coverage from a photo.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
           </div>
         </section>
 
-        <section class="category" id="math" aria-labelledby="math-heading">
-          <div class="category-head">
-            <p class="category-label">Math</p>
-            <div>
-              <h3 id="math-heading">Math projects</h3>
-              <p>Tools for coordinate reasoning, structured investigations, and mathematical communication.</p>
-            </div>
+        <section class="category" id="math" data-category="math" aria-labelledby="math-heading">
+          <div class="category-meta">
+            <div><span class="category-kicker">02 / Reason</span><h3 id="math-heading">Math</h3></div>
+            <span class="count">3 projects</span>
+            <p>Coordinate reasoning, structured investigations, and mathematical communication.</p>
           </div>
-          <div class="grid">
-            <a class="card" href="graph_paper/index.html">
-              <h4>Square Graph Paper Generator</h4>
-              <p>Create precise, printable A4 and A3 square graph paper.</p>
-            </a>
-            <a class="card" href="3d_simulation/index.html">
-              <h4>3D Coordinate Cube Builder</h4>
-              <p>Build and explore coordinate cubes in 3D.</p>
-            </a>
-            <a class="card" href="math_inv/index.html">
-              <h4>Mathematics Investigation Builder</h4>
-              <p>Draft formal mathematics investigation reports.</p>
-            </a>
+          <div class="project-grid">
+            <a class="project" href="graph_paper/index.html"><span><strong>Square Graph Paper Generator</strong><small>Create precise, printable A4 and A3 square graph paper.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="3d_simulation/index.html"><span><strong>3D Coordinate Cube Builder</strong><small>Build and explore coordinate cubes in 3D.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="math_inv/index.html"><span><strong>Mathematics Investigation Builder</strong><small>Draft formal mathematics investigation reports.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
           </div>
         </section>
 
-        <section class="category" id="digital-technologies" aria-labelledby="digital-technologies-heading">
-          <div class="category-head">
-            <p class="category-label">Digital Technologies</p>
-            <div>
-              <h3 id="digital-technologies-heading">Digital Technologies projects</h3>
-              <p>Build, structure, and teach core computing concepts with visual authoring tools.</p>
-            </div>
+        <section class="category" id="digital-technologies" data-category="digital-technologies" aria-labelledby="digital-technologies-heading">
+          <div class="category-meta">
+            <div><span class="category-kicker">03 / Create</span><h3 id="digital-technologies-heading">Digital Technologies</h3></div>
+            <span class="count">5 projects</span>
+            <p>Visual authoring tools for building and teaching core computing concepts.</p>
           </div>
-          <div class="grid">
-            <a class="card" href="blockly_html/index.html">
-              <h4>Blockly HTML Builder</h4>
-              <p>Build beginner HTML pages and CSS visually with Blockly.</p>
-            </a>
-            <a class="card" href="blockly_pseudo/index.html">
-              <h4>Blockly Pseudocode Builder</h4>
-              <p>Create structured pseudocode visually with local Blockly blocks.</p>
-            </a>
-            <a class="card" href="blockly-character-movement/">
-              <h4>Blockly Character Movement</h4>
-              <p>Program character movement visually with Blockly.</p>
-            </a>
-            <a class="card" href="agent_builder/index.html">
-              <h4>Agent Loom</h4>
-              <p>Design AI agents as visual flows and export them as reusable Markdown prompts.</p>
-            </a>
-            <a class="card" href="laser_cut_map/index.html">
-              <h4>Laser-cut Maze Maker</h4>
-              <p>Create true-size laser-cut maze designs and export SVG or PDF files.</p>
-            </a>
+          <div class="project-grid">
+            <a class="project" href="blockly_html/index.html"><span><strong>Blockly HTML Builder</strong><small>Build beginner HTML pages and CSS visually with Blockly.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="blockly_pseudo/index.html"><span><strong>Blockly Pseudocode Builder</strong><small>Create structured pseudocode visually with local Blockly blocks.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="blockly-character-movement/"><span><strong>Blockly Character Movement</strong><small>Program character movement visually with Blockly.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="agent_builder/index.html"><span><strong>Agent Loom</strong><small>Design AI agents as visual flows and export reusable Markdown prompts.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="laser_cut_map/index.html"><span><strong>Laser-cut Maze Maker</strong><small>Create true-size laser-cut maze designs and export SVG or PDF files.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
           </div>
         </section>
 
-        <section class="category" id="teacher-and-student-aides" aria-labelledby="teacher-and-student-aides-heading">
-          <div class="category-head">
-            <p class="category-label">Teacher and student aides</p>
-            <div>
-              <h3 id="teacher-and-student-aides-heading">Teacher and student aides</h3>
-              <p>Presentation, annotation, organisation, and classroom support tools for daily use.</p>
-            </div>
+        <section class="category" id="teacher-and-student-aides" data-category="teacher-and-student-aides" aria-labelledby="teacher-and-student-aides-heading">
+          <div class="category-meta">
+            <div><span class="category-kicker">04 / Support</span><h3 id="teacher-and-student-aides-heading">Teacher and student aides</h3></div>
+            <span class="count">11 projects</span>
+            <p>Presentation, annotation, organisation, and classroom support tools for daily use.</p>
           </div>
-          <div class="grid">
-            <a class="card" href="drawing_app/index.html">
-              <h4>Drawing App</h4>
-              <p>Stylus-first multi-page drawing with optional 1cm grid.</p>
-            </a>
-            <a class="card" href="TreePad/index.html">
-              <h4>Outliner</h4>
-              <p>Structure ideas with a simple outliner.</p>
-            </a>
-            <a class="card" href="pdf%20editor/index.html">
-              <h4>PDF Editor</h4>
-              <p>Annotate PDFs with pen, eraser, zoom, and export.</p>
-            </a>
-            <a class="card" href="pdf_editor_vid/index.html">
-              <h4>PDF Editor with record</h4>
-              <p>Annotate PDFs and record MP4 walkthrough videos.</p>
-            </a>
-            <a class="card" href="webcam/index.html">
-              <h4>WebCam Visualiser</h4>
-              <p>Turn your webcam into a classroom visualiser.</p>
-            </a>
-            <a class="card" href="audio_converter/index.html">
-              <h4>WMA Audio Converter</h4>
-              <p>Convert batches of WMA files to MP3 or WAV locally in the browser.</p>
-            </a>
-            <a class="card" href="transcribe_dictate/index.html">
-              <h4>Local Audio Transcriber</h4>
-              <p>Transcribe audio files locally in the browser with Whisper.</p>
-            </a>
-            <a class="card" href="rubric_gpt/index.html">
-              <h4>Rubric GPT</h4>
-              <p>Create and refine assessment rubrics for classroom tasks.</p>
-            </a>
-            <a class="card" href="lesson_sequence_board/lesson_sequence_board.html">
-              <h4>Lesson Sequence Board</h4>
-              <p>Plan and organise lessons across weeks with a flexible visual board.</p>
-            </a>
-            <a class="card" href="planner/">
-              <h4>Weekly Planner</h4>
-              <p>Organise subjects and lessons across teaching weeks.</p>
-            </a>
-            <a class="card" href="flashcard-web/index.html">
-              <h4>Flashcard Study</h4>
-              <p>Import two-column CSV decks for local flashcard practice, progress tracking, print, and Anki export.</p>
-            </a>
+          <div class="project-grid">
+            <a class="project" href="drawing_app/index.html"><span><strong>Drawing App</strong><small>Stylus-first multi-page drawing with optional 1cm grid.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="TreePad/index.html"><span><strong>Outliner</strong><small>Structure ideas with a simple outliner.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="pdf%20editor/index.html"><span><strong>PDF Editor</strong><small>Annotate PDFs with pen, eraser, zoom, and export.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="pdf_editor_vid/index.html"><span><strong>PDF Editor with record</strong><small>Annotate PDFs and record MP4 walkthrough videos.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="webcam/index.html"><span><strong>WebCam Visualiser</strong><small>Turn your webcam into a classroom visualiser.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="audio_converter/index.html"><span><strong>WMA Audio Converter</strong><small>Convert WMA files to MP3 or WAV locally in the browser.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="transcribe_dictate/index.html"><span><strong>Local Audio Transcriber</strong><small>Transcribe audio files locally in the browser with Whisper.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="rubric_gpt/index.html"><span><strong>Rubric GPT</strong><small>Create and refine assessment rubrics for classroom tasks.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="lesson_sequence_board/lesson_sequence_board.html"><span><strong>Lesson Sequence Board</strong><small>Plan and organise lessons across weeks with a flexible visual board.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="planner/"><span><strong>Weekly Planner</strong><small>Organise subjects and lessons across teaching weeks.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
+            <a class="project" href="flashcard-web/index.html"><span><strong>Flashcard Study</strong><small>Import two-column CSV decks for practice, progress tracking, printing, and Anki export.</small></span><span class="arrow" aria-hidden="true">&nearr;</span></a>
           </div>
         </section>
+
+        <p class="empty-state" id="empty-state" role="status" hidden>No projects match your search. Try another name or category.</p>
       </section>
     </main>
 
-    <footer class="site-footer">
-      <small>© <span id="year"></span> Paul Gavini</small>
-    </footer>
-
+    <footer class="site-footer"><small>&copy; <span id="year"></span> Paul Gavini</small><a href="#home">Back to top &uarr;</a></footer>
     <script>
-      const y = document.getElementById('year');
-      if (y) y.textContent = new Date().getFullYear();
+      const searchInput = document.getElementById('project-search');
+      const filterButtons = [...document.querySelectorAll('.filter')];
+      const categories = [...document.querySelectorAll('.category')];
+      const emptyState = document.getElementById('empty-state');
+      let activeFilter = 'all';
+
+      function updateProjects() {
+        const query = searchInput.value.trim().toLowerCase();
+        let visibleCount = 0;
+
+        categories.forEach((category) => {
+          let categoryCount = 0;
+          category.querySelectorAll('.project').forEach((project) => {
+            const matches = project.textContent.toLowerCase().includes(query);
+            project.hidden = !matches;
+            if (matches) categoryCount += 1;
+          });
+
+          const isCategorySelected = activeFilter === 'all' || activeFilter === category.dataset.category;
+          category.hidden = !isCategorySelected || categoryCount === 0;
+          if (!category.hidden) visibleCount += categoryCount;
+        });
+
+        emptyState.hidden = visibleCount > 0;
+      }
+
+      filterButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          activeFilter = button.dataset.filter;
+          filterButtons.forEach((item) => {
+            const isActive = item === button;
+            item.classList.toggle('is-active', isActive);
+            item.setAttribute('aria-pressed', String(isActive));
+          });
+          updateProjects();
+        });
+      });
+
+      searchInput.addEventListener('input', updateProjects);
+      document.getElementById('year').textContent = new Date().getFullYear();
     </script>
   </body>
-  
 </html>
