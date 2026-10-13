@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f8f4">
+  <title>Concept Mapper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=20261014-layout-modes">
+  <script src="app.js?v=20261014-word-narrow-margins" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand-lockup">
+      <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div>
+        <p class="eyebrow">LEARNING TOOLS</p>
+        <h1>Concept Mapper</h1>
+      </div>
+    </div>
+    <div class="file-tools">
+      <div id="fileSaveStatus" class="file-save-status" aria-live="polite">
+        <span class="file-save-dot" aria-hidden="true"></span>
+        <span id="fileSaveLabel">No file linked — use Save As or Load</span>
+      </div>
+      <div class="header-actions">
+        <button class="button button-quiet" id="newMapButton" type="button" title="Start a new map">New</button>
+        <button class="button button-quiet" id="openMapButton" type="button">Load</button>
+        <button class="button button-quiet" id="saveMapButton" type="button">Save As</button>
+        <button class="button button-quiet" id="reloadFileButton" type="button" hidden>Reload</button>
+        <button class="button button-primary" id="exportButton" type="button">Export image</button>
+        <button class="button button-quiet" id="exportWordButton" type="button">Export Word</button>
+        <a class="button button-quiet" href="help.html" target="_blank" rel="noopener">Help</a>
+        <input id="openFileInput" type="file" accept="application/json,.json" hidden>
+      </div>
+      <div class="file-browser-note">Autosaves linked files in Edge and Chrome · Reload after cloud-folder sync</div>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="map-shell" id="mapShell" aria-label="Concept map editor">
+      <div class="map-toolbar">
+        <div class="tool-group" aria-label="Concept editing tools">
+          <button class="button button-primary" id="addChildButton" type="button" title="Add a concept connected to the selected node">
+            <span class="plus-icon" aria-hidden="true">+</span> Add child
+          </button>
+          <button class="button button-quiet" id="addSiblingButton" type="button" title="Add a concept beside the selected node">Add sibling</button>
+          <span class="toolbar-divider" aria-hidden="true"></span>
+          <button class="button button-quiet" id="editNodeButton" type="button">Edit text</button>
+          <button class="button button-danger" id="deleteNodeButton" type="button">Delete</button>
+          <span class="toolbar-divider map-layout-tools" aria-hidden="true"></span>
+          <div class="mode-switch map-layout-tools" role="group" aria-label="Map layout">
+            <button class="mode-button is-active" id="balancedLayoutButton" type="button" aria-pressed="true" title="Place main branches on both sides of the central idea">Balanced</button>
+            <button class="mode-button" id="rightLayoutButton" type="button" aria-pressed="false" title="Place the central idea on the left and grow all branches to the right">Right aligned</button>
+          </div>
+        </div>
+        <div class="view-tools" aria-label="Canvas view controls">
+          <div class="mode-switch" role="group" aria-label="Editor view">
+            <button class="mode-button is-active" id="mapViewButton" type="button" aria-pressed="true">Map</button>
+            <button class="mode-button" id="outlineViewButton" type="button" aria-pressed="false">Outline</button>
+          </div>
+          <span class="toolbar-divider mode-divider" aria-hidden="true"></span>
+          <div class="map-only-tools" id="mapOnlyTools" aria-label="Map zoom controls">
+          <button class="icon-button" id="zoomOutButton" type="button" aria-label="Zoom out" title="Zoom out">−</button>
+          <span id="zoomLabel" class="zoom-label">100%</span>
+          <button class="icon-button" id="zoomInButton" type="button" aria-label="Zoom in" title="Zoom in">+</button>
+          <span class="toolbar-divider" aria-hidden="true"></span>
+          </div>
+          <button class="icon-button history-button" id="undoButton" type="button" aria-label="Undo" title="Undo (Ctrl+Z)" disabled>↶</button>
+          <button class="icon-button history-button" id="redoButton" type="button" aria-label="Redo" title="Redo (Ctrl+Y)" disabled>↷</button>
+          <button class="button button-quiet fit-button map-only-tools" id="fitButton" type="button">Fit map</button>
+        </div>
+      </div>
+
+      <div class="canvas-wrap" id="canvasWrap">
+        <svg id="mapCanvas" class="map-canvas" role="application" aria-label="Editable concept map" tabindex="0">
+          <title>Concept map</title>
+          <g id="mapContent"></g>
+        </svg>
+        <div id="outlineView" class="outline-view" role="tree" aria-label="Concept outline" hidden></div>
+        <div id="emptyHint" class="empty-hint" aria-live="polite">
+          <div class="empty-icon" aria-hidden="true"><span></span><span></span><span></span></div>
+          <p class="empty-title">Start with your central idea</p>
+          <p class="empty-copy">Select the centre node to name it, then add connected concepts to grow your map.</p>
+          <button class="button button-primary" id="emptyAddButton" type="button">Add your first concept</button>
+        </div>
+      </div>
+      <div class="canvas-footer">
+        <span id="mapStatus" aria-live="polite">Select a concept to add a child or sibling.</span>
+        <span class="canvas-tip">Tip: double-click a concept to edit it</span>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <span>By Paul Gavini</span><span aria-hidden="true">·</span>
+    <a href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener noreferrer">YouTube</a><span aria-hidden="true">·</span>
+    <a href="https://paulgavini.github.io/" target="_blank" rel="noopener noreferrer">Website</a>
+  </footer>
+
+  <dialog id="editDialog" class="edit-dialog">
+    <form method="dialog" id="editForm">
+      <div class="dialog-heading">
+        <button class="icon-button close-button" type="button" id="closeDialogButton" aria-label="Close">×</button>
+      </div>
+      <label for="nodeTextInput">Heading</label>
+      <textarea id="nodeTextInput" class="heading-input" rows="1" maxlength="180" required></textarea>
+      <p class="field-hint">Keep labels short so the map stays easy to scan.</p>
+      <div id="relationLabelField">
+        <label for="relationLabelInput">Connection label</label>
+        <input id="relationLabelInput" class="relation-label-input" type="text" maxlength="40" placeholder="e.g. depends on, reduces">
+        <p class="field-hint">Describe how this concept relates to its parent.</p>
+      </div>
+      <label id="nodeNotesLabel">Notes</label>
+      <div class="notes-toolbar" role="toolbar" aria-label="Note formatting">
+        <button class="notes-format-button" type="button" data-note-command="bold" aria-label="Bold" title="Bold (Ctrl+B)"><strong>B</strong></button>
+        <button class="notes-format-button" type="button" data-note-command="italic" aria-label="Italic" title="Italic (Ctrl+I)"><em>I</em></button>
+        <span class="notes-toolbar-divider" aria-hidden="true"></span>
+        <button class="notes-format-button" type="button" data-note-command="insertUnorderedList" aria-label="Bulleted list" title="Bulleted list">•</button>
+        <button class="notes-format-button numbered-list-format" type="button" data-note-command="insertOrderedList" aria-label="Numbered list" title="Numbered list">1.</button>
+        <span class="notes-toolbar-divider" aria-hidden="true"></span>
+        <button class="notes-format-button script-format" type="button" data-note-command="superscript" aria-label="Superscript" title="Superscript — raise text" aria-pressed="false"><span class="script-symbol" aria-hidden="true">x<span class="script-glyph">²</span></span></button>
+        <button class="notes-format-button script-format" type="button" data-note-command="subscript" aria-label="Subscript" title="Subscript — lower text" aria-pressed="false"><span class="script-symbol" aria-hidden="true">x<span class="script-glyph">₂</span></span></button>
+        <button class="notes-format-button normal-script-format" type="button" data-note-command="normalScript" aria-label="Normal script" title="Normal text — remove superscript or subscript">x</button>
+        <span class="notes-toolbar-divider" aria-hidden="true"></span>
+        <button class="notes-format-button chemistry-symbol-format" type="button" data-note-insert="→" aria-label="Insert right arrow" title="Insert right arrow">→</button>
+        <button class="notes-format-button chemistry-symbol-format" type="button" data-note-insert="⇌" aria-label="Insert equilibrium arrows" title="Insert equilibrium arrows">⇌</button>
+      </div>
+      <div id="nodeNotesInput" class="notes-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="nodeNotesLabel" data-placeholder="Add detail, evidence, or context…"></div>
+      <p class="field-hint">Notes appear beneath the concept in Outline and Word export.</p>
+      <div class="dialog-actions">
+        <button class="button button-quiet" type="button" id="cancelEditButton">Cancel</button>
+        <button class="button button-primary" type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="connectionDialog" class="connection-dialog" aria-labelledby="connectionDialogTitle">
+    <form method="dialog" id="connectionForm">
+      <div class="dialog-heading">
+        <h2 id="connectionDialogTitle">Edit connection</h2>
+        <button class="icon-button close-button" type="button" id="closeConnectionButton" aria-label="Close">&times;</button>
+      </div>
+      <p id="connectionContext" class="field-hint connection-context"></p>
+      <label for="connectionLabelInput">Connection label</label>
+      <input id="connectionLabelInput" class="relation-label-input" type="text" maxlength="40" placeholder="e.g. depends on, reduces">
+      <div class="dialog-actions">
+        <button class="button button-quiet" type="button" id="cancelConnectionButton">Cancel</button>
+        <button class="button button-primary" type="submit">Save label</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

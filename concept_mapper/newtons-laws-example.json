@@ -1,0 +1,200 @@
+{
+  "format": "concept-mapper",
+  "version": 1,
+  "title": "Newton's Laws of Motion",
+  "root": {
+    "id": "newtons-laws-root",
+    "text": "Newton's Laws of Motion",
+    "relationLabel": "",
+    "notes": "<p>Three principles describe how forces affect motion. This example demonstrates nested concepts, short connection labels, and formatted notes.</p>",
+    "children": [
+      {
+        "id": "second-law",
+        "text": "Second Law: \nForce and acceleration",
+        "relationLabel": "quantifies",
+        "notes": "<p>The acceleration of an object depends on the net force and the object&apos;s mass.</p><p><strong>Net force matters:</strong> add all external forces as vectors before applying the equation.→⇌</p>",
+        "children": [
+          {
+            "id": "second-law-equation",
+            "text": "F_net = m a",
+            "relationLabel": "is expressed as",
+            "notes": "<p><strong>F<sub>net</sub></strong> is net force in newtons, <em>m</em> is mass in kilograms, and <em>a</em> is acceleration in metres per second squared.</p>",
+            "children": []
+          },
+          {
+            "id": "net-force-effect",
+            "text": "Greater net force",
+            "relationLabel": "increases",
+            "notes": "<p>For the same mass, doubling the net force doubles the acceleration.</p>",
+            "children": [
+              {
+                "id": "acceleration",
+                "text": "Acceleration",
+                "relationLabel": "when mass stays the same",
+                "notes": "<p>Acceleration is the rate at which velocity changes. It can mean a change in speed, direction, or both.</p>",
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "mass-effect",
+            "text": "Greater mass",
+            "relationLabel": "reduces acceleration for equal force",
+            "notes": "<p>For the same net force, a more massive object accelerates less.</p><p>Compare pushing an empty trolley with pushing a full one.</p>",
+            "children": [
+              {
+                "id": "node-b61fc687-ad65-4277-b111-b8d6442b4550",
+                "text": "New concept",
+                "relationLabel": "",
+                "notes": "",
+                "children": []
+              },
+              {
+                "id": "node-aaf0460d-106b-4403-8861-c6505fdb20c8",
+                "text": "New concept",
+                "relationLabel": "",
+                "notes": "",
+                "children": []
+              },
+              {
+                "id": "node-8ab61866-cce2-4cfd-975b-bb01b955bf0d",
+                "text": "New concept",
+                "relationLabel": "",
+                "notes": "",
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "trolley-example",
+            "text": "Shopping trolley example",
+            "relationLabel": "applies to",
+            "notes": "<p>A stronger push gives the trolley more acceleration. Loading it with groceries increases its mass, so the same push gives it less acceleration.</p>",
+            "children": []
+          },
+          {
+            "id": "node-ea930a89-b13d-4473-88be-2689b3137f90",
+            "text": "New concept",
+            "relationLabel": "",
+            "notes": "",
+            "children": []
+          },
+          {
+            "id": "node-8348feba-7723-4ab9-9ff2-f60a90e02baa",
+            "text": "New concept",
+            "relationLabel": "",
+            "notes": "",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "first-law",
+        "text": "First Law: Inertia",
+        "relationLabel": "explains",
+        "notes": "<p>An object stays at rest or continues at <strong>constant velocity</strong> unless acted on by a non-zero net external force.</p><p>Constant velocity means both speed and direction stay the same.</p>",
+        "children": [
+          {
+            "id": "inertia",
+            "text": "Inertia",
+            "relationLabel": "describes resistance to change in",
+            "notes": "<p>Inertia is an object's tendency to resist a change in its motion. More mass means more inertia.</p>",
+            "children": [
+              {
+                "id": "node-a23b02f2-9aef-44ba-8d53-7ab5e74a2bdd",
+                "text": "New concept",
+                "relationLabel": "",
+                "notes": "",
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "balanced-forces",
+            "text": "Balanced forces",
+            "relationLabel": "keep net force at zero",
+            "notes": "<ul><li>The forces cancel out.</li><li>There is no acceleration.</li><li>The object may still be moving at constant velocity.</li></ul>",
+            "children": [
+              {
+                "id": "constant-velocity",
+                "text": "Constant velocity",
+                "relationLabel": "",
+                "notes": "<p>Example: a book resting on a level table has balanced forces: gravity downward and support from the table upward.</p>",
+                "children": []
+              },
+              {
+                "id": "node-a961c028-3011-4f11-bad8-0b2f32d61058",
+                "text": "New concept",
+                "relationLabel": "",
+                "notes": "",
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "seatbelt-example",
+            "text": "Seatbelts and inertia",
+            "relationLabel": "seen when",
+            "notes": "<p>When a car stops suddenly, passengers keep moving forward because their bodies resist the change in motion. A seatbelt provides the force that slows them safely.</p>",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "third-law",
+        "text": "Third Law: Action and reaction",
+        "relationLabel": "describes interactions through",
+        "notes": "<p>When one object exerts a force on another, the second object exerts an <strong>equal and opposite</strong> force on the first.</p>",
+        "children": [
+          {
+            "id": "force-pairs",
+            "text": "Force pairs",
+            "relationLabel": "are",
+            "notes": "<ul><li>Equal in magnitude.</li><li>Opposite in direction.</li><li>Act on different objects, so they do not cancel each other on one object.</li></ul>",
+            "children": []
+          },
+          {
+            "id": "walking-example",
+            "text": "Walking",
+            "relationLabel": "helps explain",
+            "notes": "<p>Your foot pushes the ground backward. The ground pushes you forward with an equal and opposite force.</p>",
+            "children": []
+          },
+          {
+            "id": "rocket-example",
+            "text": "Rocket propulsion",
+            "relationLabel": "also explains",
+            "notes": "<p>A rocket pushes exhaust gases backward. The gases push the rocket forward.</p>",
+            "children": []
+          },
+          {
+            "id": "node-66077740-c858-48c1-afa4-01e4900001e8",
+            "text": "New concept",
+            "relationLabel": "",
+            "notes": "",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "node-ab01fff3-87e6-4d86-a7d5-dfcba43ed6e4",
+        "text": "New concept",
+        "relationLabel": "",
+        "notes": "",
+        "children": [
+          {
+            "id": "node-e440bbec-6a4d-4b74-9d67-d60cb9a64c0c",
+            "text": "New concept",
+            "relationLabel": "",
+            "notes": "",
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  "_fileMeta": {
+    "updatedAt": "2026-10-13T14:02:28.580Z",
+    "revision": "node-d328d7fa-a8ff-424f-807b-56446b669c02"
+  }
+}

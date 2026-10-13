@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f8f4">
+  <title>Help · Concept Mapper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="help-page">
+  <header class="app-header help-header">
+    <div class="brand-lockup">
+      <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div>
+        <p class="eyebrow">CONCEPT MAPPER GUIDE</p>
+        <h1>Help</h1>
+      </div>
+    </div>
+    <a class="button button-primary" href="index.html">Back to map</a>
+  </header>
+
+  <main class="help-content">
+    <section class="help-intro">
+      <p class="eyebrow">GETTING STARTED</p>
+      <h2>Build your ideas into a map</h2>
+      <p>Start with the central idea, add connected concepts, and switch between the visual map and a structured outline at any time. Both views show the same content.</p>
+    </section>
+
+    <section class="help-card" id="example-map">
+      <h2>Try an example map</h2>
+      <p>The Newton's Laws example demonstrates nested topics, labeled connections, rich notes, and ideas that export as Word heading levels.</p>
+      <p><a class="button button-primary" href="newtons-laws-example.json" download="newtons-laws-example.json">Download Newton's Laws example</a></p>
+      <p>After downloading, return to Concept Mapper, choose <strong>Load</strong>, and select <code>newtons-laws-example.json</code> from your Downloads folder. Loading it replaces the map currently open.</p>
+      <p>Try switching between Map and Outline, opening a connection label, and editing a concept's notes to explore the example.</p>
+    </section>
+
+    <section class="help-card" id="concepts">
+      <h2>Create and arrange concepts</h2>
+      <ul>
+        <li>Select a concept, then choose <strong>Add child</strong> to create a concept below it or <strong>Add sibling</strong> to add one beside it. The central idea can have children but not siblings.</li>
+        <li>Double-click a concept, choose <strong>Edit text</strong>, or press <kbd>F2</kbd> to edit its heading and notes.</li>
+        <li>Edit a concept's <strong>Connection label</strong> to describe how it relates to its parent, such as <em>depends on</em> or <em>reduces</em>. The label appears on the map connector and above the concept heading in Outline and Word export.</li>
+        <li>In Map view, click a connector line or its label to open a small connection-label dialog. You can also focus the connector with <kbd>Tab</kbd> and press <kbd>Enter</kbd> or <kbd>Space</kbd>. The same label is available in the full concept editor.</li>
+        <li>Use <kbd>Tab</kbd> to add a child and <kbd>Enter</kbd> to add a sibling. From the central idea, <kbd>Enter</kbd> adds its first child.</li>
+        <li>In <strong>Outline</strong>, drag a topic by its handle. Drop it above or below another topic to reorder it, or onto a topic to make it a child. Its whole branch moves with it.</li>
+        <li>Use the outline disclosure control to collapse or expand a branch. Map view offers zoom, pan, and <strong>Fit map</strong> controls.</li>
+        <li>In Map view, choose <strong>Balanced</strong> to spread first-level branches across both sides of the central idea, or <strong>Right aligned</strong> to place the central idea on the left and grow all branches to the right. Your choice is remembered in this browser.</li>
+        <li>Use <strong>Undo</strong> and <strong>Redo</strong> or <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> to step through changes. Select a non-central concept and choose <strong>Delete</strong> to remove its branch.</li>
+      </ul>
+    </section>
+
+    <section class="help-card" id="notes">
+      <h2>Add notes to a concept</h2>
+      <p>Each concept has a short <strong>Heading</strong> and a separate <strong>Notes</strong> area. Put supporting detail, evidence, or context in Notes. Notes appear below headings in Outline and are indicated on map concepts.</p>
+      <p>The notes toolbar provides <strong>Bold</strong>, <em>Italic</em>, bulleted and numbered lists, superscript, subscript, a right arrow (→), and equilibrium arrows (⇌). The arrow controls insert the symbol at the cursor, or replace selected text. Select text before applying a format; to start a list, place the cursor in a paragraph and choose the bullet or numbered-list control. Select superscript or subscript text and choose <strong>Normal text</strong> (the plain <em>x</em> button) to return it to the baseline while keeping other formatting. With no selection, the control returns typing to the baseline.</p>
+    </section>
+
+    <section class="help-card" id="files">
+      <h2>Save and load map files</h2>
+      <p>Maps are kept in browser storage as a recovery copy. Use <strong>Save As</strong> to create a portable JSON map file. In current Edge and Chrome, choosing a file links it to this browser profile and edits autosave to it. The status beside the file controls shows when a save is in progress or complete.</p>
+      <ul>
+        <li>Choose <strong>Load</strong> to open and link an existing Concept Mapper JSON file. Loading a different map replaces the one currently open.</li>
+        <li>If the linked file changes outside the app, editing pauses to protect those changes. Choose <strong>Reload</strong> to load the latest file contents.</li>
+        <li>After a cloud drive finishes syncing on another device, choose <strong>Reload</strong> to bring the latest file into the app.</li>
+        <li>Choose <strong>New</strong> to start a blank map. If there are pending edits to a linked file, the app saves them when possible and disconnects that file before starting over.</li>
+        <li>If your browser does not support linked files, <strong>Save As</strong> downloads a JSON copy and <strong>Load</strong> imports one. After further edits, download another copy to keep the file current.</li>
+      </ul>
+      <p>Keep your downloaded JSON files somewhere you can find them; they contain the map headings, notes, and structure.</p>
+    </section>
+
+    <section class="help-card" id="export">
+      <h2>Export your work</h2>
+      <ul>
+        <li><strong>Export image</strong> downloads the map as an SVG image that can be opened or placed in other documents.</li>
+        <li><strong>Export Word</strong> creates a Word document with narrow 1.27 cm margins. The central idea is Heading 1, its children are Heading 2, and each deeper concept uses the next heading level. The document includes Word Heading 1–9 styles and uses the Word theme font. Connection labels appear immediately before their concept heading. Notes follow their concept heading and retain supported formatting.</li>
+      </ul>
+      <p>Exports create a separate copy; they do not change the linked JSON map file.</p>
+    </section>
+
+    <p class="help-contact">More features will be added over time. Return to your map whenever you are ready.</p>
+  </main>
+
+  <footer class="app-footer">
+    <span>By Paul Gavini</span><span aria-hidden="true">·</span>
+    <a href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener noreferrer">YouTube</a><span aria-hidden="true">·</span>
+    <a href="https://paulgavini.github.io/" target="_blank" rel="noopener noreferrer">Website</a>
+  </footer>
+</body>
+</html>
