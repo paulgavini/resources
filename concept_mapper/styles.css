@@ -135,6 +135,10 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   background: rgba(255,255,255,.98);
 }
 .tool-group, .view-tools { display: flex; align-items: center; gap: 5px; }
+.outline-move-tools { display: none; align-items: center; gap: 3px; }
+.map-shell.is-outline .outline-move-tools { display: inline-flex; }
+.icon-button.outline-move-button { width: 1.25cm; min-width: 1.25cm; height: 32px; min-height: 32px; font-size: 16px; line-height: 1; }
+.outline-move-button:disabled { opacity: .42; cursor: not-allowed; }
 .view-tools { flex-shrink: 0; }
 .toolbar-divider { width: 1px; height: 23px; margin: 0 5px; background: var(--line); }
 .mode-switch { display: inline-flex; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: #f7f9f6; }

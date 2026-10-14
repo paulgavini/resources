@@ -13,7 +13,7 @@
   const textMeasureContext = document.createElement("canvas").getContext("2d");
   const els = Object.fromEntries([
     "mapCanvas", "mapContent", "outlineView", "mapShell", "mapViewButton", "outlineViewButton", "canvasWrap", "emptyHint", "mapStatus", "zoomLabel",
-    "addChildButton", "addSiblingButton", "editNodeButton", "deleteNodeButton", "balancedLayoutButton", "rightLayoutButton",
+    "addChildButton", "addSiblingButton", "editNodeButton", "deleteNodeButton", "moveConceptUpButton", "moveConceptDownButton", "outdentConceptButton", "indentConceptButton", "balancedLayoutButton", "rightLayoutButton",
     "emptyAddButton", "newMapButton", "openMapButton", "saveMapButton", "reloadFileButton", "fileSaveStatus", "fileSaveLabel", "exportButton", "exportWordButton",
     "openFileInput", "zoomInButton", "zoomOutButton", "fitButton", "undoButton", "redoButton", "editDialog", "connectionDialog",
     "editForm", "nodeTextInput", "relationLabelField", "relationLabelInput", "nodeNotesInput", "closeDialogButton", "cancelEditButton",
@@ -455,6 +455,30 @@
     return true;
   }
 
+  function moveSelectedWithinSiblings(direction) {
+    const found = findNode(selectedId);
+    if (!found?.parent) return false;
+    const siblings = found.parent.children;
+    const index = siblings.findIndex(child => child.id === found.node.id);
+    const target = siblings[index + direction];
+    if (!target) return false;
+    return moveNode(found.node.id, target.id, direction < 0 ? "before" : "after");
+  }
+
+  function changeSelectedIndent(direction) {
+    const found = findNode(selectedId);
+    if (!found?.parent) return false;
+    if (direction < 0) {
+      if (found.parent === map.root) return false;
+      return moveNode(found.node.id, found.parent.id, "after");
+    }
+    const siblings = found.parent.children;
+    const index = siblings.findIndex(child => child.id === found.node.id);
+    const previousSibling = siblings[index - 1];
+    if (!previousSibling) return false;
+    return moveNode(found.node.id, previousSibling.id, "inside");
+  }
+
   function dropPositionFor(row, node, event) {
     if (node.id === map.root.id) return "inside";
     const rect = row.getBoundingClientRect();
@@ -618,6 +642,13 @@
     selectedId = selected.id;
     els.addSiblingButton.disabled = selected === map.root;
     els.deleteNodeButton.disabled = selected === map.root;
+    const selectedLocation = findNode(selected.id);
+    const selectedSiblings = selectedLocation?.parent?.children || [];
+    const selectedIndex = selectedSiblings.findIndex(child => child.id === selected.id);
+    els.moveConceptUpButton.disabled = !selectedLocation?.parent || selectedIndex <= 0;
+    els.moveConceptDownButton.disabled = !selectedLocation?.parent || selectedIndex >= selectedSiblings.length - 1;
+    els.outdentConceptButton.disabled = !selectedLocation?.parent || selectedLocation.parent === map.root;
+    els.indentConceptButton.disabled = !selectedLocation?.parent || selectedIndex <= 0;
     els.balancedLayoutButton.classList.toggle("is-active", layoutMode === "balanced");
     els.rightLayoutButton.classList.toggle("is-active", layoutMode === "right");
     els.balancedLayoutButton.setAttribute("aria-pressed", String(layoutMode === "balanced"));
@@ -1439,6 +1470,10 @@
   els.addSiblingButton.addEventListener("click", addSibling);
   els.editNodeButton.addEventListener("click", editSelected);
   els.deleteNodeButton.addEventListener("click", deleteSelected);
+  els.moveConceptUpButton.addEventListener("click", () => moveSelectedWithinSiblings(-1));
+  els.moveConceptDownButton.addEventListener("click", () => moveSelectedWithinSiblings(1));
+  els.outdentConceptButton.addEventListener("click", () => changeSelectedIndent(-1));
+  els.indentConceptButton.addEventListener("click", () => changeSelectedIndent(1));
   els.balancedLayoutButton.addEventListener("click", () => setLayoutMode("balanced"));
   els.rightLayoutButton.addEventListener("click", () => setLayoutMode("right"));
   els.emptyAddButton.addEventListener("click", () => addChild(map.root.id));
