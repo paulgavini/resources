@@ -1,0 +1,449 @@
+{
+  "format": "concept-mapper",
+  "version": 1,
+  "title": "Science and Human Endeavour",
+  "root": {
+    "id": "original-066",
+    "text": "Science and Human Endeavour",
+    "relationLabel": "",
+    "notes": "",
+    "children": [
+      {
+        "id": "original-004",
+        "text": "Introduction",
+        "relationLabel": "",
+        "notes": "",
+        "children": [
+          {
+            "id": "original-001",
+            "text": "Refer to word count",
+            "relationLabel": "",
+            "notes": "",
+            "children": []
+          },
+          {
+            "id": "original-002",
+            "text": "Set the context",
+            "relationLabel": "",
+            "notes": "",
+            "children": []
+          },
+          {
+            "id": "original-003",
+            "text": "Which SHE areas you are discussing?",
+            "relationLabel": "",
+            "notes": "",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "original-008",
+        "text": "Science background",
+        "relationLabel": "",
+        "notes": "",
+        "children": [
+          {
+            "id": "original-005",
+            "text": "Science",
+            "relationLabel": "",
+            "notes": "",
+            "children": []
+          },
+          {
+            "id": "original-006",
+            "text": "Diagrams",
+            "relationLabel": "",
+            "notes": "",
+            "children": []
+          },
+          {
+            "id": "original-007",
+            "text": "Refer to word count",
+            "relationLabel": "",
+            "notes": "",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "original-054",
+        "text": "SHE Section",
+        "relationLabel": "",
+        "notes": "",
+        "children": [
+          {
+            "id": "original-017",
+            "text": "Communication and Collaboration",
+            "relationLabel": "",
+            "notes": "",
+            "children": [
+              {
+                "id": "original-012",
+                "text": "Communication",
+                "relationLabel": "",
+                "notes": "",
+                "children": [
+                  {
+                    "id": "original-009",
+                    "text": "Peer reviewed workd",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-010",
+                    "text": "Verified",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-011",
+                    "text": "Published",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "id": "original-016",
+                "text": "Collaboration",
+                "relationLabel": "",
+                "notes": "",
+                "children": [
+                  {
+                    "id": "original-013",
+                    "text": "Scientists",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-014",
+                    "text": "Governments",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-015",
+                    "text": "Private eneterprise",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "original-026",
+            "text": "Development",
+            "relationLabel": "",
+            "notes": "",
+            "children": [
+              {
+                "id": "original-020",
+                "text": "New technologies",
+                "relationLabel": "",
+                "notes": "",
+                "children": [
+                  {
+                    "id": "original-018",
+                    "text": "Improving data collection",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-019",
+                    "text": "Updating proceedures",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "id": "original-023",
+                "text": "Models or theories",
+                "relationLabel": "",
+                "notes": "",
+                "children": [
+                  {
+                    "id": "original-021",
+                    "text": "New",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-022",
+                    "text": "Modified",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "id": "original-025",
+                "text": "Cross disciplines",
+                "relationLabel": "",
+                "notes": "",
+                "children": [
+                  {
+                    "id": "original-024",
+                    "text": "e.g. Physics and Maths",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "original-039",
+            "text": "Influence",
+            "relationLabel": "",
+            "notes": "",
+            "children": [
+              {
+                "id": "original-028",
+                "text": "Social",
+                "relationLabel": "",
+                "notes": "",
+                "children": [
+                  {
+                    "id": "original-027",
+                    "text": "Ethics",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "id": "original-031",
+                "text": "Economics",
+                "relationLabel": "",
+                "notes": "",
+                "children": [
+                  {
+                    "id": "original-029",
+                    "text": "Cost",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-030",
+                    "text": "Profit",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "id": "original-034",
+                "text": "Cultural",
+                "relationLabel": "",
+                "notes": "",
+                "children": [
+                  {
+                    "id": "original-032",
+                    "text": "Ethics",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-033",
+                    "text": "Spoken word, e.g. dreamtime",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "id": "original-038",
+                "text": "Other areas",
+                "relationLabel": "",
+                "notes": "",
+                "children": [
+                  {
+                    "id": "original-035",
+                    "text": "Other sciences",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-036",
+                    "text": "Maths",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-037",
+                    "text": "Engineering",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "original-052",
+            "text": "Application and Limitations",
+            "relationLabel": "",
+            "notes": "",
+            "children": [
+              {
+                "id": "original-045",
+                "text": "Application",
+                "relationLabel": "",
+                "notes": "",
+                "children": [
+                  {
+                    "id": "original-040",
+                    "text": "What is the science is used form",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-041",
+                    "text": "Sustainability",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-042",
+                    "text": "Solutions to existing problems",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-043",
+                    "text": "Economic",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-044",
+                    "text": "Improved efficiency",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "id": "original-051",
+                "text": "Limitation",
+                "relationLabel": "",
+                "notes": "",
+                "children": [
+                  {
+                    "id": "original-046",
+                    "text": "What the science can't do",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-047",
+                    "text": "Deployment from lab to real world",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-048",
+                    "text": "Expense",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-049",
+                    "text": "Not enough data or developed science",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  },
+                  {
+                    "id": "original-050",
+                    "text": "Informs public debate",
+                    "relationLabel": "",
+                    "notes": "",
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "original-053",
+            "text": "Refer to word count",
+            "relationLabel": "",
+            "notes": "",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "original-058",
+        "text": "Conclusion/Summary",
+        "relationLabel": "",
+        "notes": "",
+        "children": [
+          {
+            "id": "original-055",
+            "text": "Summarise main findings",
+            "relationLabel": "",
+            "notes": "",
+            "children": []
+          },
+          {
+            "id": "original-056",
+            "text": "Justification based upon the information presented in your report",
+            "relationLabel": "",
+            "notes": "",
+            "children": []
+          },
+          {
+            "id": "original-057",
+            "text": "Refer to word count",
+            "relationLabel": "",
+            "notes": "",
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "original-059",
+        "text": "Bibliography",
+        "relationLabel": "",
+        "notes": "",
+        "children": []
+      }
+    ]
+  },
+  "_fileMeta": {
+    "updatedAt": "2026-10-19T11:30:35.230Z",
+    "revision": "node-acdcd80d-7b70-4dc9-b138-4193311b0608"
+  }
+}

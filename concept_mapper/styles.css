@@ -116,7 +116,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   min-height: calc(100vh - 137px);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: clip;
   background: var(--white);
   border: 1px solid var(--line);
   border-radius: 13px;
@@ -124,7 +124,9 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 }
 .map-shell[inert] { opacity: .62; }
 .map-toolbar {
-  z-index: 2;
+  position: sticky;
+  top: 0;
+  z-index: 15;
   min-height: 54px;
   display: flex;
   align-items: center;

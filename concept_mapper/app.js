@@ -9,7 +9,8 @@
   const SVG_NS = "http://www.w3.org/2000/svg";
   const ROOT_TEXT = "Central idea";
   const ROOT_NODE_WIDTH = 220;
-  const BRANCH_GAP = 145;
+  const BRANCH_GAP = 90;
+  const VERTICAL_BRANCH_GAP = 6;
   const textMeasureContext = document.createElement("canvas").getContext("2d");
   const els = Object.fromEntries([
     "mapCanvas", "mapContent", "outlineView", "mapShell", "mapViewButton", "outlineViewButton", "canvasWrap", "emptyHint", "mapStatus", "zoomLabel",
@@ -184,9 +185,11 @@
   }
 
   function subtreeHeight(node) {
-    if (!node.children?.length) return 44;
-    const sum = node.children.reduce((total, child) => total + subtreeHeight(child), 0) + (node.children.length - 1) * 28;
-    return Math.max(48, sum);
+    const labelHeight = Math.max(24, wrapText(node.text || " ", 30).length * 17 + 4);
+    const nodePadding = 4;
+    if (!node.children?.length) return labelHeight + nodePadding;
+    const sum = node.children.reduce((total, child) => total + subtreeHeight(child), 0) + (node.children.length - 1) * VERTICAL_BRANCH_GAP;
+    return Math.max(labelHeight + nodePadding, sum);
   }
 
   function maxDepth(node, depth = 0) {
@@ -197,7 +200,7 @@
     const roots = map.root.children || [];
     const sides = { 1: [], "-1": [] };
     roots.forEach((node, index) => sides[layoutMode === "right" ? 1 : index % 2 === 0 ? 1 : -1].push(node));
-    const heightOfSide = side => side.reduce((sum, node) => sum + subtreeHeight(node), 0) + Math.max(0, side.length - 1) * 28;
+    const heightOfSide = side => side.reduce((sum, node) => sum + subtreeHeight(node), 0) + Math.max(0, side.length - 1) * VERTICAL_BRANCH_GAP;
     const totalHeight = Math.max(520, heightOfSide(sides[1]), heightOfSide(sides[-1]));
     const rootY = totalHeight / 2;
     const maxD = maxDepth(map.root);
@@ -237,13 +240,13 @@
       nodes.push(nodeInfo);
 
       if (depth > 0 && node.children?.length) {
-        const groupHeight = node.children.reduce((sum, child) => sum + subtreeHeight(child), 0) + (node.children.length - 1) * 28;
+        const groupHeight = node.children.reduce((sum, child) => sum + subtreeHeight(child), 0) + (node.children.length - 1) * VERTICAL_BRANCH_GAP;
         let cursor = centerY - groupHeight / 2;
         for (const child of node.children) {
           const childHeight = subtreeHeight(child);
           const childY = cursor + childHeight / 2;
           place(child, depth + 1, side, childY, nodeInfo);
-          cursor += childHeight + 28;
+          cursor += childHeight + VERTICAL_BRANCH_GAP;
         }
       }
       return nodeInfo;
@@ -259,7 +262,7 @@
         const childY = cursor + h / 2;
         const childInfo = place(child, 1, Number(sideKey), childY, nodes[0]);
         paths.push({ parent: nodes[0], child: childInfo, side: Number(sideKey), rootBranch: true });
-        cursor += h + 28;
+        cursor += h + VERTICAL_BRANCH_GAP;
       }
     }
     const byId = new Map(nodes.map(item => [item.node.id, item]));
@@ -1212,9 +1215,10 @@
     cloneSvg.setAttribute("viewBox", `0 0 ${layout.width} ${layout.height}`);
     const background = svgEl("rect", { x: 0, y: 0, width: layout.width, height: layout.height, fill: "#ffffff" });
     cloneSvg.insertBefore(background, cloneSvg.firstChild);
-    cloneSvg.querySelectorAll(".node-add-dot, .node-add-plus, .connector-hit").forEach(item => item.remove());
+    cloneSvg.querySelectorAll(".node-hit, .node-add-dot, .node-add-plus, .connector-hit").forEach(item => item.remove());
+    cloneSvg.querySelectorAll(".node-group.selected").forEach(item => item.classList.remove("selected"));
     const style = svgEl("style");
-    style.textContent = `.node-branch{fill:none;stroke:#68766f;stroke-width:1.45;stroke-linecap:round}.node-branch.root-branch{stroke-width:2.4;stroke:#52615a}.connection-label-back{fill:#fff;fill-opacity:.96;stroke:#dfe7df;stroke-width:1}.connection-label{fill:#53645a;font-family:'DM Sans','Segoe UI',sans-serif;font-size:10px;font-weight:600;text-anchor:middle;dominant-baseline:central}.node-label{fill:#38463f;font-family:'DM Sans','Segoe UI',sans-serif;font-size:12px;dominant-baseline:central}.node-label.main-topic{font-size:13px;font-weight:700}.node-label.root-label{font-family:Manrope,'Segoe UI',sans-serif;font-size:16px;font-weight:800;fill:#183c2a}.node-hit{fill:#fff;stroke:#5c6b62;stroke-width:2.1}.node-group:not(.root-node) .node-hit{fill:transparent;stroke:transparent}.node-group.selected:not(.root-node) .node-hit{fill:#eff7f0;stroke:#b7d1bc}.node-group.root-node .node-hit{rx:42px}`;
+    style.textContent = `.node-branch{fill:none;stroke:#68766f;stroke-width:1.45;stroke-linecap:round}.node-branch.root-branch{stroke-width:2.4;stroke:#52615a}.connection-label-back{fill:#fff;fill-opacity:.96;stroke:#dfe7df;stroke-width:1}.connection-label{fill:#53645a;font-family:'DM Sans','Segoe UI',sans-serif;font-size:10px;font-weight:600;text-anchor:middle;dominant-baseline:central}.node-label{fill:#38463f;font-family:'DM Sans','Segoe UI',sans-serif;font-size:12px;dominant-baseline:central}.node-label.main-topic{font-size:13px;font-weight:700}.node-label.root-label{font-family:Manrope,'Segoe UI',sans-serif;font-size:16px;font-weight:800;fill:#183c2a}`;
     cloneSvg.insertBefore(style, cloneSvg.children[1] || null);
     const serialized = new XMLSerializer().serializeToString(cloneSvg);
     download(safeFilename(map.root.text, "svg"), `<?xml version="1.0" encoding="UTF-8"?>\n${serialized}`, "image/svg+xml;charset=utf-8");
