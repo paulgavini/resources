@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20261019-compact-horizontal">
-  <script src="app.js?v=20261019-compact-horizontal" defer></script>
+  <link rel="stylesheet" href="styles.css?v=20261019-header-links">
+  <script src="app.js?v=20261019-header-links" defer></script>
 </head>
 <body>
   <header class="app-header">
@@ -19,6 +19,15 @@
         <p class="eyebrow">LEARNING TOOLS</p>
         <h1>Concept Mapper</h1>
       </div>
+    </div>
+    <div class="author-links" aria-label="About Concept Mapper">
+      <span>By Paul Gavini</span>
+      <span aria-hidden="true">·</span>
+      <a href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener noreferrer">YouTube</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://paulgavini.github.io/" target="_blank" rel="noopener noreferrer">Website</a>
+      <span aria-hidden="true">·</span>
+      <a href="help.html" target="_blank" rel="noopener noreferrer">Help</a>
     </div>
     <div class="file-tools">
       <div id="fileSaveStatus" class="file-save-status" aria-live="polite">
@@ -32,7 +41,6 @@
         <button class="button button-quiet" id="reloadFileButton" type="button" hidden>Reload</button>
         <button class="button button-primary" id="exportButton" type="button">Export image</button>
         <button class="button button-quiet" id="exportWordButton" type="button">Export Word</button>
-        <a class="button button-quiet" href="help.html" target="_blank" rel="noopener">Help</a>
         <input id="openFileInput" type="file" accept="application/json,.json" hidden>
       </div>
       <div class="file-browser-note">Autosaves linked files in Edge and Chrome · Reload after cloud-folder sync</div>
@@ -99,12 +107,6 @@
       </div>
     </section>
   </main>
-
-  <footer class="app-footer">
-    <span>By Paul Gavini</span><span aria-hidden="true">·</span>
-    <a href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener noreferrer">YouTube</a><span aria-hidden="true">·</span>
-    <a href="https://paulgavini.github.io/" target="_blank" rel="noopener noreferrer">Website</a>
-  </footer>
 
   <dialog id="editDialog" class="edit-dialog">
     <form method="dialog" id="editForm">

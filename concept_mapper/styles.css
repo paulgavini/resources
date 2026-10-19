@@ -62,6 +62,10 @@ button { color: inherit; }
 .brand-mark span:first-child { top: 16px; left: 16px; width: 6px; height: 6px; background: var(--green); }
 .brand-mark span:nth-child(2) { top: 7px; right: 6px; width: 6px; height: 6px; }
 .brand-mark span:nth-child(3) { bottom: 7px; left: 7px; width: 6px; height: 6px; }
+.author-links { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-left: 12px; color: var(--muted); font-size: 11px; line-height: 1.35; white-space: nowrap; }
+.author-links a { color: var(--green); text-decoration: underline; text-underline-offset: 2px; }
+.author-links a:hover { color: var(--green-dark); }
+.author-links a:focus-visible { outline: 2px solid rgba(35, 110, 72, .32); outline-offset: 2px; }
 .eyebrow {
   margin: 0 0 2px;
   color: var(--muted);
@@ -350,6 +354,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 
 @media (max-width: 760px) {
   .app-header { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .author-links { margin-left: 0; }
   .file-tools { width: 100%; order: 4; justify-items: end; }
   .file-save-status { max-width: 100%; font-size: 10px; }
   .file-browser-note { max-width: 100%; }
