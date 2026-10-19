@@ -9,7 +9,7 @@ Build a dependency-free, vanilla HTML/CSS/JavaScript square graph-paper generato
 ## Source files
 
 - `index.html` — interface and print-page container
-- `styles.css` — minimalist responsive UI, dark mode, viewport-fit and print styles
+- `styles.css` — responsive botanical-green UI, dark mode, scrollable settings and print styles
 - `app.js` — grid geometry, SVG generation, controls, export, print, zoom and theme behaviour
 
 Do not introduce a framework, package manager, third-party API, or unnecessary project scaffolding. The app previously had generated scaffolding; it was intentionally removed.
@@ -53,31 +53,22 @@ At the defaults, A4 portrait produces 35 × 55 cells, a 175 × 275 mm grid, 17.5
 
 ## Design requirements
 
-- Strict minimalist style
-- Full browser width and height
-- No page or nested-panel scrolling
-- Black, white and light blue interface palette
-- Thin 1 px borders and 2 px corner radius
-- No gradients, glass effects, glossy elements or heavy shadows
-- Compact but readable settings typography (generally 11–13 px; section headings 16 px)
-- Technical, calm and precise appearance
-- Responsive desktop, short-window and mobile layouts
-- The preview scales by both width and height to stay inside the viewport
-- On small/short screens, settings reflow into a compact grid and nonessential intro/footer content collapses
+- Follow `theme.md`: warm pale green-gray background, white panels, botanical-green actions, DM Sans / Manrope with system fallbacks
+- Keep the layout calm, compact and easy to scan, with thin green-gray borders, moderate corner radii and restrained shadows
+- Use visible sage focus rings and respect reduced-motion preferences
+- On desktop, keep the preview visible while the settings panel scrolls when its contents exceed the available height
+- On narrow screens, allow the page to scroll and keep the complete settings and export actions reachable
+- Keep the preview scaled to its available panel dimensions in fit mode
+- Preserve the light/dark toggle and keep interface dark mode independent from print/export colours
 - Do not restore the former “Gridcraft” name or branding
 
 ## Header details
 
 Visible attribution:
 
-`By Paul Gavini using CODEX · YouTube · Website`
+`By Paul Gavini · YouTube · Website`
 
-Also present:
-
-- `Physics guide ↗`
-- Light/dark mode toggle
-
-The YouTube, Website and Physics Guide links are visual placeholders. Their destination URLs still need to be supplied by the user. Placeholder clicks are deliberately prevented in `app.js`.
+The YouTube and Website links remain visual placeholders until the user supplies their destination URLs. Placeholder clicks are deliberately prevented in `app.js`.
 
 ## Printing notes and limitations
 
@@ -110,6 +101,6 @@ Then open `http://localhost:4173`.
 1. Read this file and inspect only `index.html`, `styles.css` and `app.js` as needed.
 2. Preserve the vanilla, dependency-free architecture.
 3. Preserve exact millimetre SVG geometry and the complete-bold-block centring rule.
-4. Preserve the no-scroll viewport layout and keyboard accessibility.
+4. Preserve scroll access to settings and keyboard accessibility.
 5. Ask for the three missing header URLs before wiring those links; do not invent them.
 6. After changes, verify unique HTML IDs, linked assets, relevant geometry invariants and supported control ranges.
