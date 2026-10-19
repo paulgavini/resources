@@ -2,6 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "concept-mapper-map-v1";
+  const HISTORY_STORAGE_KEY = "concept-mapper-history-v1";
   const LAYOUT_KEY = "concept-mapper-layout-v1";
   const HANDLE_DB = "concept-mapper-file-handles-v1";
   const HANDLE_STORE = "handles";
@@ -26,6 +27,8 @@
   let layout = null;
   let view = null;
   let pan = null;
+  let mapDrag = null;
+  let suppressMapClickUntil = 0;
   let history = [];
   let future = [];
   let editingId = null;
@@ -71,9 +74,58 @@
     future = [];
   }
 
+  function persistHistory() {
+    try {
+      const saved = {
+        version: 1,
+        current: JSON.stringify(map),
+        history: history.slice(-20),
+        future: future.slice(-20)
+      };
+      while (true) {
+        try {
+          sessionStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(saved));
+          return;
+        } catch {
+          if (saved.history.length) saved.history.shift();
+          else if (saved.future.length) saved.future.shift();
+          else {
+            sessionStorage.removeItem(HISTORY_STORAGE_KEY);
+            return;
+          }
+        }
+      }
+    } catch { /* Undo remains available in memory when session storage is unavailable. */ }
+  }
+
+  function restoreHistoryForMap(currentMap) {
+    history = [];
+    future = [];
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(HISTORY_STORAGE_KEY) || "null");
+      if (saved?.version !== 1 || saved.current !== JSON.stringify(currentMap) || !Array.isArray(saved.history) || !Array.isArray(saved.future)) {
+        sessionStorage.removeItem(HISTORY_STORAGE_KEY);
+        return;
+      }
+      if (!saved.history.every(validMap) || !saved.future.every(validMap)) {
+        sessionStorage.removeItem(HISTORY_STORAGE_KEY);
+        return;
+      }
+      history = saved.history.slice(-80);
+      future = saved.future.slice(-80);
+    } catch {
+      try { sessionStorage.removeItem(HISTORY_STORAGE_KEY); } catch { /* Ignore unavailable session storage. */ }
+    }
+  }
+
+  function clearPersistedHistory() {
+    try { sessionStorage.removeItem(HISTORY_STORAGE_KEY); } catch { /* Ignore unavailable session storage. */ }
+  }
+
   function commit() {
     saveLocal();
     render(true);
+    persistHistory();
     if (!suspendFileTracking) markMapEdited();
   }
 
@@ -364,7 +416,14 @@
     const hasNotes = Boolean(noteText);
     const hasRelationLabel = Boolean(node.relationLabel && !root);
     const ariaDetails = [hasRelationLabel ? `Relationship to parent: ${node.relationLabel}` : "", hasNotes ? "has notes" : ""].filter(Boolean).join(", ");
-    const g = svgEl("g", { class: `node-group${root ? " root-node" : ""}${depth === 1 ? " main-topic-node" : ""}${node.id === selectedId ? " selected" : ""}`, "data-node-id": node.id, tabindex: "0", role: "button", "aria-label": `${node.text}, ${node.children.length} child concepts${ariaDetails ? `, ${ariaDetails}` : ""}` });
+    const g = svgEl("g", { class: `node-group${root ? " root-node" : " can-drag"}${depth === 1 ? " main-topic-node" : ""}${node.id === selectedId ? " selected" : ""}`, "data-node-id": node.id, tabindex: "0", role: "button", "aria-label": `${node.text}, ${node.children.length} child concepts${ariaDetails ? `, ${ariaDetails}` : ""}` });
+    if (!root) {
+      g.addEventListener("pointerdown", event => {
+        if (event.button !== 0 || event.target.closest?.(".node-add-dot")) return;
+        mapDrag = { pointerId: event.pointerId, sourceId: node.id, startX: event.clientX, startY: event.clientY, started: false };
+        g.setPointerCapture?.(event.pointerId);
+      });
+    }
     if (hasNotes || hasRelationLabel) {
       const title = svgEl("title");
       title.textContent = `${node.text}${hasRelationLabel ? `\nRelationship to parent: ${node.relationLabel}` : ""}${hasNotes ? `\n${noteText}` : ""}`;
@@ -397,6 +456,12 @@
       g.appendChild(marker);
     }
     g.addEventListener("click", event => {
+      if (performance.now() < suppressMapClickUntil) {
+        suppressMapClickUntil = 0;
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       if (event.target.closest?.(".node-add-dot")) return;
       selectedId = node.id;
       render(false);
@@ -489,6 +554,76 @@
     if (node.id !== map.root.id && findNode(node.id)?.parent && offset < .24) return "before";
     if (node.id !== map.root.id && findNode(node.id)?.parent && offset > .76) return "after";
     return "inside";
+  }
+
+  function mapDropPositionFor(group, node, clientY) {
+    if (node.id === map.root.id) return "inside";
+    const rect = group.getBoundingClientRect();
+    const offset = (clientY - rect.top) / Math.max(1, rect.height);
+    if (offset < .24) return "before";
+    if (offset > .76) return "after";
+    return "inside";
+  }
+
+  function showMapDropCue(group, position) {
+    clearMapDropState();
+    group.classList.add(`drop-${position}`);
+    if (position === "inside") return;
+    const hitBox = group.querySelector(".node-hit");
+    if (!hitBox) return;
+    const x = Number(hitBox.getAttribute("x"));
+    const y = Number(hitBox.getAttribute("y"));
+    const width = Number(hitBox.getAttribute("width"));
+    const edgeY = position === "before" ? y : y + Number(hitBox.getAttribute("height"));
+    group.appendChild(svgEl("line", { class: "map-drop-indicator", x1: x, x2: x + width, y1: edgeY, y2: edgeY }));
+  }
+
+  function clearMapDropState() {
+    els.mapContent.querySelectorAll(".drop-before, .drop-after, .drop-inside")
+      .forEach(item => item.classList.remove("drop-before", "drop-after", "drop-inside"));
+    els.mapContent.querySelectorAll(".map-drop-indicator").forEach(item => item.remove());
+    els.mapCanvas.classList.remove("is-dragging-concept");
+  }
+
+  function moveMapPointer(event) {
+    if (!mapDrag || event.pointerId !== mapDrag.pointerId) return;
+    if (!mapDrag.started && Math.hypot(event.clientX - mapDrag.startX, event.clientY - mapDrag.startY) < 6) return;
+    if (!mapDrag.started) {
+      mapDrag.started = true;
+      draggedId = mapDrag.sourceId;
+      els.mapContent.querySelector(`[data-node-id="${CSS.escape(mapDrag.sourceId)}"]`)?.classList.add("is-dragging");
+      els.mapCanvas.classList.add("is-dragging-concept");
+    }
+    event.preventDefault();
+    const target = document.elementFromPoint(event.clientX, event.clientY)?.closest?.(".node-group");
+    const source = findNode(mapDrag.sourceId);
+    const targetNode = target ? findNode(target.dataset.nodeId) : null;
+    if (!source || !targetNode || isInSubtree(source.node, targetNode.node.id)) {
+      clearMapDropState();
+      els.mapCanvas.classList.add("is-dragging-concept");
+      return;
+    }
+    showMapDropCue(target, mapDropPositionFor(target, targetNode.node, event.clientY));
+    els.mapCanvas.classList.add("is-dragging-concept");
+  }
+
+  function finishMapPointer(event, cancelled = false) {
+    if (!mapDrag || event.pointerId !== mapDrag.pointerId) return;
+    const drag = mapDrag;
+    mapDrag = null;
+    if (drag.started && !cancelled) {
+      const target = document.elementFromPoint(event.clientX, event.clientY)?.closest?.(".node-group");
+      const targetId = target?.dataset.nodeId;
+      const source = findNode(drag.sourceId);
+      const targetNode = targetId ? findNode(targetId) : null;
+      if (source && targetNode && !isInSubtree(source.node, targetNode.node.id)) {
+        moveNode(drag.sourceId, targetNode.node.id, mapDropPositionFor(target, targetNode.node, event.clientY));
+      }
+      suppressMapClickUntil = performance.now() + 500;
+    }
+    draggedId = null;
+    els.mapContent.querySelectorAll(".is-dragging").forEach(item => item.classList.remove("is-dragging"));
+    clearMapDropState();
   }
 
   function renderOutlineNode(node, depth = 0) {
@@ -1251,8 +1386,7 @@
       map = loadedMap;
       selectedId = map.root.id;
       collapsedIds.clear();
-      history = [];
-      future = [];
+      restoreHistoryForMap(map);
       fileBaseSignatures.set(handle, raw);
       fileConflict = false;
       fileDirty = false;
@@ -1290,6 +1424,7 @@
       collapsedIds.clear();
       history = [];
       future = [];
+      clearPersistedHistory();
       saveLocal();
       render(true);
       setUnlinkedStatus();
@@ -1396,6 +1531,7 @@
     collapsedIds.clear();
     history = [];
     future = [];
+    clearPersistedHistory();
     saveLocal();
     render(true);
     setFileStatus("New blank map — use Save As to create its file");
@@ -1526,6 +1662,9 @@
   els.mapCanvas.addEventListener("pointermove", movePan);
   els.mapCanvas.addEventListener("pointerup", endPan);
   els.mapCanvas.addEventListener("pointercancel", endPan);
+  document.addEventListener("pointermove", moveMapPointer);
+  document.addEventListener("pointerup", event => finishMapPointer(event));
+  document.addEventListener("pointercancel", event => finishMapPointer(event, true));
   els.mapCanvas.addEventListener("wheel", event => {
     if (!event.ctrlKey && !event.metaKey) return;
     event.preventDefault();
@@ -1543,6 +1682,7 @@
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
     if (validMap(stored)) map = stored;
   } catch { /* Start with a fresh map if browser storage is unavailable or invalid. */ }
+  restoreHistoryForMap(map);
   selectedId = map.root.id;
   render(true);
   restoreFileLink();
