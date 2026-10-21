@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4f6f5">
+    <meta name="description" content="Help using DataNook: import data, design tables, build queries, and download the school demo database.">
+    <title>Help · DataNook</title>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell help-shell">
+      <header class="topbar">
+        <div class="brand-and-links">
+          <a class="brand" href="./" aria-label="DataNook home">
+            <span class="brand-mark" aria-hidden="true">D</span>
+            <span>DataNook</span>
+          </a>
+          <nav class="author-links" aria-label="Paul Gavini links">
+            <span>By Paul Gavini ·</span>
+            <a href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener noreferrer">YouTube</a>
+            <span aria-hidden="true">·</span>
+            <a href="https://paulgavini.github.io/resources/" target="_blank" rel="noopener noreferrer">Website</a>
+            <span aria-hidden="true">·</span>
+            <a href="help.html" aria-current="page">Help</a>
+          </nav>
+        </div>
+      </header>
+
+      <main class="help-main">
+        <div class="help-heading">
+          <div class="eyebrow">DATANOOK · SQLITE DATABASE WORKSPACE</div>
+          <h1>Help and getting started</h1>
+          <p>Explore a local SQLite database, build queries, and learn how the workspace saves your changes.</p>
+          <a class="primary-button help-open-app" href="./">Open DataNook</a>
+        </div>
+
+        <section class="help-demo-card" aria-labelledby="demo-heading">
+          <div class="help-demo-icon" aria-hidden="true">▤</div>
+          <div>
+            <div class="eyebrow">PRACTICE DATABASE</div>
+            <h2 id="demo-heading">Try the school demo</h2>
+            <p>Download the example database to experiment with students, courses, and enrollments. It includes two relationships linking enrollments to students and courses.</p>
+            <a class="primary-button" href="school-demo.sqlite" download="school-demo.sqlite">Download school demo database</a>
+            <p class="help-demo-note">In DataNook, choose <strong>Open database</strong> and select the downloaded <code>school-demo.sqlite</code> file.</p>
+          </div>
+        </section>
+
+        <div class="help-sections">
+          <section class="help-card">
+            <h2>Browse and edit data</h2>
+            <p>Choose a table in the left navigation, then use Datasheet to view and edit its rows. Paste tab-separated cells copied from a spreadsheet to add or update multiple values. Changes save automatically.</p>
+          </section>
+          <section class="help-card">
+            <h2>Create tables and import files</h2>
+            <p>Use Table Designer to create a table and set each field’s name, SQLite data type, primary key, and constraints. Choose <strong>Import CSV as table</strong> there to preview a CSV or TSV file and create a new table from it; the first row is used for field names by default.</p>
+          </section>
+          <section class="help-card">
+            <h2>Explore relationships and queries</h2>
+            <p>Relationships shows linked fields between tables. Query Design lets you add related tables, choose fields, sort and filter results, and calculate totals such as counts and averages. SQL Editor runs SQLite statements and offers table and field suggestions.</p>
+          </section>
+          <section class="help-card">
+            <h2>Save and move databases</h2>
+            <p>The workspace runs in your browser. It saves changes in the current browser profile. Use <strong>Save as</strong> to keep a portable SQLite file, or <strong>Open database</strong> to work with an existing <code>.sqlite</code>, <code>.sqlite3</code>, or <code>.db</code> file.</p>
+          </section>
+          <section class="help-card">
+            <h2>Create reports</h2>
+            <p>Reports can use related table fields or the latest SQL Editor results. Select fields, choose grouping and sorting options, preview the report, and use your browser’s print dialog to print or save it as a PDF.</p>
+          </section>
+          <section class="help-card">
+            <h2>Browser requirements</h2>
+            <p>SQLite runs locally in a Chromium based browser using WebAssembly. An internet connection is needed to load the SQLite engine library when opening the app. File saving options depend on the browser; browser storage remains available for automatic saves.</p>
+          </section>
+          <section class="help-card help-disclaimer" aria-labelledby="disclaimer-heading">
+            <h2 id="disclaimer-heading">Disclaimer</h2>
+            <p>DataNook and the example database are provided “as is” and for learning and experimentation. No warranty is made that the app or example data will be accurate, available, error free, or suitable for a particular purpose. To the extent permitted by law, the author is not liable for loss or damage arising from using or being unable to use the app or example database, including loss or corruption of data. Keep backups of important databases.</p>
+          </section>
+        </div>
+
+        <footer class="help-footer">DataNook · A browser based SQLite learning workspace inspired by Microsoft Access and LibreOffice Base.</footer>
+      </main>
+    </div>
+  </body>
+</html>

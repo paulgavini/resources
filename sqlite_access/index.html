@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4f6f5">
+    <title>DataNook</title>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.14.2/sql-wasm.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-and-links">
+          <a class="brand" href="./" aria-label="DataNook home">
+            <span class="brand-mark" aria-hidden="true">D</span>
+            <span>DataNook</span>
+          </a>
+          <nav class="author-links" aria-label="Paul Gavini links">
+            <span>By Paul Gavini ·</span>
+            <a href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener noreferrer">YouTube</a>
+            <span aria-hidden="true">·</span>
+            <a href="https://paulgavini.github.io/resources/" target="_blank" rel="noopener noreferrer">Website</a>
+            <span aria-hidden="true">·</span>
+            <a href="help.html">Help</a>
+          </nav>
+        </div>
+        <div class="topbar-right">
+          <button class="file-action-button" id="new-database" type="button">New database</button>
+          <button class="file-action-button" id="load-database" type="button">Open database</button>
+          <button class="file-action-button file-action-primary" id="save-database-as" type="button">Save as</button>
+          <span class="local-badge"><span class="live-dot"></span> Runs in this browser</span>
+          <span class="save-status" id="save-status" role="status" aria-live="polite">
+            <span class="status-dot"></span><span id="save-label">Starting database…</span>
+          </span>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <aside class="sidebar" aria-label="Database navigation">
+          <div class="sidebar-heading">WORKSPACE</div>
+          <div class="database-card">
+            <div class="database-icon" aria-hidden="true">▤</div>
+            <div class="database-meta">
+              <strong id="database-title">My database</strong>
+              <span id="database-subtitle">Saved in this browser</span>
+            </div>
+            <span class="more-mark" aria-hidden="true">···</span>
+          </div>
+
+          <div class="sidebar-section">
+            <div class="section-heading">
+              <span>TABLES</span>
+              <button class="icon-button" id="refresh-schema" type="button" title="Refresh tables" aria-label="Refresh tables">↻</button>
+            </div>
+            <ul class="table-list" id="table-list" aria-label="Database tables">
+              <li class="empty-tables">Loading tables…</li>
+            </ul>
+          </div>
+
+          <div class="sidebar-note">
+            <span class="note-icon" aria-hidden="true">⌘</span>
+            <p>Your database is stored locally in this browser. It is never sent to a server.</p>
+          </div>
+          <div class="sidebar-footer">LOCAL WORKSPACE <span>·</span> SQLITE</div>
+        </aside>
+
+        <main class="main-content">
+          <div class="page-heading">
+            <div>
+              <div class="eyebrow">DATABASE WORKSPACE</div>
+              <h1>Database workspace</h1>
+              <p>Browse, edit, and design tables in your local database.</p>
+            </div>
+            <div class="engine-pill"><span class="engine-icon">◉</span> SQLite <span class="engine-version" id="engine-version">WASM</span></div>
+          </div>
+
+          <div class="workspace-tabs" role="tablist" aria-label="Workspace views">
+            <button class="workspace-tab is-active" id="tab-data" type="button" role="tab" aria-selected="true" aria-controls="data-panel" data-tab="data"><span aria-hidden="true">▦</span> Datasheet</button>
+            <button class="workspace-tab" id="tab-designer" type="button" role="tab" aria-selected="false" aria-controls="designer-panel" data-tab="designer"><span aria-hidden="true">⊞</span> Table Designer</button>
+            <button class="workspace-tab" id="tab-relationships" type="button" role="tab" aria-selected="false" aria-controls="relationships-panel" data-tab="relationships"><span aria-hidden="true">⌗</span> Relationships</button>
+            <button class="workspace-tab" id="tab-query-design" type="button" role="tab" aria-selected="false" aria-controls="query-design-panel" data-tab="query-design"><span aria-hidden="true">▱</span> Query Design</button>
+            <button class="workspace-tab" id="tab-editor" type="button" role="tab" aria-selected="false" aria-controls="editor-panel" data-tab="editor"><span aria-hidden="true">⌘</span> SQL Editor</button>
+            <button class="workspace-tab" id="tab-reports" type="button" role="tab" aria-selected="false" aria-controls="reports-panel" data-tab="reports"><span aria-hidden="true">▤</span> Reports</button>
+          </div>
+
+          <section class="tab-panel data-panel" id="data-panel" role="tabpanel" aria-labelledby="tab-data">
+            <div class="data-toolbar">
+              <div class="selected-table-title"><span class="table-title-icon" aria-hidden="true">▦</span><strong id="selected-table-name">Select a table</strong><select class="table-select" id="data-table-select" aria-label="Select table"></select><span class="result-count" id="data-row-count">—</span></div>
+              <div class="data-actions">
+                <span class="copy-hint">Copy or paste ranges; type in the blank row to add records. Changes save automatically.</span>
+              </div>
+            </div>
+            <div class="datasheet-tools" aria-label="Find and sort table rows">
+              <label class="datasheet-search-label" for="datasheet-search">Find</label>
+              <input class="text-input datasheet-search" id="datasheet-search" type="search" placeholder="Search this table" autocomplete="off" disabled>
+              <label for="datasheet-sort-field">Sort by</label>
+              <select class="text-input datasheet-sort-field" id="datasheet-sort-field" disabled><option value="">No sorting</option></select>
+              <label class="sr-only" for="datasheet-sort-direction">Sort order</label>
+              <select class="text-input datasheet-sort-direction" id="datasheet-sort-direction" aria-label="Sort order" disabled><option value="ASC">Ascending</option><option value="DESC">Descending</option></select>
+              <button class="secondary-button datasheet-clear" id="datasheet-clear-view" type="button" disabled>Clear</button>
+            </div>
+            <div class="data-feedback" id="data-feedback" role="status" aria-live="polite"></div>
+            <div class="data-grid-wrap" id="data-grid-container">
+              <div class="grid-empty-state">Choose a table from the left to view its data.</div>
+            </div>
+          </section>
+
+          <section class="tab-panel" id="editor-panel" role="tabpanel" aria-labelledby="tab-editor" hidden>
+          <section class="editor-card" aria-labelledby="query-heading">
+            <div class="card-toolbar">
+              <div class="query-tab"><span class="file-icon">▤</span><h2 id="query-heading">Query</h2><span class="tab-indicator"></span></div>
+              <span class="keyboard-hint"><kbd>⌘</kbd><span>or</span><kbd>Ctrl</kbd> <kbd>Enter</kbd> <span>to run</span></span>
+            </div>
+            <div class="saved-query-manager">
+              <div class="saved-query-controls">
+                <label class="sr-only" for="saved-query-select">Saved queries</label>
+                <select class="text-input" id="saved-query-select" aria-label="Saved queries"><option value="">No saved queries</option></select>
+                <button class="secondary-button" id="load-saved-query" type="button" disabled>Load</button>
+                <button class="secondary-button" id="save-saved-query" type="button">Save query</button>
+                <button class="secondary-button saved-query-delete" id="delete-saved-query" type="button" disabled>Delete</button>
+              </div>
+              <div class="saved-query-warning">Saved in <code>__APP_SAVED_QUERIES_DO_NOT_EDIT</code> · do not edit this app-managed table.</div>
+              <div class="saved-query-feedback" id="saved-query-feedback" role="status" aria-live="polite"></div>
+            </div>
+            <label class="sr-only" for="sql-input">SQL query</label>
+            <div class="editor-query-layout">
+              <div class="editor-area">
+                <div class="line-number" aria-hidden="true">1<br>2<br>3<br>4<br>5<br>6</div>
+                <textarea id="sql-input" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-autocomplete="list" aria-controls="sql-suggestions" aria-describedby="editor-help">SELECT student_number, first_name, last_name, year_level
+FROM students
+ORDER BY student_number;</textarea>
+                <div class="sql-suggestions" id="sql-suggestions" role="listbox" aria-label="SQL suggestions" hidden></div>
+              </div>
+              <aside class="join-guide" id="join-guide" aria-label="SQL join diagrams">
+                <div class="join-guide-heading"><strong>Join diagrams</strong><span id="join-summary">No JOIN</span></div>
+                <div class="join-diagrams" id="join-diagrams" aria-live="polite"></div>
+              </aside>
+            </div>
+            <div class="editor-footer">
+              <span id="editor-help">SQLite syntax · Ctrl+Space for suggestions · Enter to complete</span>
+              <button class="run-button" id="run-query" type="button"><span aria-hidden="true">▶</span> Run query <kbd>⌘ ↵</kbd></button>
+            </div>
+          </section>
+
+          <section class="results-card" aria-labelledby="results-heading">
+            <div class="results-header">
+              <div class="results-title"><h2 id="results-heading">Results</h2><span class="result-count" id="result-count">Ready</span></div>
+              <div class="results-tools"><span id="result-time"></span><button class="secondary-button results-report-button" id="create-report-from-results" type="button" hidden>Create report from results</button><button class="icon-button" id="clear-results" type="button" title="Clear results" aria-label="Clear results">×</button></div>
+            </div>
+            <div class="results-content" id="results-content" aria-live="polite">
+              <div class="welcome-state">
+                <span class="welcome-icon" aria-hidden="true">⌁</span>
+                <strong>Run a query to see results</strong>
+                <span>Try editing the sample query above.</span>
+              </div>
+            </div>
+          </section>
+          </section>
+
+          <section class="tab-panel designer-panel" id="designer-panel" role="tabpanel" aria-labelledby="tab-designer" hidden>
+            <form id="table-designer-form" class="designer-card">
+              <div class="designer-intro">
+                <div><div class="eyebrow">DATABASE STRUCTURE</div><h2 id="designer-heading">Create a table</h2><p id="designer-description">Define the columns and SQLite properties for a new table, or import a CSV with its first row as field names.</p></div>
+                <button class="secondary-button" id="designer-import-csv" type="button"><span aria-hidden="true">↑</span> Import CSV as table</button>
+              </div>
+              <div class="designer-table-name"><label class="field-label" for="designer-table-name">Table name</label><input class="text-input" id="designer-table-name" type="text" placeholder="e.g. customers" required></div>
+              <div class="designer-fields-heading"><div><h3>Fields</h3><p>Choose a type and properties for each column.</p></div><div class="designer-actions"><button class="secondary-button" id="designer-new-table" type="button" hidden>New table</button><button class="secondary-button" id="add-designer-field" type="button">＋ Add field</button></div></div>
+              <div class="designer-fields" id="designer-fields"></div>
+              <div class="dialog-feedback" id="designer-feedback" role="status" aria-live="polite"></div>
+              <div class="designer-footer"><span id="designer-footer-note">Changes are saved to this browser after the table is created.</span><button class="primary-button" id="designer-submit" type="submit">Create table</button></div>
+            </form>
+          </section>
+
+          <section class="tab-panel relationships-panel" id="relationships-panel" role="tabpanel" aria-labelledby="tab-relationships" hidden>
+            <div class="relationships-card">
+              <div class="relationships-toolbar">
+                <div><div class="eyebrow">DATABASE STRUCTURE</div><h2>Relationships</h2><p>Drag table title bars to arrange the diagram. Drag a primary key or unique field onto another field to create a relationship.</p></div>
+                <button class="secondary-button" id="remove-relationship" type="button" disabled>Remove relationship</button>
+              </div>
+              <div class="relationships-feedback" id="relationships-feedback" role="status" aria-live="polite"></div>
+              <div class="relationships-viewport" id="relationships-viewport" tabindex="0" aria-label="Relationship diagram">
+                <div class="relationships-stage" id="relationships-stage"><svg class="relationship-lines" id="relationship-lines" role="group" aria-label="Relationship connectors"></svg><div class="relationship-tables" id="relationship-tables"></div></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel query-design-panel" id="query-design-panel" role="tabpanel" aria-labelledby="tab-query-design" hidden>
+            <div class="query-design-toolbar">
+              <div><div class="eyebrow">QUERY DESIGN</div><h2>Build a query</h2><p>Drag tables onto the surface, then drag fields into the grid. Saved relationships appear as join lines.</p></div>
+              <div class="query-design-actions">
+                <button class="secondary-button" id="query-design-clear" type="button">Clear design</button>
+                <button class="secondary-button" id="query-design-save" type="button">Save query</button>
+                <button class="secondary-button" id="query-design-open-sql" type="button">Open SQL</button>
+                <button class="primary-button" id="query-design-run" type="button">Run query</button>
+              </div>
+            </div>
+            <div class="query-design-layout">
+              <aside class="query-table-picker" aria-label="Available tables">
+                <h3>Tables</h3><p>Drag a table onto the canvas or use Add.</p>
+                <ul id="query-design-table-sources" class="query-table-sources"></ul>
+              </aside>
+              <div class="query-design-workspace">
+                <div class="query-design-canvas-viewport" id="query-design-canvas-viewport">
+                  <div class="query-design-stage" id="query-design-stage" aria-label="Query table layout">
+                    <svg class="query-design-lines" id="query-design-lines" aria-hidden="true"></svg>
+                    <div class="query-design-cards" id="query-design-cards"></div>
+                    <div class="query-design-empty" id="query-design-empty">Drag a table here to begin designing a query.</div>
+                  </div>
+                </div>
+                <div class="query-grid-heading"><h3>Query grid</h3><span id="query-design-field-count">0 fields</span><button class="secondary-button query-totals-toggle" id="query-design-totals" type="button" aria-pressed="false" title="Add Group By and aggregate functions to the query grid">∑ Totals</button></div>
+                <div class="query-grid-scroll" id="query-design-grid-drop">
+                  <table class="query-design-grid" aria-label="Query design grid">
+                    <thead><tr><th>Field</th><th>Table</th><th id="query-design-total-heading" hidden>Total</th><th>Sort</th><th>Show</th><th>Criteria</th><th></th></tr></thead>
+                    <tbody id="query-design-grid-body"><tr><td class="query-grid-empty" colspan="7">Drag a field from a table card into this grid.</td></tr></tbody>
+                  </table>
+                </div>
+                <div class="query-design-feedback" id="query-design-feedback" role="status" aria-live="polite"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel reports-panel" id="reports-panel" role="tabpanel" aria-labelledby="tab-reports" hidden>
+            <div class="report-workspace">
+              <form class="report-builder" id="report-builder-form">
+                <div class="report-builder-heading"><div class="eyebrow">REPORT DESIGN</div><h2>Create a report</h2><p>Choose related table fields or use the latest SQL Editor result, then arrange groups and summaries.</p></div>
+                <label class="field-label" for="report-source-mode">Report source</label>
+                <select class="text-input" id="report-source-mode"><option value="related">Related tables</option><option value="query">Latest SQL result</option></select>
+                <div class="report-related-controls" id="report-related-controls">
+                  <label class="field-label" for="report-table">Starting table</label>
+                  <select class="text-input" id="report-table"></select>
+                  <div class="report-related-hint">Fields are grouped by table. Selecting a related field automatically follows its saved relationship.</div>
+                </div>
+                <div class="report-query-source" id="report-query-source" hidden>No SQL results are available. Run a SELECT query in SQL Editor, then choose <strong>Create report from results</strong> in the Results panel.</div>
+                <label class="field-label report-title-label" for="report-title">Report title</label>
+                <input class="text-input" id="report-title" type="text" value="Table report" maxlength="100" placeholder="Enter a report title">
+                <div class="report-fields-heading"><h3>Fields</h3><div><button class="text-button" id="report-select-all" type="button">Select all</button><button class="text-button" id="report-select-none" type="button">Clear</button></div></div>
+                <div class="report-field-list" id="report-fields" aria-label="Report fields"></div>
+                <div class="report-fields-heading"><h3>Group by</h3><span class="report-small-hint">Optional · nested in selection order</span></div>
+                <div class="report-field-list report-group-list" id="report-group-fields" aria-label="Report grouping fields"></div>
+                <div class="report-sort-row"><div><label class="field-label" for="report-sort-field">Sort by</label><select class="text-input" id="report-sort-field"></select></div><div><label class="field-label" for="report-sort-direction">Order</label><select class="text-input" id="report-sort-direction"><option value="ASC">Ascending</option><option value="DESC">Descending</option></select></div></div>
+                <div class="report-summary-controls"><div><label class="field-label" for="report-summary-function">Group summary</label><select class="text-input" id="report-summary-function"><option value="NONE">Record count only</option><option value="SUM">Sum</option><option value="AVG">Average</option></select></div><div><label class="field-label" for="report-summary-field">Numeric field</label><select class="text-input" id="report-summary-field" disabled></select></div></div>
+                <div class="report-feedback" id="report-feedback" role="status" aria-live="polite"></div>
+                <div class="report-builder-actions"><button class="primary-button" id="generate-report" type="submit">Generate preview</button><button class="secondary-button" id="print-report" type="button" disabled>Print</button></div>
+              </form>
+              <div class="report-preview-area"><div class="report-preview-placeholder" id="report-preview-placeholder">Your report preview will appear here.</div><article class="report-page" id="report-preview" hidden></article></div>
+            </div>
+          </section>
+
+          <footer class="main-footer"><span>SQLite runs locally in your browser</span><span>Changes auto-save to this device</span></footer>
+        </main>
+      </div>
+    </div>
+
+    <dialog class="app-dialog" id="import-dialog" aria-labelledby="import-title">
+      <form id="import-form" class="dialog-form">
+        <div class="dialog-heading">
+          <div><div class="eyebrow">ADD DATA</div><h2 id="import-title">Import a CSV file</h2></div>
+          <button class="dialog-close" type="button" data-close-dialog="import-dialog" aria-label="Close">×</button>
+        </div>
+        <p class="dialog-description">Create a new table from a comma separated file. Values are imported as text and saved in this browser.</p>
+        <label class="field-label" for="csv-file">CSV file</label>
+        <input class="file-input" id="csv-file" type="file" accept=".csv,text/csv,text/tab-separated-values,.tsv" required>
+        <div class="form-grid two-columns">
+          <div>
+            <label class="field-label" for="csv-table-name">New table name</label>
+            <input class="text-input" id="csv-table-name" name="tableName" type="text" placeholder="imported_data" required>
+          </div>
+          <div>
+            <label class="field-label" for="csv-delimiter">Column separator</label>
+            <select class="text-input" id="csv-delimiter" name="delimiter">
+              <option value="auto">Detect automatically</option>
+              <option value=",">Comma</option>
+              <option value=";">Semicolon</option>
+              <option value="tab">Tab</option>
+            </select>
+          </div>
+        </div>
+        <label class="checkbox-row"><input id="csv-has-header" type="checkbox" checked> First row contains column names</label>
+        <div class="csv-preview" id="csv-preview"><span class="preview-placeholder">Choose a file to preview its columns and rows.</span></div>
+        <div class="dialog-feedback" id="import-feedback" role="status" aria-live="polite"></div>
+        <div class="dialog-actions">
+          <button class="secondary-button" type="button" data-close-dialog="import-dialog">Cancel</button>
+          <button class="primary-button" id="import-submit" type="submit" disabled>Import table</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="app-dialog" id="saved-query-name-dialog" aria-labelledby="saved-query-name-title">
+      <form id="saved-query-name-form" class="dialog-form">
+        <div class="dialog-heading">
+          <div><div class="eyebrow">SAVE QUERY</div><h2 id="saved-query-name-title">Name this saved query</h2></div>
+          <button class="dialog-close" type="button" data-close-dialog="saved-query-name-dialog" aria-label="Close">×</button>
+        </div>
+        <p class="dialog-description">The query definition will be saved with this database.</p>
+        <label class="field-label" for="saved-query-name-input">Query name</label>
+        <input class="text-input" id="saved-query-name-input" name="queryName" type="text" maxlength="100" autocomplete="off" required>
+        <div class="dialog-actions">
+          <button class="secondary-button" type="button" data-close-dialog="saved-query-name-dialog">Cancel</button>
+          <button class="primary-button" type="submit">Save query</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="app-dialog" id="app-confirm-dialog" aria-labelledby="app-confirm-title">
+      <form id="app-confirm-form" class="dialog-form">
+        <div class="dialog-heading">
+          <div><div class="eyebrow">PLEASE CONFIRM</div><h2 id="app-confirm-title">Confirm action</h2></div>
+          <button class="dialog-close" type="button" data-close-dialog="app-confirm-dialog" aria-label="Close">×</button>
+        </div>
+        <p class="dialog-description" id="app-confirm-message"></p>
+        <div class="dialog-actions">
+          <button class="secondary-button" type="button" data-close-dialog="app-confirm-dialog">Cancel</button>
+          <button class="primary-button" id="app-confirm-accept" type="submit">Continue</button>
+        </div>
+      </form>
+    </dialog>
+
+    <template id="designer-field-template">
+      <div class="designer-field-row">
+        <div class="designer-name"><label class="field-label">Field name<input class="text-input" data-field="name" type="text" placeholder="e.g. customer_id" required></label></div>
+        <div class="designer-type"><label class="field-label">Data type<select class="text-input" data-field="type">
+          <option>TEXT</option><option>INTEGER</option><option>REAL</option><option>NUMERIC</option><option>BLOB</option><option>BOOLEAN</option><option>DATE</option><option>DATETIME</option>
+        </select></label></div>
+        <div class="designer-default"><label class="field-label">Default value<input class="text-input" data-field="default" type="text" placeholder="'Unknown', 0, CURRENT_TIMESTAMP"></label></div>
+        <label class="designer-check"><input data-field="primary-key" type="checkbox"> Primary key</label>
+        <label class="designer-check"><input data-field="not-null" type="checkbox"> Required</label>
+        <label class="designer-check"><input data-field="unique" type="checkbox"> Unique</label>
+        <label class="designer-check"><input data-field="autoincrement" type="checkbox" disabled> Auto increment</label>
+        <button class="remove-field" type="button" aria-label="Remove field">×</button>
+      </div>
+    </template>
+
+    <input id="database-file-input" class="sr-only" type="file" accept=".sqlite,.sqlite3,.db,application/vnd.sqlite3,application/x-sqlite3" tabindex="-1" aria-hidden="true">
+
+  </body>
+</html>
