@@ -9,6 +9,7 @@ Keep DataNook a small, local, browser based SQLite workspace. Ship one focused i
 
 ## Soon
 
+- [x] **Delete a table safely.** Add a confirmed red × beside the selected Datasheet table; block deletion until incoming relationships are removed.
 - [x] **Add basic Datasheet search and sorting.** Search across the selected table’s displayed values, sort by one field ascending or descending, and clear both with one action. Verified filtered edits and multirow paste in an isolated Edge test origin; no advanced filter builder added.
 - [ ] **Let Query Design change join type.** Selecting a relationship connector should offer `INNER`, `LEFT`, and `RIGHT`, with a short explanation of which rows remain. Keep `FULL` and `CROSS` available in SQL Editor. Update generated SQL and the join diagram together.
 - [ ] **Add a safe way to delete a record.** Start with deleting one selected row, a clear confirmation, and an undo action before leaving the table. Keep autosave and foreign-key behavior visible.

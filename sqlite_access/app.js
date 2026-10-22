@@ -924,9 +924,11 @@ function updateDatasheetViewControls(columns = []) {
 
 function renderDataGrid() {
   const title = document.querySelector('#selected-table-name');
+  const deleteTableButton = document.querySelector('#datasheet-delete-table');
   const availableTables = listTables();
   if (!activeTable || !availableTables.includes(activeTable)) activeTable = availableTables[0] || null;
   if (!activeTable) {
+    deleteTableButton.disabled = true;
     gridState = null;
     title.textContent = 'No tables yet';
     elements.dataRowCount.textContent = '0 rows';
@@ -943,6 +945,7 @@ function renderDataGrid() {
     return;
   }
   gridState = { table: activeTable, ...readTableData(activeTable) };
+  deleteTableButton.disabled = false;
   updateDatasheetViewControls(gridState.columns);
   sortDatasheetRows();
   title.textContent = activeTable;
@@ -2193,6 +2196,52 @@ function resetDesignerCreateMode() {
   document.querySelector('#designer-footer-note').textContent = 'Changes are saved to this browser after the table is created.';
 }
 
+async function deleteSelectedTable(storage) {
+  const tableName = activeTable;
+  if (!tableName) return;
+  const feedback = elements.dataFeedback;
+  feedback.textContent = '';
+  feedback.classList.remove('is-error');
+  const inboundRelationships = getRelationships().filter((relationship) => relationship.targetTable === tableName && relationship.childTable !== tableName);
+  if (inboundRelationships.length) {
+    const childTables = [...new Set(inboundRelationships.map((relationship) => relationship.childTable))];
+    feedback.textContent = `Remove the relationship${childTables.length === 1 ? '' : 's'} from ${childTables.map((name) => `“${name}”`).join(', ')} before deleting this table.`;
+    feedback.classList.add('is-error');
+    return;
+  }
+  const confirmed = await askForAppConfirmation(
+    'Delete table?',
+    `Delete “${tableName}” and all of its records? This cannot be undone.`,
+    'Delete table',
+  );
+  if (!confirmed || activeTable !== tableName || !listTables().includes(tableName)) return;
+  try {
+    db.run(`DROP TABLE ${quoteIdentifier(tableName)};`);
+    const tables = listTables();
+    activeTable = tables.includes('students') ? 'students' : tables[0] || null;
+    queryDesignTables = queryDesignTables.filter((table) => table !== tableName);
+    queryDesignFields = queryDesignFields.filter((field) => field.table !== tableName);
+    delete queryDesignPositions[tableName];
+    delete relationshipPositions[tableName];
+    selectedRelationship = null;
+    resetReportConfiguration();
+    resetReportPreview();
+    renderSchema();
+    renderDataGrid();
+    renderQueryDesigner();
+    refreshReportSources();
+    const reportTitle = document.querySelector('#report-title');
+    if (reportTitle.dataset.userEdited !== 'true' && activeTable) reportTitle.value = `${activeTable} report`;
+    renderRelationships();
+    await persistRelationshipPositions(storage);
+    await saveDatabase(storage);
+    activateTab('data');
+  } catch (error) {
+    feedback.textContent = error.message || `Could not delete “${tableName}”.`;
+    feedback.classList.add('is-error');
+  }
+}
+
 function readDesignerFields(rows) {
   const fields = rows.map((row) => ({
     name: row.querySelector('[data-field="name"]').value.trim(),
@@ -3164,6 +3213,7 @@ async function start() {
     addDesignerField({ name: 'id', type: 'INTEGER', primaryKey: true, autoincrement: true });
     addDesignerField({ name: 'name', type: 'TEXT' });
   });
+  document.querySelector('#datasheet-delete-table').addEventListener('click', () => deleteSelectedTable(storage));
   document.querySelector('#table-designer-form').addEventListener('submit', (event) => createTable(storage, event));
   document.querySelector('#csv-file').addEventListener('change', (event) => loadCsvFile(event.target.files[0]));
   document.querySelector('#csv-delimiter').addEventListener('change', refreshCsvPreview);

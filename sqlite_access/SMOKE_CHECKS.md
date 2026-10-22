@@ -6,6 +6,7 @@ Run these checks in Edge or another Chromium browser after a focused change. Use
 
 - [ ] Open the workspace. The school demo shows `students`, `courses`, and `enrollments`.
 - [ ] Create a small table in Table Designer with an integer primary key and a text field.
+- [ ] In Datasheet, choose the red × beside the selected table and confirm. Check that the table disappears and another table (or the empty state) is shown. Confirm cancellation keeps the table. Try deleting a referenced parent table and confirm the app asks you to remove incoming relationships first.
 - [ ] Enter a value in Datasheet, paste a two-row tab-separated range, and reload. Confirm the rows remain.
 - [ ] Search Datasheet across fields, sort a numeric field ascending and descending, and use Clear. Confirm filtered cells remain editable and a multirow paste saves the intended records.
 
