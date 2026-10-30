@@ -11,13 +11,16 @@ Keep DataNook a small, local, browser based SQLite workspace. Ship one focused i
 
 - [x] **Delete a table safely.** Add a confirmed red × beside the selected Datasheet table; block deletion until incoming relationships are removed.
 - [x] **Add basic Datasheet search and sorting.** Search across the selected table’s displayed values, sort by one field ascending or descending, and clear both with one action. Verified filtered edits and multirow paste in an isolated Edge test origin; no advanced filter builder added.
+- [x] **Export report previews to Excel and Word.** Add `.xlsx` and `.docx` downloads for the current report, including title, source, selected fields, grouping headings, summaries, and record count. Export actions require a current preview.
+- [x] **Filter Datasheet by field values.** Add searchable per-field value checklists that combine across columns, show an active funnel icon on filtered fields, and only affect displayed rows. Keep the existing Clear action for all view controls.
 - [ ] **Let Query Design change join type.** Selecting a relationship connector should offer `INNER`, `LEFT`, and `RIGHT`, with a short explanation of which rows remain. Keep `FULL` and `CROSS` available in SQL Editor. Update generated SQL and the join diagram together.
 - [ ] **Add a safe way to delete a record.** Start with deleting one selected row, a clear confirmation, and an undo action before leaving the table. Keep autosave and foreign-key behavior visible.
 
 ## Later
 
+- [ ] **Add a Visuals tab with interactive charts and slicers.** Use a table or SQL query as the source. Start with KPI cards, bar charts, detail tables, and slicers that filter the visuals; add line charts when the source has useful date data. Keep calculations and filters in the browser without changing user tables.
 - [ ] **Create a simple form from one table.** Show one record at a time with Previous, Next, New, and Save actions. Use the table’s existing field names and types; defer layout design and multi-table subforms.
-- [ ] **Save report setup.** Save and reopen a report title, selected fields, grouping, summary, and sort order. Keep the existing print/PDF preview as the output.
+- [x] **Save report setup.** Save, load, replace, and delete report definitions in the hidden app-managed SQLite table. Query-based reports preserve the SQL and rebuild after the user runs it.
 
 ## Leave out for now
 

@@ -9,6 +9,7 @@ Run these checks in Edge or another Chromium browser after a focused change. Use
 - [ ] In Datasheet, choose the red × beside the selected table and confirm. Check that the table disappears and another table (or the empty state) is shown. Confirm cancellation keeps the table. Try deleting a referenced parent table and confirm the app asks you to remove incoming relationships first.
 - [ ] Enter a value in Datasheet, paste a two-row tab-separated range, and reload. Confirm the rows remain.
 - [ ] Search Datasheet across fields, sort a numeric field ascending and descending, and use Clear. Confirm filtered cells remain editable and a multirow paste saves the intended records.
+- [x] Open first- and rightmost-column filters at desktop and 452 × 477 Edge viewports. Confirm popups stay fully visible, including Apply; apply a value filter and confirm its field shows a funnel icon, then use Clear and confirm all five demo rows return.
 
 ## CSV and database files
 
@@ -27,6 +28,8 @@ Run these checks in Edge or another Chromium browser after a focused change. Use
 - [ ] In Query Design, add related tables, run a join, and check a grouped Count or Sum.
 - [ ] In SQL Editor, run a SELECT, save and reload its named query, and inspect the join diagrams.
 - [ ] In Reports, create a preview from related fields and from a SQL result.
+- [x] Open a table design from a Datasheet field heading, change the field name without saving, and choose Cancel. Confirm Datasheet returns and the original field name and records remain.
+- [ ] Export each report preview to Excel and Word. Confirm the `.xlsx` and `.docx` files open and include the title, columns, group headings, summaries, and record count. Change a report option and confirm exports disable until a new preview is generated.
 
 ## Results from the 2026-10-21 file-workflow check
 

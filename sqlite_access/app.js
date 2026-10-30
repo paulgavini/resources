@@ -3,6 +3,7 @@ const DATABASE_STORE = 'databases';
 const DATABASE_KEY = 'school-demo-default-v1';
 const SQLJS_VERSION = '1.14.2';
 const SAVED_QUERIES_TABLE = '__APP_SAVED_QUERIES_DO_NOT_EDIT';
+const SAVED_REPORTS_TABLE = '__APP_SAVED_REPORTS_DO_NOT_EDIT';
 const QUERY_DRAFT_KEY = 'sql_editor_draft';
 const DATABASE_FILENAME_KEY = 'database_filename';
 const RELATIONSHIP_LAYOUT_KEY = 'relationship_layout';
@@ -17,6 +18,11 @@ let activeTable = null;
 let designerEditingTable = null;
 let gridState = null;
 let drawingGrid = false;
+let datasheetFilters = new Map();
+let datasheetFilterTable = null;
+let openDatasheetFilterField = null;
+let datasheetFilterDraft = null;
+let openDatasheetFilterMenu = null;
 let queryDraftTimer = null;
 let sqlSuggestionItems = [];
 let sqlSuggestionIndex = 0;
@@ -34,6 +40,8 @@ let reportSelectedFields = new Set();
 let reportInitializedFields = new Set();
 let reportGroupFields = new Set();
 let lastQueryResultSet = null;
+let lastQuerySqlText = '';
+let pendingSavedReportDefinition = null;
 
 const SQL_KEYWORDS = `ABORT ACTION ADD AFTER ALL ALTER ANALYZE AND AS ASC ATTACH AUTOINCREMENT BEFORE BEGIN BETWEEN BY CASCADE CASE CAST CHECK COLLATE COLUMN COMMIT CONFLICT CONSTRAINT CREATE CROSS CURRENT_DATE CURRENT_TIME CURRENT_TIMESTAMP DATABASE DEFAULT DEFERRABLE DEFERRED DELETE DESC DETACH DISTINCT DROP EACH ELSE END ESCAPE EXCEPT EXCLUSIVE EXISTS EXPLAIN FAIL FILTER FIRST FOLLOWING FOR FOREIGN FROM FULL GLOB GROUP GROUPS HAVING IF IGNORE IMMEDIATE IN INDEX INDEXED INITIALLY INNER INSERT INSTEAD INTERSECT INTO IS ISNULL JOIN KEY LAST LEFT LIKE LIMIT MATCH MATERIALIZED NATURAL NO NOT NOTHING NOTNULL NULL NULLS OF OFFSET ON OR ORDER OTHERS OUTER OVER PARTITION PLAN PRAGMA PRECEDING PRIMARY QUERY RAISE RANGE RECURSIVE REFERENCES REGEXP REINDEX RELEASE RENAME REPLACE RESTRICT RIGHT ROLLBACK ROW ROWS SAVEPOINT SELECT SET TABLE TEMP TEMPORARY THEN TIES TO TRANSACTION TRIGGER UNBOUNDED UNION UNIQUE UPDATE USING VACUUM VALUES VIEW VIRTUAL WHEN WHERE WINDOW WITH WITHOUT`.split(' ');
 const SQL_FUNCTIONS = `ABS AVG CHANGES CHAR COALESCE COUNT DATE DATETIME DENSE_RANK FIRST_VALUE GROUP_CONCAT IFNULL INSTR JULIANDAY LAG LAST_VALUE LEAD LENGTH LIKE LOWER LTRIM MAX MIN NULLIF NTILE PRINTF QUOTE RANK REPLACE ROUND ROW_NUMBER RTRIM SIGN STRFTIME SUBSTR SUM TIME TOTAL TRIM TYPEOF UNICODE UNHEX UPPER ZEROBLOB`.split(' ');
@@ -98,7 +106,7 @@ function writeStoredValue(storage, key, value) {
 function removeLegacyInternalTables(database) {
   const internalTables = database.exec(`SELECT name FROM sqlite_master WHERE type = 'table';`)[0]?.values.map(([name]) => name) || [];
   for (const tableName of internalTables) {
-    if (tableName.toLowerCase().startsWith('__app_') && tableName.toUpperCase() !== SAVED_QUERIES_TABLE) {
+    if (tableName.toLowerCase().startsWith('__app_') && ![SAVED_QUERIES_TABLE, SAVED_REPORTS_TABLE].includes(tableName.toUpperCase())) {
       database.run(`DROP TABLE ${quoteIdentifier(tableName)};`);
     }
   }
@@ -117,6 +125,24 @@ function ensureSavedQueriesTable(database) {
     query_id INTEGER PRIMARY KEY AUTOINCREMENT,
     query_name TEXT NOT NULL UNIQUE,
     sql_text TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );`);
+}
+
+function ensureSavedReportsTable(database) {
+  const existingName = database.exec(`SELECT name FROM sqlite_master WHERE type = 'table' AND upper(name) = '${SAVED_REPORTS_TABLE}' LIMIT 1;`)[0]?.values[0]?.[0];
+  if (existingName) {
+    const existingColumns = database.exec(`PRAGMA table_info(${quoteIdentifier(existingName)});`)[0]?.values.map((column) => column[1]) || [];
+    if (!['report_id', 'report_name', 'report_json', 'created_at', 'updated_at'].every((column) => existingColumns.includes(column))) {
+      throw new Error(`This database already contains “${existingName}” with a different structure. Rename that table before using saved reports.`);
+    }
+    return;
+  }
+  database.run(`CREATE TABLE IF NOT EXISTS ${quoteIdentifier(SAVED_REPORTS_TABLE)} (
+    report_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    report_name TEXT NOT NULL UNIQUE,
+    report_json TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );`);
@@ -245,6 +271,7 @@ async function openDatabaseFile(storage, file, handle = null) {
   removeLegacyInternalTables(candidate);
   candidate.run('PRAGMA foreign_keys = ON;');
   ensureSavedQueriesTable(candidate);
+  ensureSavedReportsTable(candidate);
   const currentDraft = elements.sqlInput.value;
   await writeStoredValue(storage, QUERY_DRAFT_KEY, currentDraft);
 
@@ -263,6 +290,8 @@ async function openDatabaseFile(storage, file, handle = null) {
 
   const previousDatabase = db;
   db = candidate;
+  lastQuerySqlText = '';
+  pendingSavedReportDefinition = null;
   queryDesignTables = []; queryDesignFields = []; queryDesignPositions = {}; queryDesignTotalsMode = false;
   resetReportConfiguration();
   resetReportPreview();
@@ -273,9 +302,12 @@ async function openDatabaseFile(storage, file, handle = null) {
   setDatabaseFileName(file.name);
   await writeStoredValue(storage, DATABASE_FILENAME_KEY, file.name);
   activeTable = listTables()[0] || null;
+  datasheetFilters.clear();
+  datasheetFilterTable = activeTable;
   renderSchema();
   renderDataGrid();
   refreshSavedQueries('');
+  refreshSavedReports('');
   if (!document.querySelector('#reports-panel').hidden) refreshReportSources();
   if (!document.querySelector('#relationships-panel').hidden) renderRelationships();
   await saveDatabase(storage);
@@ -328,6 +360,7 @@ async function createNewDatabase(storage) {
     candidate = new SQLModule.Database();
     candidate.run('PRAGMA foreign_keys = ON;');
     ensureSavedQueriesTable(candidate);
+    ensureSavedReportsTable(candidate);
     downloadDatabaseCopy(candidate.export(), fileName);
   }
   await flushQueryDraft(storage);
@@ -337,6 +370,7 @@ async function createNewDatabase(storage) {
     candidate = new SQLModule.Database();
     candidate.run('PRAGMA foreign_keys = ON;');
     ensureSavedQueriesTable(candidate);
+    ensureSavedReportsTable(candidate);
     try {
       await writeDatabaseFile(handle, candidate.export());
     } catch (error) {
@@ -348,6 +382,8 @@ async function createNewDatabase(storage) {
 
   const previousDatabase = db;
   db = candidate;
+  lastQuerySqlText = '';
+  pendingSavedReportDefinition = null;
   queryDesignTables = []; queryDesignFields = []; queryDesignPositions = {}; queryDesignTotalsMode = false;
   resetReportConfiguration();
   resetReportPreview();
@@ -360,9 +396,12 @@ async function createNewDatabase(storage) {
   await writeStoredValue(storage, DATABASE_FILENAME_KEY, fileName);
   await writeStoredValue(storage, QUERY_DRAFT_KEY, initialDraft);
   activeTable = null;
+  datasheetFilters.clear();
+  datasheetFilterTable = null;
   renderSchema();
   renderDataGrid();
   refreshSavedQueries('');
+  refreshSavedReports('');
   elements.results.innerHTML = '<div class="welcome-state"><span class="welcome-icon" aria-hidden="true">⌁</span><strong>Run a query to see results</strong><span>Try editing the sample query above.</span></div>';
   elements.resultCount.textContent = 'Ready';
   elements.resultTime.textContent = '';
@@ -592,6 +631,217 @@ async function deleteSavedQuery(storage) {
   feedback.textContent = `Deleted “${name}”.`;
 }
 
+function refreshSavedReports(selectedName = document.querySelector('#saved-report-select')?.value || '') {
+  const select = document.querySelector('#saved-report-select');
+  if (!select || !db) return;
+  const rows = db.exec(`SELECT report_name FROM ${quoteIdentifier(SAVED_REPORTS_TABLE)} ORDER BY report_name COLLATE NOCASE;`)[0]?.values || [];
+  select.replaceChildren();
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = rows.length ? 'Choose a saved report…' : 'No saved reports yet';
+  select.append(placeholder);
+  for (const [name] of rows) {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    select.append(option);
+  }
+  if (rows.some(([name]) => name === selectedName)) select.value = selectedName;
+  document.querySelector('#load-saved-report').disabled = !select.value;
+  document.querySelector('#delete-saved-report').disabled = !select.value;
+}
+
+function askForSavedReportName(currentName = '') {
+  const dialog = document.querySelector('#saved-report-name-dialog');
+  const form = document.querySelector('#saved-report-name-form');
+  const input = document.querySelector('#saved-report-name-input');
+  input.value = currentName;
+  input.setCustomValidity('');
+  return new Promise((resolve) => {
+    let finished = false;
+    const clearValidity = () => input.setCustomValidity('');
+    const finish = (value) => {
+      if (finished) return;
+      finished = true;
+      form.removeEventListener('submit', submit);
+      dialog.removeEventListener('close', closed);
+      input.removeEventListener('input', clearValidity);
+      resolve(value);
+    };
+    const submit = (event) => {
+      event.preventDefault();
+      const name = input.value.trim();
+      if (!name) {
+        input.setCustomValidity('Enter a name for this report.');
+        input.reportValidity();
+        return;
+      }
+      finish(name);
+      dialog.close();
+    };
+    const closed = () => finish(null);
+    input.addEventListener('input', clearValidity);
+    form.addEventListener('submit', submit);
+    dialog.addEventListener('close', closed);
+    dialog.showModal();
+    input.focus();
+    input.select();
+  });
+}
+
+function reportFieldReference(field) {
+  return field.table === '$query'
+    ? { index: field.index, name: field.name }
+    : { table: field.table, name: field.name };
+}
+
+function currentReportDefinition() {
+  const fields = getAvailableReportFields();
+  const selected = fields.filter((field) => reportSelectedFields.has(field.token));
+  if (!selected.length) throw new Error('Select at least one report field before saving.');
+  if (reportSourceMode === 'query' && (!lastQueryResultSet || !lastQuerySqlText)) {
+    throw new Error('Run a SQL query before saving a report based on query results.');
+  }
+  const sortField = fields.find((field) => field.token === document.querySelector('#report-sort-field').value);
+  const summaryField = fields.find((field) => field.token === document.querySelector('#report-summary-field').value);
+  return {
+    version: 1,
+    sourceMode: reportSourceMode,
+    title: document.querySelector('#report-title').value,
+    table: reportSourceMode === 'related' ? document.querySelector('#report-table').value : null,
+    selectedFields: selected.map(reportFieldReference),
+    groupFields: fields.filter((field) => reportGroupFields.has(field.token)).map(reportFieldReference),
+    sortField: sortField ? reportFieldReference(sortField) : null,
+    sortDirection: document.querySelector('#report-sort-direction').value,
+    summaryFunction: document.querySelector('#report-summary-function').value,
+    summaryField: summaryField ? reportFieldReference(summaryField) : null,
+    querySql: reportSourceMode === 'query' ? lastQuerySqlText : '',
+  };
+}
+
+async function saveSavedReport(storage) {
+  const feedback = document.querySelector('#saved-report-feedback');
+  const definition = currentReportDefinition();
+  const currentName = document.querySelector('#saved-report-select').value;
+  const name = await askForSavedReportName(currentName);
+  if (name === null) return;
+  const lookup = db.prepare(`SELECT 1 FROM ${quoteIdentifier(SAVED_REPORTS_TABLE)} WHERE report_name = ?;`);
+  let exists;
+  try {
+    lookup.bind([name]);
+    exists = lookup.step();
+  } finally {
+    lookup.free();
+  }
+  if (exists && !await askForAppConfirmation('Replace saved report?', `A saved report named “${name}” already exists. Replace it?`, 'Replace')) return;
+  const statement = db.prepare(exists
+    ? `UPDATE ${quoteIdentifier(SAVED_REPORTS_TABLE)} SET report_json = ?, updated_at = CURRENT_TIMESTAMP WHERE report_name = ?;`
+    : `INSERT INTO ${quoteIdentifier(SAVED_REPORTS_TABLE)} (report_name, report_json) VALUES (?, ?);`);
+  try {
+    statement.run(exists ? [JSON.stringify(definition), name] : [name, JSON.stringify(definition)]);
+  } finally {
+    statement.free();
+  }
+  await saveDatabase(storage);
+  refreshSavedReports(name);
+  feedback.classList.remove('is-error');
+  feedback.textContent = `Saved “${name}” with this database.`;
+}
+
+function applySavedReportOptions(definition, fields) {
+  const findField = (reference) => fields.find((field) => reference &&
+    (reference.table ? field.table === reference.table && field.name === reference.name
+      : field.table === '$query' && field.index === reference.index && field.name === reference.name))
+    || fields.find((field) => reference && field.name === reference.name);
+  reportSelectedFields = new Set((definition.selectedFields || []).map((reference) => findField(reference)?.token).filter(Boolean));
+  reportGroupFields = new Set((definition.groupFields || []).map((reference) => findField(reference)?.token).filter(Boolean));
+  reportInitializedFields = new Set(fields.map((field) => field.token));
+  document.querySelector('#report-title').value = definition.title || 'Database report';
+  document.querySelector('#report-title').dataset.userEdited = 'true';
+  document.querySelector('#report-sort-direction').value = definition.sortDirection === 'DESC' ? 'DESC' : 'ASC';
+  document.querySelector('#report-summary-function').value = ['NONE', 'SUM', 'AVG'].includes(definition.summaryFunction) ? definition.summaryFunction : 'NONE';
+  refreshReportFields();
+  const sortField = findField(definition.sortField);
+  const summaryField = findField(definition.summaryField);
+  document.querySelector('#report-sort-field').value = sortField?.token || '';
+  document.querySelector('#report-summary-field').value = summaryField?.token || '';
+  syncReportSummaryControls();
+}
+
+function loadSavedReport(storage) {
+  const name = document.querySelector('#saved-report-select').value;
+  if (!name) return;
+  const statement = db.prepare(`SELECT report_json FROM ${quoteIdentifier(SAVED_REPORTS_TABLE)} WHERE report_name = ?;`);
+  let raw = null;
+  try {
+    statement.bind([name]);
+    if (statement.step()) raw = statement.getAsObject().report_json;
+  } finally {
+    statement.free();
+  }
+  try {
+    const definition = JSON.parse(raw);
+    if (definition?.version !== 1 || !['related', 'query'].includes(definition.sourceMode)) throw new Error('This saved report has an unsupported format.');
+    const feedback = document.querySelector('#saved-report-feedback');
+    feedback.classList.remove('is-error');
+    if (definition.sourceMode === 'related') {
+      if (!listTables().includes(definition.table)) throw new Error(`The starting table “${definition.table}” is not in this database.`);
+      reportSourceMode = 'related';
+      document.querySelector('#report-table').value = definition.table;
+      reportJoins = [];
+      setReportSourceMode('related');
+      applySavedReportOptions(definition, getAvailableReportFields());
+      resetReportPreview();
+      activateTab('reports');
+      generateReport();
+      feedback.textContent = `Loaded “${name}”.`;
+      return;
+    }
+    if (lastQueryResultSet && lastQuerySqlText.trim() === String(definition.querySql || '').trim()) {
+      reportSourceMode = 'query';
+      setReportSourceMode('query');
+      applySavedReportOptions(definition, getAvailableReportFields());
+      resetReportPreview();
+      activateTab('reports');
+      generateReport();
+      feedback.textContent = `Loaded “${name}”.`;
+      return;
+    }
+    pendingSavedReportDefinition = definition;
+    reportSourceMode = 'query';
+    lastQueryResultSet = null;
+    lastQuerySqlText = '';
+    elements.sqlInput.value = definition.querySql || '';
+    updateJoinDiagram();
+    scheduleQueryDraftSave(storage);
+    renderResults([]);
+    setReportSourceMode('query');
+    activateTab('editor');
+    feedback.textContent = `Loaded “${name}”. Run its SQL to rebuild the report preview.`;
+  } catch (error) {
+    const feedback = document.querySelector('#saved-report-feedback');
+    feedback.textContent = error.message || 'The saved report could not be loaded.';
+    feedback.classList.add('is-error');
+  }
+}
+
+async function deleteSavedReport(storage) {
+  const select = document.querySelector('#saved-report-select');
+  const name = select.value;
+  if (!name || !await askForAppConfirmation('Delete saved report?', `Delete the saved report “${name}”?`, 'Delete')) return;
+  const statement = db.prepare(`DELETE FROM ${quoteIdentifier(SAVED_REPORTS_TABLE)} WHERE report_name = ?;`);
+  try {
+    statement.run([name]);
+  } finally {
+    statement.free();
+  }
+  await saveDatabase(storage);
+  refreshSavedReports();
+  const feedback = document.querySelector('#saved-report-feedback');
+  feedback.classList.remove('is-error');
+  feedback.textContent = `Deleted “${name}”.`;
+}
+
 function renderSchema() {
   const tables = listTables();
 
@@ -791,7 +1041,7 @@ function refreshCsvPreview() {
 }
 
 function listTables() {
-  return db.exec(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND upper(name) <> '${SAVED_QUERIES_TABLE}' ORDER BY name;`)
+  return db.exec(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND upper(name) NOT IN ('${SAVED_QUERIES_TABLE}', '${SAVED_REPORTS_TABLE}') ORDER BY name;`)
     [0]?.values.map(([name]) => name) || [];
 }
 
@@ -881,7 +1131,217 @@ function datasheetSearchTerm() {
 }
 
 function datasheetRowMatches(row, term = datasheetSearchTerm()) {
-  return !term || row.values.some((value) => displayCellValue(value).toLocaleLowerCase().includes(term));
+  if (term && !row.values.some((value) => displayCellValue(value).toLocaleLowerCase().includes(term))) return false;
+  for (const [fieldName, selectedValues] of datasheetFilters) {
+    const fieldIndex = gridState?.columns.findIndex((column) => column.name === fieldName) ?? -1;
+    if (fieldIndex >= 0 && !selectedValues.has(datasheetFilterValueKey(row.values[fieldIndex]))) return false;
+  }
+  return true;
+}
+
+function datasheetFilterValueKey(value) {
+  return displayCellValue(value).toLocaleLowerCase();
+}
+
+function datasheetDistinctFilterValues(fieldName) {
+  const fieldIndex = gridState?.columns.findIndex((column) => column.name === fieldName) ?? -1;
+  if (fieldIndex < 0) return [];
+  const values = new Map();
+  gridState.rows.filter((row) => !row.isNew).forEach((row) => {
+    const value = row.values[fieldIndex];
+    const key = datasheetFilterValueKey(value);
+    if (!values.has(key)) values.set(key, { key, label: value === null || value === undefined || value === '' ? '(Blanks)' : displayCellValue(value) });
+  });
+  return [...values.values()].sort((left, right) => left.label.localeCompare(right.label, undefined, { numeric: true, sensitivity: 'base' }));
+}
+
+function datasheetViewHasFilters() {
+  return datasheetFilters.size > 0;
+}
+
+function updateDatasheetRowCount() {
+  if (!gridState) return { visibleRows: 0, viewIsFiltered: false };
+  const totalRows = gridState.rows.filter((row) => !row.isNew).length;
+  const visibleRows = gridState.rows.filter((row) => !row.isNew && datasheetRowMatches(row)).length;
+  const viewIsFiltered = Boolean(datasheetSearchTerm()) || datasheetViewHasFilters();
+  elements.dataRowCount.textContent = viewIsFiltered
+    ? `${visibleRows} of ${totalRows} rows`
+    : `${totalRows} row${totalRows === 1 ? '' : 's'}`;
+  return { visibleRows, viewIsFiltered };
+}
+
+function renderDatasheetFilterOptions(menu, fieldName, selectedValues) {
+  const list = menu.querySelector('.datasheet-filter-options');
+  const search = menu.querySelector('.datasheet-filter-search').value.trim().toLocaleLowerCase();
+  const allValues = datasheetDistinctFilterValues(fieldName);
+  const matching = search ? allValues.filter((item) => item.label.toLocaleLowerCase().includes(search)) : allValues;
+  const shown = matching.slice(0, 500);
+  list.replaceChildren();
+  for (const item of shown) {
+    const label = document.createElement('label');
+    label.className = 'datasheet-filter-option';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = selectedValues.has(item.key);
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) selectedValues.add(item.key);
+      else selectedValues.delete(item.key);
+      updateDatasheetFilterSelectionCount(menu, selectedValues, allValues.length);
+    });
+    const text = document.createElement('span');
+    text.textContent = item.label;
+    label.append(checkbox, text);
+    list.append(label);
+  }
+  menu.querySelector('.datasheet-filter-limit').hidden = matching.length <= shown.length;
+  menu.querySelector('.datasheet-filter-empty').hidden = allValues.length > 0 && matching.length > 0;
+  menu.querySelector('.datasheet-filter-empty').textContent = allValues.length ? 'No values match your search.' : 'This field has no values to filter.';
+  updateDatasheetFilterSelectionCount(menu, selectedValues, allValues.length);
+}
+
+function updateDatasheetFilterSelectionCount(menu, selectedValues, valueCount) {
+  menu.querySelector('.datasheet-filter-count').textContent = `${selectedValues.size} of ${valueCount} selected`;
+}
+
+function positionDatasheetFilterMenu() {
+  const menu = openDatasheetFilterMenu;
+  const button = menu?.filterButton;
+  if (!menu || menu.hidden || !button?.isConnected) return;
+  const anchor = button.getBoundingClientRect();
+  const margin = 8;
+  const width = Math.max(120, Math.min(270, window.innerWidth - margin * 2));
+  menu.style.width = `${width}px`;
+  menu.style.maxHeight = `${Math.max(80, window.innerHeight - margin * 2)}px`;
+  const left = Math.max(margin, Math.min(anchor.right - width, window.innerWidth - width - margin));
+  const menuHeight = menu.getBoundingClientRect().height;
+  const spaceBelow = window.innerHeight - anchor.bottom - margin;
+  const spaceAbove = anchor.top - margin;
+  let top = anchor.bottom + 4;
+  if (spaceBelow < menuHeight && spaceAbove > spaceBelow) top = anchor.top - menuHeight - 4;
+  top = Math.max(margin, Math.min(top, window.innerHeight - menuHeight - margin));
+  menu.style.left = `${left}px`;
+  menu.style.top = `${top}px`;
+}
+
+function closeDatasheetFilterMenu(restoreFocus = false) {
+  const menu = openDatasheetFilterMenu;
+  const button = menu?.filterButton;
+  if (menu) menu.remove();
+  if (button) {
+    button.setAttribute('aria-expanded', 'false');
+    if (restoreFocus && button.isConnected) button.focus();
+  }
+  openDatasheetFilterMenu = null;
+  openDatasheetFilterField = null;
+  datasheetFilterDraft = null;
+}
+
+function createDatasheetFilterMenu(fieldName) {
+  const menu = document.createElement('div');
+  menu.className = 'datasheet-filter-menu';
+  menu.hidden = true;
+  menu.setAttribute('role', 'dialog');
+  menu.setAttribute('aria-label', `Filter ${fieldName}`);
+  const top = document.createElement('div');
+  top.className = 'datasheet-filter-menu-top';
+  const search = document.createElement('input');
+  search.className = 'text-input datasheet-filter-search';
+  search.type = 'search';
+  search.placeholder = 'Search values';
+  search.setAttribute('aria-label', `Search ${fieldName} values`);
+  top.append(search);
+  const actions = document.createElement('div');
+  actions.className = 'datasheet-filter-menu-actions';
+  const selectAll = document.createElement('button');
+  selectAll.type = 'button';
+  selectAll.className = 'text-button';
+  selectAll.textContent = 'Select all';
+  selectAll.setAttribute('aria-label', `Select all ${fieldName} values`);
+  const selectNone = document.createElement('button');
+  selectNone.type = 'button';
+  selectNone.className = 'text-button';
+  selectNone.textContent = 'Select none';
+  selectNone.setAttribute('aria-label', `Select no ${fieldName} values`);
+  const clearFilter = document.createElement('button');
+  clearFilter.type = 'button';
+  clearFilter.className = 'text-button';
+  clearFilter.textContent = 'Clear filter';
+  actions.append(selectAll, selectNone, clearFilter);
+  const count = document.createElement('div');
+  count.className = 'datasheet-filter-count';
+  const options = document.createElement('div');
+  options.className = 'datasheet-filter-options';
+  const empty = document.createElement('div');
+  empty.className = 'datasheet-filter-empty';
+  empty.hidden = true;
+  const limit = document.createElement('div');
+  limit.className = 'datasheet-filter-limit';
+  limit.hidden = true;
+  limit.textContent = 'Showing 500 values. Search to find more.';
+  const footer = document.createElement('div');
+  footer.className = 'datasheet-filter-menu-footer';
+  const cancel = document.createElement('button');
+  cancel.type = 'button';
+  cancel.className = 'secondary-button';
+  cancel.textContent = 'Cancel';
+  const apply = document.createElement('button');
+  apply.type = 'button';
+  apply.className = 'primary-button';
+  apply.textContent = 'Apply';
+  footer.append(cancel, apply);
+  menu.append(top, actions, count, options, empty, limit, footer);
+  search.addEventListener('input', () => renderDatasheetFilterOptions(menu, fieldName, datasheetFilterDraft));
+  menu.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    closeDatasheetFilterMenu(true);
+  });
+  const selectMatchingValues = (checked) => {
+    const searchTerm = search.value.trim().toLocaleLowerCase();
+    const matchingValues = datasheetDistinctFilterValues(fieldName).filter((item) => !searchTerm || item.label.toLocaleLowerCase().includes(searchTerm));
+    matchingValues.forEach((item) => checked ? datasheetFilterDraft.add(item.key) : datasheetFilterDraft.delete(item.key));
+    renderDatasheetFilterOptions(menu, fieldName, datasheetFilterDraft);
+  };
+  selectAll.addEventListener('click', () => selectMatchingValues(true));
+  selectNone.addEventListener('click', () => selectMatchingValues(false));
+  clearFilter.addEventListener('click', () => {
+    datasheetFilters.delete(fieldName);
+    closeDatasheetFilterMenu();
+    renderDataGrid();
+  });
+  cancel.addEventListener('click', () => {
+    closeDatasheetFilterMenu(true);
+  });
+  apply.addEventListener('click', () => {
+    const allKeys = new Set(datasheetDistinctFilterValues(fieldName).map((item) => item.key));
+    if (datasheetFilterDraft.size >= allKeys.size && [...allKeys].every((key) => datasheetFilterDraft.has(key))) datasheetFilters.delete(fieldName);
+    else datasheetFilters.set(fieldName, new Set(datasheetFilterDraft));
+    closeDatasheetFilterMenu();
+    renderDataGrid();
+  });
+  return menu;
+}
+
+function openDatasheetFilter(fieldName, button, menu) {
+  if (openDatasheetFilterField === fieldName && !menu.hidden) {
+    closeDatasheetFilterMenu();
+    return;
+  }
+  closeDatasheetFilterMenu();
+  document.querySelectorAll('.datasheet-filter-button').forEach((item) => item.setAttribute('aria-expanded', 'false'));
+  const values = datasheetDistinctFilterValues(fieldName);
+  const currentFilter = datasheetFilters.get(fieldName);
+  menu.querySelector('.datasheet-filter-menu-actions button:last-child').disabled = !currentFilter;
+  datasheetFilterDraft = currentFilter ? new Set(currentFilter) : new Set(values.map((item) => item.key));
+  openDatasheetFilterField = fieldName;
+  menu.hidden = false;
+  menu.filterButton = button;
+  document.body.append(menu);
+  openDatasheetFilterMenu = menu;
+  button.setAttribute('aria-expanded', 'true');
+  menu.querySelector('.datasheet-filter-search').value = '';
+  renderDatasheetFilterOptions(menu, fieldName, datasheetFilterDraft);
+  positionDatasheetFilterMenu();
+  menu.querySelector('.datasheet-filter-search').focus();
 }
 
 function sortDatasheetRows() {
@@ -912,6 +1372,9 @@ function updateDatasheetViewControls(columns = []) {
   const sortField = document.querySelector('#datasheet-sort-field');
   const sortDirection = document.querySelector('#datasheet-sort-direction');
   const clear = document.querySelector('#datasheet-clear-view');
+  for (const fieldName of datasheetFilters.keys()) {
+    if (!columns.some((column) => column.name === fieldName)) datasheetFilters.delete(fieldName);
+  }
   const previousField = sortField.value;
   search.disabled = columns.length === 0;
   sortField.replaceChildren(new Option('No sorting', ''));
@@ -919,15 +1382,20 @@ function updateDatasheetViewControls(columns = []) {
   sortField.disabled = columns.length === 0;
   sortField.value = columns.some((column) => column.name === previousField) ? previousField : '';
   sortDirection.disabled = columns.length === 0 || !sortField.value;
-  clear.disabled = !search.value && !sortField.value;
+  clear.disabled = !search.value && !sortField.value && !datasheetViewHasFilters();
 }
 
 function renderDataGrid() {
+  closeDatasheetFilterMenu();
   const title = document.querySelector('#selected-table-name');
   const deleteTableButton = document.querySelector('#datasheet-delete-table');
   const availableTables = listTables();
   if (!activeTable || !availableTables.includes(activeTable)) activeTable = availableTables[0] || null;
   if (!activeTable) {
+    datasheetFilters.clear();
+    datasheetFilterTable = null;
+    openDatasheetFilterField = null;
+    datasheetFilterDraft = null;
     deleteTableButton.disabled = true;
     gridState = null;
     title.textContent = 'No tables yet';
@@ -943,6 +1411,12 @@ function renderDataGrid() {
     elements.dataFeedback.textContent = '';
     elements.dataFeedback.classList.remove('is-error');
     return;
+  }
+  if (datasheetFilterTable !== activeTable) {
+    datasheetFilters.clear();
+    datasheetFilterTable = activeTable;
+    openDatasheetFilterField = null;
+    datasheetFilterDraft = null;
   }
   gridState = { table: activeTable, ...readTableData(activeTable) };
   deleteTableButton.disabled = false;
@@ -962,16 +1436,12 @@ function renderDataGrid() {
   elements.tableList.querySelectorAll('button').forEach((button) => {
     button.classList.toggle('is-selected', button.lastElementChild?.textContent === activeTable);
   });
-  const totalRows = gridState.rows.filter((row) => !row.isNew).length;
-  const visibleRows = gridState.rows.filter((row) => !row.isNew && datasheetRowMatches(row)).length;
-  elements.dataRowCount.textContent = datasheetSearchTerm()
-    ? `${visibleRows} of ${totalRows} rows`
-    : `${totalRows} row${totalRows === 1 ? '' : 's'}`;
+  const { visibleRows, viewIsFiltered } = updateDatasheetRowCount();
   elements.dataFeedback.classList.remove('is-error');
   if (!gridState.keyMode) {
     elements.dataFeedback.textContent = 'This table has no editable row key, so its data is shown read-only.';
-  } else if (datasheetSearchTerm() && visibleRows === 0) {
-    elements.dataFeedback.textContent = `No rows match “${document.querySelector('#datasheet-search').value.trim()}”.`;
+  } else if (viewIsFiltered && visibleRows === 0) {
+    elements.dataFeedback.textContent = 'No rows match the current search and filters.';
   } else {
     elements.dataFeedback.textContent = '';
   }
@@ -1005,14 +1475,48 @@ function drawDataGrid() {
   header.append(rowNumberHeading);
   for (const column of gridState.columns) {
     const cell = document.createElement('th');
+    const heading = document.createElement('div');
+    heading.className = 'field-heading-layout';
     const fieldButton = document.createElement('button');
     fieldButton.className = 'field-heading-button';
     fieldButton.type = 'button';
     fieldButton.textContent = column.name;
     fieldButton.title = `${column.name}${column.type ? ` · ${column.type}` : ''} · Click to edit field information`;
     fieldButton.setAttribute('aria-label', `Edit ${column.name} field information`);
-    fieldButton.addEventListener('click', () => openFieldDesigner(gridState.table, column.name));
-    cell.append(fieldButton);
+    fieldButton.addEventListener('click', () => {
+      closeDatasheetFilterMenu();
+      openFieldDesigner(gridState.table, column.name);
+    });
+    heading.append(fieldButton);
+    const filterButton = document.createElement('button');
+    filterButton.type = 'button';
+    filterButton.className = 'datasheet-filter-button';
+    const filterApplied = datasheetFilters.has(column.name);
+    filterButton.title = filterApplied ? `Filter ${column.name} (applied)` : `Filter ${column.name}`;
+    filterButton.setAttribute('aria-label', filterApplied ? `Filter ${column.name}, filter applied` : `Filter ${column.name}`);
+    filterButton.setAttribute('aria-haspopup', 'dialog');
+    filterButton.setAttribute('aria-expanded', 'false');
+    if (filterApplied) {
+      filterButton.classList.add('is-filtered');
+      const filterIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      filterIcon.classList.add('datasheet-filter-icon');
+      filterIcon.setAttribute('viewBox', '0 0 16 16');
+      filterIcon.setAttribute('aria-hidden', 'true');
+      const funnel = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      funnel.setAttribute('d', 'M1.5 2.5h13L9 8v5l-2 1V8L1.5 2.5z');
+      filterIcon.append(funnel);
+      filterButton.append(filterIcon);
+    } else {
+      filterButton.textContent = '\u25BE';
+    }
+    const menu = createDatasheetFilterMenu(column.name);
+    filterButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      openDatasheetFilter(column.name, filterButton, menu);
+    });
+    menu.filterButton = filterButton;
+    heading.append(filterButton);
+    cell.append(heading);
     header.append(cell);
   }
   head.append(header);
@@ -1049,6 +1553,7 @@ function drawDataGrid() {
   table.append(head, body);
   container.append(table);
   drawingGrid = false;
+  updateDatasheetRowCount();
 }
 
 function ensureGridViewRow(viewIndex) {
@@ -1212,10 +1717,75 @@ function addQueryDesignTable(table) {
 
 function addQueryDesignField(table, field) {
   if (!queryDesignTables.includes(table)) addQueryDesignTable(table);
-  if (!getTableSchema(table).some((column) => column.name === field)) return;
-  if (!queryDesignFields.some((item) => item.table === table && item.field === field)) queryDesignFields.push({ table, field, total: 'GROUP BY', sort: '', show: true, criteria: '' });
+  const schemaField = getTableSchema(table).find((column) => column.name === field);
+  if (!schemaField) return;
+  const duplicate = queryDesignFields.some((item) => item.table === table && item.field === field);
+  const numericField = /INT|REAL|FLOA|DOUB|NUM|DEC/i.test(schemaField.type);
+  queryDesignFields.push({ table, field, total: queryDesignTotalsMode && duplicate && numericField ? 'SUM' : 'GROUP BY', sort: '', show: true, criteria: '' });
   renderQueryDesignGrid();
-  queryDesignFeedback(`Added ${table}.${field}.`);
+  queryDesignFeedback(`${duplicate ? 'Added another instance of' : 'Added'} ${table}.${field}. Set each instance’s Total independently.`);
+}
+
+function buildQueryDesignFromClause() {
+  if (!queryDesignTables.length) throw new Error('Add at least one table to the design surface.');
+  const root = queryDesignTables[0];
+  const joined = new Set([root]);
+  const from = [`FROM ${quoteIdentifier(root)}`];
+  while (joined.size < queryDesignTables.length) {
+    let match = null;
+    for (const relationship of getRelationships()) {
+      const childReady = joined.has(relationship.childTable) && queryDesignTables.includes(relationship.targetTable) && !joined.has(relationship.targetTable);
+      const parentReady = joined.has(relationship.targetTable) && queryDesignTables.includes(relationship.childTable) && !joined.has(relationship.childTable);
+      if (childReady || parentReady) { match = { relationship, next: childReady ? relationship.targetTable : relationship.childTable }; break; }
+    }
+    if (!match) {
+      const next = queryDesignTables.find((table) => !joined.has(table));
+      from.push(`CROSS JOIN ${quoteIdentifier(next)}`);
+      joined.add(next);
+      continue;
+    }
+    const { relationship, next } = match;
+    const conditions = relationship.from.map((field, index) => `${quoteIdentifier(relationship.childTable)}.${quoteIdentifier(field)} = ${quoteIdentifier(relationship.targetTable)}.${quoteIdentifier(relationship.to[index])}`);
+    from.push(`LEFT JOIN ${quoteIdentifier(next)} ON ${conditions.join(' AND ')}`);
+    joined.add(next);
+  }
+  return from.join('\n');
+}
+
+function validateCalculatedQueryField(name, expression) {
+  const cleanName = name.trim();
+  const cleanExpression = expression.trim();
+  if (!cleanName) throw new Error('Enter a name for the calculated field.');
+  if (cleanName.length > 100) throw new Error('The calculated field name must be 100 characters or fewer.');
+  if (queryDesignFields.some((item) => item.field.toLocaleLowerCase() === cleanName.toLocaleLowerCase())) {
+    throw new Error('Choose a result name that is different from the fields already in the query grid.');
+  }
+  if (!cleanExpression) throw new Error('Enter an expression for the calculated field.');
+  if (cleanExpression.length > 1000) throw new Error('The expression must be 1,000 characters or fewer.');
+  if (/[;\u0000]|--|\/\*|\*\//.test(cleanExpression)) throw new Error('Enter one SQLite expression without comments or statement separators.');
+  const sql = `SELECT (${cleanExpression}) AS ${quoteIdentifier(cleanName)}\n${buildQueryDesignFromClause()}\nLIMIT 0;`;
+  try {
+    db.exec(sql);
+  } catch (error) {
+    throw new Error(`The expression could not be validated: ${error.message}`);
+  }
+  return { name: cleanName, expression: cleanExpression };
+}
+
+function addCalculatedQueryField(name, expression) {
+  const field = validateCalculatedQueryField(name, expression);
+  queryDesignFields.push({
+    isCalculated: true,
+    table: 'Calculated field',
+    field: field.name,
+    expression: field.expression,
+    total: 'GROUP BY',
+    sort: '',
+    show: true,
+    criteria: '',
+  });
+  renderQueryDesignGrid();
+  queryDesignFeedback(`Added calculated field ${field.name}. It exists in query results only.`);
 }
 
 function renderQueryDesigner() {
@@ -1275,6 +1845,16 @@ function renderQueryDesignLines() {
   }
 }
 
+function reorderQueryDesignField(sourceIndex, destinationIndex) {
+  if (sourceIndex < 0 || sourceIndex >= queryDesignFields.length || destinationIndex < 0 || destinationIndex >= queryDesignFields.length || sourceIndex === destinationIndex) return;
+  const [field] = queryDesignFields.splice(sourceIndex, 1);
+  queryDesignFields.splice(destinationIndex, 0, field);
+  renderQueryDesignGrid();
+  const row = document.querySelector(`#query-design-grid-body [data-query-field-index="${destinationIndex}"]`);
+  row?.focus();
+  queryDesignFeedback(`Moved ${field.field} to position ${destinationIndex + 1}.`);
+}
+
 function renderQueryDesignGrid() {
   const body = document.querySelector('#query-design-grid-body'); body.replaceChildren();
   document.querySelector('#query-design-total-heading').hidden = !queryDesignTotalsMode;
@@ -1287,13 +1867,53 @@ function renderQueryDesignGrid() {
     const row = document.createElement('tr'); const field = document.createElement('td'); field.className = 'query-grid-field'; field.textContent = item.field; const table = document.createElement('td'); table.className = 'query-grid-table'; table.textContent = item.table;
     if (!item.total) item.total = 'GROUP BY';
     const totalCell = document.createElement('td'); totalCell.hidden = !queryDesignTotalsMode;
-    const total = document.createElement('select'); total.className = 'query-grid-control query-grid-total'; total.setAttribute('aria-label', `Total for ${item.field}`);
+    const total = document.createElement('select'); total.className = 'query-grid-control query-grid-total'; total.setAttribute('aria-label', `Total for ${item.field}, instance ${index + 1}`);
     [['GROUP BY', 'Group By'], ['SUM', 'Sum'], ['AVG', 'Avg'], ['COUNT', 'Count'], ['MIN', 'Min'], ['MAX', 'Max'], ['WHERE', 'Where']].forEach(([value, label]) => { const option = document.createElement('option'); option.value = value; option.textContent = label; total.append(option); });
     total.value = item.total; total.addEventListener('change', () => { item.total = total.value; renderQueryDesignGrid(); }); totalCell.append(total);
-    const sortCell = document.createElement('td'); const sort = document.createElement('select'); sort.className = 'query-grid-control'; sort.setAttribute('aria-label', `Sort ${item.field}`); [['', 'No sorting'], ['ASC', 'Ascending'], ['DESC', 'Descending']].forEach(([value, label]) => { const option = document.createElement('option'); option.value = value; option.textContent = label; sort.append(option); }); sort.value = item.sort; sort.disabled = queryDesignTotalsMode && item.total === 'WHERE'; sort.addEventListener('change', () => { item.sort = sort.value; }); sortCell.append(sort);
-    const showCell = document.createElement('td'); const show = document.createElement('input'); show.type = 'checkbox'; show.checked = queryDesignTotalsMode && item.total === 'WHERE' ? false : item.show; show.disabled = queryDesignTotalsMode && item.total === 'WHERE'; show.setAttribute('aria-label', `Show ${item.field}`); show.addEventListener('change', () => { item.show = show.checked; }); showCell.append(show);
-    const criteriaCell = document.createElement('td'); const criteria = document.createElement('input'); criteria.className = 'query-grid-control query-grid-criteria'; criteria.type = 'text'; criteria.value = item.criteria; criteria.placeholder = "e.g. >= 10, LIKE 'A%', IS NULL"; criteria.setAttribute('aria-label', `Criteria for ${item.field}`); criteria.addEventListener('input', () => { item.criteria = criteria.value; }); criteriaCell.append(criteria);
-    const removeCell = document.createElement('td'); const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'query-grid-remove'; remove.textContent = '×'; remove.title = `Remove ${item.field}`; remove.setAttribute('aria-label', `Remove ${item.field}`); remove.addEventListener('click', () => { queryDesignFields.splice(index, 1); renderQueryDesignGrid(); }); removeCell.append(remove);
+    const sortCell = document.createElement('td'); const sort = document.createElement('select'); sort.className = 'query-grid-control'; sort.setAttribute('aria-label', `Sort ${item.field}, instance ${index + 1}`); [['', 'No sorting'], ['ASC', 'Ascending'], ['DESC', 'Descending']].forEach(([value, label]) => { const option = document.createElement('option'); option.value = value; option.textContent = label; sort.append(option); }); sort.value = item.sort; sort.disabled = queryDesignTotalsMode && item.total === 'WHERE'; sort.addEventListener('change', () => { item.sort = sort.value; }); sortCell.append(sort);
+    const showCell = document.createElement('td'); const show = document.createElement('input'); show.type = 'checkbox'; show.checked = queryDesignTotalsMode && item.total === 'WHERE' ? false : item.show; show.disabled = queryDesignTotalsMode && item.total === 'WHERE'; show.setAttribute('aria-label', `Show ${item.field}, instance ${index + 1}`); show.addEventListener('change', () => { item.show = show.checked; }); showCell.append(show);
+    const criteriaCell = document.createElement('td'); const criteria = document.createElement('input'); criteria.className = 'query-grid-control query-grid-criteria'; criteria.type = 'text'; criteria.value = item.criteria; criteria.placeholder = "e.g. >= 10, LIKE 'A%', IS NULL"; criteria.setAttribute('aria-label', `Criteria for ${item.field}, instance ${index + 1}`); criteria.addEventListener('input', () => { item.criteria = criteria.value; }); criteriaCell.append(criteria);
+    const removeCell = document.createElement('td'); const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'query-grid-remove'; remove.textContent = '×'; remove.title = `Remove ${item.field}`; remove.setAttribute('aria-label', `Remove ${item.field}, instance ${index + 1}`); remove.addEventListener('click', () => { queryDesignFields.splice(index, 1); renderQueryDesignGrid(); }); removeCell.append(remove);
+    row.classList.add('query-grid-row');
+    row.dataset.queryFieldIndex = String(index);
+    row.draggable = true;
+    row.tabIndex = 0;
+    row.title = 'Drag to reorder · use Alt + Arrow Up or Down to move this field';
+    row.addEventListener('dragstart', (event) => {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('application/x-query-grid-row', String(index));
+      row.classList.add('is-dragging');
+    });
+    row.addEventListener('dragend', () => {
+      body.querySelectorAll('.is-dragging, .drop-before, .drop-after').forEach((element) => element.classList.remove('is-dragging', 'drop-before', 'drop-after'));
+    });
+    row.addEventListener('dragover', (event) => {
+      if (!event.dataTransfer.types.includes('application/x-query-grid-row')) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      const bounds = row.getBoundingClientRect();
+      const before = event.clientY < bounds.top + bounds.height / 2;
+      row.classList.toggle('drop-before', before);
+      row.classList.toggle('drop-after', !before);
+    });
+    row.addEventListener('dragleave', (event) => {
+      if (!row.contains(event.relatedTarget)) row.classList.remove('drop-before', 'drop-after');
+    });
+    row.addEventListener('drop', (event) => {
+      const sourceIndex = Number(event.dataTransfer.getData('application/x-query-grid-row'));
+      if (!Number.isInteger(sourceIndex) || sourceIndex < 0 || sourceIndex >= queryDesignFields.length) return;
+      event.preventDefault();
+      const bounds = row.getBoundingClientRect();
+      const before = event.clientY < bounds.top + bounds.height / 2;
+      let destinationIndex = index + (before ? 0 : 1);
+      if (sourceIndex < destinationIndex) destinationIndex -= 1;
+      reorderQueryDesignField(sourceIndex, destinationIndex);
+    });
+    row.addEventListener('keydown', (event) => {
+      if (!event.altKey || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+      event.preventDefault();
+      reorderQueryDesignField(index, index + (event.key === 'ArrowUp' ? -1 : 1));
+    });
     row.append(field, table, totalCell, sortCell, showCell, criteriaCell, removeCell); body.append(row);
   });
 }
@@ -1405,14 +2025,28 @@ function buildQueryDesignSql() {
   const outputFields = queryDesignFields.filter((item) => item.show && !(activeTotals && item.total === 'WHERE'));
   if (!queryDesignTables.length) throw new Error('Add at least one table to the design surface.');
   if (!outputFields.length) throw new Error('Select Show for at least one output field.');
-  const counts = new Map(); outputFields.forEach((item) => counts.set(item.field, (counts.get(item.field) || 0) + 1));
-  const sourceColumn = (item) => `${quoteIdentifier(item.table)}.${quoteIdentifier(item.field)}`;
+  const sourceColumn = (item) => item.isCalculated
+    ? `(${item.expression})`
+    : `${quoteIdentifier(item.table)}.${quoteIdentifier(item.field)}`;
   const selectExpression = (item) => {
     if (!activeTotals) return sourceColumn(item);
     if (item.total === 'SUM' || item.total === 'AVG' || item.total === 'COUNT' || item.total === 'MIN' || item.total === 'MAX') return `${item.total}(${sourceColumn(item)})`;
     return sourceColumn(item);
   };
-  const select = outputFields.map((item) => `${selectExpression(item)} AS ${quoteIdentifier(counts.get(item.field) > 1 ? `${item.table}.${item.field}` : item.field)}`);
+  const outputAliases = new Set();
+  const select = outputFields.map((item) => {
+    const sourceCount = outputFields.filter((candidate) => candidate.table === item.table && candidate.field === item.field).length;
+    const aggregate = activeTotals && ['SUM', 'AVG', 'COUNT', 'MIN', 'MAX'].includes(item.total);
+    const aggregateName = item.total[0] + item.total.slice(1).toLowerCase();
+    const baseAlias = aggregate && (item.isCalculated || sourceCount > 1) ? `${aggregateName} of ${item.field}`
+      : sourceCount > 1 && outputAliases.has(item.field) ? `${item.table}.${item.field}`
+        : item.field;
+    let alias = baseAlias;
+    let suffix = 2;
+    while (outputAliases.has(alias)) alias = `${baseAlias} (${suffix++})`;
+    outputAliases.add(alias);
+    return `${selectExpression(item)} AS ${quoteIdentifier(alias)}`;
+  });
   const root = queryDesignTables[0]; const joined = new Set([root]); const from = [`FROM ${quoteIdentifier(root)}`];
   while (joined.size < queryDesignTables.length) {
     let match = null;
@@ -1427,7 +2061,7 @@ function buildQueryDesignSql() {
   }
   const where = queryDesignFields
     .filter((item) => !activeTotals || item.total === 'WHERE' || item.total === 'GROUP BY')
-    .map((item) => queryCriteriaExpression(item, item.criteria)).filter(Boolean);
+    .map((item) => queryCriteriaExpression(item, item.criteria, sourceColumn(item))).filter(Boolean);
   const groupBy = activeTotals ? queryDesignFields.filter((item) => item.total === 'GROUP BY').map(sourceColumn) : [];
   const having = activeTotals ? queryDesignFields
     .filter((item) => ['SUM', 'AVG', 'COUNT', 'MIN', 'MAX'].includes(item.total))
@@ -1808,9 +2442,11 @@ function setReportFeedback(message, isError = false) {
 
 function invalidateReportPreview() {
   const printButton = document.querySelector('#print-report');
+  const exportButtons = ['#export-report-excel', '#export-report-word'].map((selector) => document.querySelector(selector));
   if (!printButton.disabled) {
     printButton.disabled = true;
-    setReportFeedback('Changes made · generate a new preview before printing.');
+    exportButtons.forEach((button) => { button.disabled = true; });
+    setReportFeedback('Changes made · generate a new preview before printing or exporting.');
   }
 }
 
@@ -1820,7 +2456,154 @@ function resetReportPreview() {
   preview.hidden = true;
   document.querySelector('#report-preview-placeholder').hidden = false;
   document.querySelector('#print-report').disabled = true;
+  document.querySelector('#export-report-excel').disabled = true;
+  document.querySelector('#export-report-word').disabled = true;
   setReportFeedback('');
+}
+
+function reportXmlText(value) {
+  return String(value ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '')
+    .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;').replaceAll("'", '&apos;');
+}
+
+function reportFileBaseName() {
+  const title = document.querySelector('#report-preview h1')?.textContent || 'DataNook report';
+  return title.trim().replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_').replace(/\s+/g, ' ').slice(0, 90) || 'DataNook report';
+}
+
+function downloadReportFile(blob, extension) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${reportFileBaseName()}.${extension}`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function getReportExportContent() {
+  const preview = document.querySelector('#report-preview');
+  if (preview.hidden || !preview.querySelector('.report-data-table')) throw new Error('Generate a current report preview before exporting.');
+  const table = preview.querySelector('.report-data-table');
+  return {
+    title: preview.querySelector('h1')?.textContent.trim() || 'Database report',
+    metadata: [...preview.querySelectorAll('.report-page-meta span')].map((item) => item.textContent.trim()),
+    footer: [...preview.querySelectorAll('.report-page-footer span')].map((item) => item.textContent.trim()),
+    headings: [...table.querySelectorAll('thead th')].map((cell) => cell.textContent.trim()),
+    bodyRows: [...table.querySelectorAll('tbody tr')].map((row) => ({
+      className: row.className,
+      cells: [...row.cells].map((cell) => ({ text: cell.textContent.trim(), span: Number(cell.colSpan) || 1, type: cell.dataset.exportType || '', value: cell.dataset.exportValue || '' })),
+    })),
+  };
+}
+
+function excelColumnName(number) {
+  let name = '';
+  for (let value = number; value > 0; value = Math.floor((value - 1) / 26)) name = String.fromCharCode(65 + ((value - 1) % 26)) + name;
+  return name;
+}
+
+function excelCell(reference, value, style = 0) {
+  if (value?.type === 'number' && Number.isFinite(Number(value.value))) return `<c r="${reference}" s="${style}"><v>${Number(value.value)}</v></c>`;
+  const text = typeof value === 'object' && value !== null ? value.text : value;
+  return `<c r="${reference}" t="inlineStr" s="${style}"><is><t xml:space="preserve">${reportXmlText(text)}</t></is></c>`;
+}
+
+function createExcelWorksheet(report) {
+  const count = Math.max(1, report.headings.length);
+  const rows = [];
+  const addRow = (cells, style = 0) => {
+    const rowNumber = rows.length + 1;
+    const normalized = cells.slice(0, count).map((value) => typeof value === 'object' && value !== null ? value : { text: value });
+    while (normalized.length < count) normalized.push({ text: '' });
+    rows.push(`<row r="${rowNumber}">${normalized.map((value, index) => excelCell(`${excelColumnName(index + 1)}${rowNumber}`, value, style)).join('')}</row>`);
+  };
+  addRow([report.title], 1);
+  report.metadata.forEach((line) => addRow([line], 2));
+  addRow([]);
+  addRow(report.headings, 3);
+  for (const row of report.bodyRows) {
+    const isGroup = row.className.includes('report-group-heading');
+    const isFooter = row.className.includes('report-group-footer');
+    addRow(row.cells.map((cell) => cell), isGroup ? 4 : isFooter ? 5 : 0);
+  }
+  if (report.footer.length) {
+    addRow([]);
+    addRow(report.footer, 2);
+  }
+  const lastCell = `${excelColumnName(count)}${rows.length}`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="5" topLeftCell="A6" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="18"/><cols>${Array.from({ length: count }, (_, index) => `<col min="${index + 1}" max="${index + 1}" width="22" customWidth="1"/>`).join('')}</cols><sheetData>${rows.join('')}</sheetData><autoFilter ref="A5:${lastCell}"/><pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.2" footer="0.2"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
+}
+
+function createExcelStyles() {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="3"><font><sz val="10"/><name val="Aptos"/></font><font><b/><sz val="16"/><color rgb="FF35483C"/><name val="Aptos Display"/></font><font><i/><sz val="9"/><color rgb="FF849188"/><name val="Aptos"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEDF5EF"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE8F1EB"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="6"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="0" fillId="2" borderId="0" xfId="0" applyFill="1"/><xf numFmtId="0" fontId="0" fillId="3" borderId="0" xfId="0" applyFill="1"/><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="right"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+}
+
+async function exportReportToExcel() {
+  try {
+    if (typeof JSZip === 'undefined') throw new Error('Excel export could not load. Check your internet connection and reload DataNook.');
+    const report = getReportExportContent();
+    const zip = new JSZip();
+    zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>');
+    zip.folder('_rels').file('.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+    zip.folder('xl').file('workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Report" sheetId="1" r:id="rId1"/></sheets></workbook>');
+    zip.folder('xl').folder('_rels').file('workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
+    zip.folder('xl').file('styles.xml', createExcelStyles());
+    zip.folder('xl').folder('worksheets').file('sheet1.xml', createExcelWorksheet(report));
+    const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    downloadReportFile(blob, 'xlsx');
+    setReportFeedback('Excel file downloaded.');
+  } catch (error) {
+    setReportFeedback(error.message || 'The Excel file could not be created.', true);
+  }
+}
+
+function wordRun(text, options = {}) {
+  const props = [options.bold ? '<w:b/>' : '', options.color ? `<w:color w:val="${options.color}"/>` : '', options.size ? `<w:sz w:val="${options.size}"/>` : ''].join('');
+  return `<w:r><w:rPr>${props}</w:rPr><w:t xml:space="preserve">${reportXmlText(text)}</w:t></w:r>`;
+}
+
+function wordParagraph(text, options = {}) {
+  const pPr = options.spaceAfter ? `<w:pPr><w:spacing w:after="${options.spaceAfter}"/></w:pPr>` : '';
+  return `<w:p>${pPr}${wordRun(text, options)}</w:p>`;
+}
+
+function createWordTable(report) {
+  const columnCount = Math.max(1, report.headings.length);
+  const grid = Array.from({ length: columnCount }, () => '<w:gridCol w:w="2200"/>').join('');
+  const rowXml = (cells, style = '') => `<w:tr>${cells.map((cell) => {
+    const span = Math.max(1, Math.min(columnCount, cell.span || 1));
+    const shading = style === 'heading' ? '<w:shd w:fill="EDF5EF"/>' : style === 'group' ? '<w:shd w:fill="E8F1EB"/>' : '';
+    const bold = style === 'heading' || style === 'group' || style === 'footer';
+    return `<w:tc><w:tcPr><w:tcW w:w="${2200 * span}" w:type="dxa"/>${span > 1 ? `<w:gridSpan w:val="${span}"/>` : ''}${shading}<w:vAlign w:val="center"/></w:tcPr>${wordParagraph(cell.text, { bold, size: style === 'footer' ? 18 : 20, color: style === 'footer' ? '6E8074' : '39483F' })}</w:tc>`;
+  }).join('')}</w:tr>`;
+  const rows = [rowXml(report.headings.map((text) => ({ text, span: 1 })), 'heading')];
+  for (const row of report.bodyRows) {
+    const type = row.className.includes('report-group-heading') ? 'group' : row.className.includes('report-group-footer') ? 'footer' : '';
+    rows.push(rowXml(row.cells, type));
+  }
+  return `<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders><w:top w:val="single" w:sz="4" w:color="D8E3DB"/><w:left w:val="single" w:sz="4" w:color="D8E3DB"/><w:bottom w:val="single" w:sz="4" w:color="D8E3DB"/><w:right w:val="single" w:sz="4" w:color="D8E3DB"/><w:insideH w:val="single" w:sz="3" w:color="E9EEEA"/><w:insideV w:val="single" w:sz="3" w:color="E9EEEA"/></w:tblBorders></w:tblPr><w:tblGrid>${grid}</w:tblGrid>${rows.join('')}</w:tbl>`;
+}
+
+async function exportReportToWord() {
+  try {
+    if (typeof JSZip === 'undefined') throw new Error('Word export could not load. Check your internet connection and reload DataNook.');
+    const report = getReportExportContent();
+    const zip = new JSZip();
+    zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+    zip.folder('_rels').file('.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+    const body = [wordParagraph(report.title, { bold: true, size: 36, color: '35483C' }), ...report.metadata.map((line) => wordParagraph(line, { size: 18, color: '849188' })), createWordTable(report)];
+    if (report.footer.length) body.push(wordParagraph(report.footer.join(' · '), { size: 18, color: '89958D' }));
+    const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body.join('')}<w:sectPr><w:pgSz w:w="15840" w:h="12240" w:orient="landscape"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="360" w:footer="360" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+    zip.folder('word').file('document.xml', documentXml);
+    const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    downloadReportFile(blob, 'docx');
+    setReportFeedback('Word file downloaded.');
+  } catch (error) {
+    setReportFeedback(error.message || 'The Word file could not be created.', true);
+  }
 }
 
 function resetReportConfiguration() {
@@ -1830,6 +2613,8 @@ function resetReportConfiguration() {
   reportInitializedFields = new Set();
   reportGroupFields = new Set();
   lastQueryResultSet = null;
+  lastQuerySqlText = '';
+  pendingSavedReportDefinition = null;
   document.querySelector('#report-source-mode').value = 'related';
   document.querySelector('#report-related-controls').hidden = false;
   document.querySelector('#report-query-source').hidden = true;
@@ -1875,6 +2660,10 @@ function appendReportDetails(body, rows, visibleFields) {
     visibleFields.forEach((field) => {
       const cell = document.createElement('td');
       const value = row[field.outputIndex];
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        cell.dataset.exportType = 'number';
+        cell.dataset.exportValue = String(value);
+      }
       cell.textContent = value === null || value === undefined ? '' : value instanceof Uint8Array ? `[BLOB · ${value.byteLength} bytes]` : String(value);
       rowElement.append(cell);
     });
@@ -2031,9 +2820,13 @@ function generateReport(event) {
     preview.hidden = false;
     placeholder.hidden = true;
     printButton.disabled = false;
+    document.querySelector('#export-report-excel').disabled = false;
+    document.querySelector('#export-report-word').disabled = false;
     setReportFeedback(`Preview ready · ${rows.length} record${rows.length === 1 ? '' : 's'}${groups.length ? ` · ${groups.length} grouping level${groups.length === 1 ? '' : 's'}` : ''}.`);
   } catch (error) {
     printButton.disabled = true;
+    document.querySelector('#export-report-excel').disabled = true;
+    document.querySelector('#export-report-word').disabled = true;
     setReportFeedback(error.message || 'The report could not be generated.', true);
   }
 }
@@ -2163,6 +2956,7 @@ function openFieldDesigner(tableName, fieldName) {
   document.querySelector('#designer-table-name').disabled = true;
   document.querySelector('#add-designer-field').disabled = false;
   document.querySelector('#designer-new-table').hidden = false;
+  document.querySelector('#designer-cancel').hidden = false;
   document.querySelector('#designer-submit').textContent = 'Save changes';
   document.querySelector('#designer-footer-note').textContent = 'Existing records are retained when the updated structure is compatible.';
   const fields = document.querySelector('#designer-fields');
@@ -2191,9 +2985,23 @@ function resetDesignerCreateMode() {
   document.querySelector('#designer-description').textContent = 'Define the columns and SQLite properties for a new table.';
   document.querySelector('#designer-table-name').disabled = false;
   document.querySelector('#designer-new-table').hidden = true;
+  document.querySelector('#designer-cancel').hidden = true;
   document.querySelector('#designer-submit').textContent = 'Create table';
   document.querySelector('#designer-submit').disabled = false;
   document.querySelector('#designer-footer-note').textContent = 'Changes are saved to this browser after the table is created.';
+}
+
+function cancelTableDesign() {
+  if (!designerEditingTable) return;
+  document.querySelector('#designer-fields').replaceChildren();
+  document.querySelector('#designer-table-name').value = '';
+  const feedback = document.querySelector('#designer-feedback');
+  feedback.textContent = '';
+  feedback.classList.remove('is-error');
+  resetDesignerCreateMode();
+  addDesignerField({ name: 'id', type: 'INTEGER', primaryKey: true, autoincrement: true });
+  addDesignerField({ name: 'name', type: 'TEXT' });
+  activateTab('data');
 }
 
 async function deleteSelectedTable(storage) {
@@ -2750,27 +3558,46 @@ async function runQuery(storage) {
   elements.resultTime.textContent = '';
   try {
     await writeStoredValue(storage, QUERY_DRAFT_KEY, elements.sqlInput.value);
-    if (sqlWritesToSavedQueryCatalog(sql)) {
-      throw new Error(`“${SAVED_QUERIES_TABLE}” is managed by DataNook. Use the saved-query controls instead of changing this table directly.`);
+    if (sqlWritesToAppManagedTable(sql)) {
+      throw new Error('This app-managed table is maintained by DataNook. Use the saved-item controls instead of changing it directly.');
     }
     const resultSets = db.exec(sql);
     lastQueryResultSet = resultSets.filter((result) => result.columns.length > 0).at(-1) || null;
+    lastQuerySqlText = sql;
+    const pendingDefinition = pendingSavedReportDefinition;
+    const canRestorePending = reportSourceMode === 'query' && pendingDefinition && sql.trim() === String(pendingDefinition.querySql || '').trim() && lastQueryResultSet;
+    if (pendingDefinition && !canRestorePending) pendingSavedReportDefinition = null;
     renderResults(resultSets);
     renderSchema();
     if (document.querySelector('.workspace').dataset.activeTab === 'data') renderDataGrid();
     if (document.querySelector('.workspace').dataset.activeTab === 'relationships') renderRelationships();
     refreshReportSources();
+    let loadedReportReady = false;
     if (reportSourceMode === 'query') {
-      reportSelectedFields = new Set();
-      reportInitializedFields = new Set();
-      reportGroupFields = new Set();
-      setReportSourceMode('query');
+      if (canRestorePending) {
+        setReportSourceMode('query');
+        applySavedReportOptions(pendingDefinition, getAvailableReportFields());
+        pendingSavedReportDefinition = null;
+        loadedReportReady = true;
+      } else {
+        reportSelectedFields = new Set();
+        reportInitializedFields = new Set();
+        reportGroupFields = new Set();
+        setReportSourceMode('query');
+      }
     }
     invalidateReportPreview();
     await saveDatabase(storage);
+    if (loadedReportReady) {
+      activateTab('reports');
+      generateReport();
+      document.querySelector('#saved-report-feedback').textContent = 'Saved report preview rebuilt from its SQL query.';
+    }
     elements.resultTime.textContent = `${Math.round(performance.now() - startedAt)} ms`;
   } catch (error) {
     lastQueryResultSet = null;
+    lastQuerySqlText = '';
+    pendingSavedReportDefinition = null;
     renderResults([]);
     refreshReportSources();
     if (reportSourceMode === 'query') {
@@ -2793,21 +3620,24 @@ async function runQuery(storage) {
   }
 }
 
-function sqlWritesToSavedQueryCatalog(sql) {
+function sqlWritesToAppManagedTable(sql) {
   const source = sql.replace(/'(?:''|[^'])*'/g, ' ')
     .replace(/--[^\r\n]*/g, ' ')
     .replace(/\/\*[\s\S]*?\*\//g, ' ');
-  const name = `(?:"${SAVED_QUERIES_TABLE}"|\`${SAVED_QUERIES_TABLE}\`|\\[${SAVED_QUERIES_TABLE}\\]|${SAVED_QUERIES_TABLE})`;
-  const target = `(?:main\\s*\\.\\s*)?${name}(?![\\w])`;
-  const patterns = [
-    new RegExp(`\\b(?:INSERT\\s+(?:OR\\s+\\w+\\s+)?INTO|REPLACE\\s+INTO|DELETE\\s+FROM)\\s+${target}`, 'i'),
-    new RegExp(`\\bUPDATE(?:\\s+OR\\s+\\w+)?\\s+${target}`, 'i'),
-    new RegExp(`\\b(?:DROP\\s+TABLE(?:\\s+IF\\s+EXISTS)?|ALTER\\s+TABLE)\\s+${target}`, 'i'),
-    new RegExp(`\\bCREATE\\s+(?:(?:TEMP|TEMPORARY)\\s+)?TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?${name}(?![\\w])`, 'i'),
-    new RegExp(`\\bCREATE\\s+(?:(?:TEMP|TEMPORARY)\\s+)?TRIGGER\\b[\\s\\S]*?\\bON\\s+${target}`, 'i'),
-    new RegExp(`\\bCREATE\\s+(?:UNIQUE\\s+)?INDEX\\b[\\s\\S]*?\\bON\\s+${target}`, 'i'),
-  ];
-  return patterns.some((pattern) => pattern.test(source));
+  return [SAVED_QUERIES_TABLE, SAVED_REPORTS_TABLE].some((tableName) => {
+    const tick = String.fromCharCode(96);
+    const name = '(?:"' + tableName + '"|' + tick + tableName + tick + '|\\[' + tableName + '\\]|' + tableName + ')';
+    const target = '(?:main\\s*\\.\\s*)?' + name + '(?![\\w])';
+    const patterns = [
+      new RegExp('\\b(?:INSERT\\s+(?:OR\\s+\\w+\\s+)?INTO|REPLACE\\s+INTO|DELETE\\s+FROM)\\s+' + target, 'i'),
+      new RegExp('\\bUPDATE(?:\\s+OR\\s+\\w+)?\\s+' + target, 'i'),
+      new RegExp('\\b(?:DROP\\s+TABLE(?:\\s+IF\\s+EXISTS)?|ALTER\\s+TABLE)\\s+' + target, 'i'),
+      new RegExp('\\bCREATE\\s+(?:(?:TEMP|TEMPORARY)\\s+)?TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?' + name + '(?![\\w])', 'i'),
+      new RegExp('\\bCREATE\\s+(?:(?:TEMP|TEMPORARY)\\s+)?TRIGGER\\b[\\s\\S]*?\\bON\\s+' + target, 'i'),
+      new RegExp('\\bCREATE\\s+(?:UNIQUE\\s+)?INDEX\\b[\\s\\S]*?\\bON\\s+' + target, 'i'),
+    ];
+    return patterns.some((pattern) => pattern.test(source));
+  });
 }
 
 async function start() {
@@ -2821,7 +3651,9 @@ async function start() {
   removeLegacyInternalTables(db);
   db.run('PRAGMA foreign_keys = ON;');
   ensureSavedQueriesTable(db);
+  ensureSavedReportsTable(db);
   refreshSavedQueries();
+  refreshSavedReports();
   const savedRelationshipPositions = await readStoredValue(storage, RELATIONSHIP_LAYOUT_KEY);
   relationshipPositions = savedRelationshipPositions && typeof savedRelationshipPositions === 'object' ? savedRelationshipPositions : {};
   currentFileName = await readStoredValue(storage, DATABASE_FILENAME_KEY) || 'school-demo.sqlite';
@@ -2905,6 +3737,33 @@ async function start() {
   const querySources = document.querySelector('#query-design-table-sources');
   const queryStage = document.querySelector('#query-design-stage');
   const queryGridDrop = document.querySelector('#query-design-grid-drop');
+  document.querySelector('#query-design-add-calculated').addEventListener('click', () => {
+    if (!queryDesignTables.length) {
+      queryDesignFeedback('Add at least one table before creating a calculated field.', true);
+      return;
+    }
+    const form = document.querySelector('#query-calculated-field-form');
+    form.reset();
+    document.querySelector('#query-calculated-field-feedback').textContent = '';
+    document.querySelector('#query-calculated-field-feedback').classList.remove('is-error');
+    const dialog = document.querySelector('#query-calculated-field-dialog');
+    dialog.showModal();
+    document.querySelector('#query-calculated-field-name').focus();
+  });
+  document.querySelector('#query-calculated-field-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const feedback = document.querySelector('#query-calculated-field-feedback');
+    try {
+      addCalculatedQueryField(
+        document.querySelector('#query-calculated-field-name').value,
+        document.querySelector('#query-calculated-field-expression').value,
+      );
+      document.querySelector('#query-calculated-field-dialog').close();
+    } catch (error) {
+      feedback.textContent = error.message || 'The calculated field could not be added.';
+      feedback.classList.add('is-error');
+    }
+  });
   document.querySelector('#query-design-totals').addEventListener('click', (event) => {
     queryDesignTotalsMode = !queryDesignTotalsMode;
     if (queryDesignTotalsMode) {
@@ -3034,6 +3893,7 @@ async function start() {
   });
   document.querySelector('#data-table-select').addEventListener('change', (event) => {
     activeTable = event.target.value;
+    datasheetFilters.clear();
     document.querySelector('#datasheet-search').value = '';
     document.querySelector('#datasheet-sort-field').value = '';
     document.querySelector('#datasheet-sort-direction').value = 'ASC';
@@ -3043,12 +3903,21 @@ async function start() {
   document.querySelector('#datasheet-sort-field').addEventListener('change', () => renderDataGrid());
   document.querySelector('#datasheet-sort-direction').addEventListener('change', () => renderDataGrid());
   document.querySelector('#datasheet-clear-view').addEventListener('click', () => {
+    datasheetFilters.clear();
+    openDatasheetFilterField = null;
+    datasheetFilterDraft = null;
     document.querySelector('#datasheet-search').value = '';
     document.querySelector('#datasheet-sort-field').value = '';
     document.querySelector('#datasheet-sort-direction').value = 'ASC';
     renderDataGrid();
     document.querySelector('#datasheet-search').focus();
   });
+  document.addEventListener('click', (event) => {
+    if (event.target instanceof Element && event.target.closest('.field-heading-layout, .datasheet-filter-menu')) return;
+    closeDatasheetFilterMenu();
+  });
+  elements.dataGrid.addEventListener('scroll', positionDatasheetFilterMenu, { passive: true });
+  window.addEventListener('resize', positionDatasheetFilterMenu);
   const relationshipStage = document.querySelector('#relationships-stage');
   let movingTable = null;
   relationshipStage.addEventListener('pointerdown', (event) => {
@@ -3136,6 +4005,29 @@ async function start() {
     event.target.dataset.userEdited = 'true';
     invalidateReportPreview();
   });
+  document.querySelector('#saved-report-select').addEventListener('change', (event) => {
+    const hasSelection = Boolean(event.target.value);
+    document.querySelector('#load-saved-report').disabled = !hasSelection;
+    document.querySelector('#delete-saved-report').disabled = !hasSelection;
+    const feedback = document.querySelector('#saved-report-feedback');
+    feedback.textContent = '';
+    feedback.classList.remove('is-error');
+  });
+  document.querySelector('#load-saved-report').addEventListener('click', () => loadSavedReport(storage));
+  document.querySelector('#save-saved-report').addEventListener('click', () => {
+    saveSavedReport(storage).catch((error) => {
+      const feedback = document.querySelector('#saved-report-feedback');
+      feedback.textContent = error.message || 'The report could not be saved.';
+      feedback.classList.add('is-error');
+    });
+  });
+  document.querySelector('#delete-saved-report').addEventListener('click', () => {
+    deleteSavedReport(storage).catch((error) => {
+      const feedback = document.querySelector('#saved-report-feedback');
+      feedback.textContent = error.message || 'The report could not be deleted.';
+      feedback.classList.add('is-error');
+    });
+  });
   document.querySelector('#report-builder-form').addEventListener('submit', generateReport);
   document.querySelector('#report-builder-form').addEventListener('change', (event) => {
     if (event.target.matches('[data-report-field]')) {
@@ -3159,6 +4051,7 @@ async function start() {
     }
   });
   document.querySelector('#report-source-mode').addEventListener('change', (event) => {
+    pendingSavedReportDefinition = null;
     setReportSourceMode(event.target.value);
     const title = document.querySelector('#report-title');
     if (title.dataset.userEdited !== 'true') {
@@ -3183,6 +4076,8 @@ async function start() {
     invalidateReportPreview();
   });
   document.querySelector('#print-report').addEventListener('click', () => window.print());
+  document.querySelector('#export-report-excel').addEventListener('click', exportReportToExcel);
+  document.querySelector('#export-report-word').addEventListener('click', exportReportToWord);
   document.querySelector('#create-report-from-results').addEventListener('click', () => {
     if (!lastQueryResultSet) return;
     reportSourceMode = 'query';
@@ -3213,6 +4108,7 @@ async function start() {
     addDesignerField({ name: 'id', type: 'INTEGER', primaryKey: true, autoincrement: true });
     addDesignerField({ name: 'name', type: 'TEXT' });
   });
+  document.querySelector('#designer-cancel').addEventListener('click', cancelTableDesign);
   document.querySelector('#datasheet-delete-table').addEventListener('click', () => deleteSelectedTable(storage));
   document.querySelector('#table-designer-form').addEventListener('submit', (event) => createTable(storage, event));
   document.querySelector('#csv-file').addEventListener('change', (event) => loadCsvFile(event.target.files[0]));

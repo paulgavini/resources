@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="stylesheet" href="styles.css">
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.14.2/sql-wasm.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script defer src="app.js"></script>
   </head>
   <body>
@@ -90,10 +91,10 @@
             <div class="data-toolbar">
               <div class="selected-table-title"><span class="table-title-icon" aria-hidden="true">▦</span><strong id="selected-table-name">Select a table</strong><select class="table-select" id="data-table-select" aria-label="Select table"></select><span class="result-count" id="data-row-count">—</span><button class="datasheet-delete-table" id="datasheet-delete-table" type="button" aria-label="Delete selected table" title="Delete selected table" disabled><span aria-hidden="true">×</span><span>Delete</span></button></div>
               <div class="data-actions">
-                <span class="copy-hint">Copy or paste ranges; type in the blank row to add records. Changes save automatically.</span>
+                <span class="copy-hint">Filter values from each field’s arrow; search and sort the view. Copy or paste ranges; type in the blank row to add records. Changes save automatically.</span>
               </div>
             </div>
-            <div class="datasheet-tools" aria-label="Find and sort table rows">
+            <div class="datasheet-tools" aria-label="Find, filter and sort table rows">
               <label class="datasheet-search-label" for="datasheet-search">Find</label>
               <input class="text-input datasheet-search" id="datasheet-search" type="search" placeholder="Search this table" autocomplete="off" disabled>
               <label for="datasheet-sort-field">Sort by</label>
@@ -170,7 +171,7 @@ ORDER BY student_number;</textarea>
               <div class="designer-fields-heading"><div><h3>Fields</h3><p>Choose a type and properties for each column.</p></div><div class="designer-actions"><button class="secondary-button" id="designer-new-table" type="button" hidden>New table</button><button class="secondary-button" id="add-designer-field" type="button">＋ Add field</button></div></div>
               <div class="designer-fields" id="designer-fields"></div>
               <div class="dialog-feedback" id="designer-feedback" role="status" aria-live="polite"></div>
-              <div class="designer-footer"><span id="designer-footer-note">Changes are saved to this browser after the table is created.</span><button class="primary-button" id="designer-submit" type="submit">Create table</button></div>
+              <div class="designer-footer"><span id="designer-footer-note">Changes are saved to this browser after the table is created.</span><div class="designer-footer-actions"><button class="secondary-button" id="designer-cancel" type="button" hidden>Cancel</button><button class="primary-button" id="designer-submit" type="submit">Create table</button></div></div>
             </form>
           </section>
 
@@ -189,7 +190,7 @@ ORDER BY student_number;</textarea>
 
           <section class="tab-panel query-design-panel" id="query-design-panel" role="tabpanel" aria-labelledby="tab-query-design" hidden>
             <div class="query-design-toolbar">
-              <div><div class="eyebrow">QUERY DESIGN</div><h2>Build a query</h2><p>Drag tables onto the surface, then drag fields into the grid. Saved relationships appear as join lines.</p></div>
+              <div><div class="eyebrow">QUERY DESIGN</div><h2>Build a query</h2><p>Drag tables onto the surface, then drag fields into the grid. Add a calculated field for a value that should appear only in query results.</p></div>
               <div class="query-design-actions">
                 <button class="secondary-button" id="query-design-clear" type="button">Clear design</button>
                 <button class="secondary-button" id="query-design-save" type="button">Save query</button>
@@ -210,7 +211,7 @@ ORDER BY student_number;</textarea>
                     <div class="query-design-empty" id="query-design-empty">Drag a table here to begin designing a query.</div>
                   </div>
                 </div>
-                <div class="query-grid-heading"><h3>Query grid</h3><span id="query-design-field-count">0 fields</span><button class="secondary-button query-totals-toggle" id="query-design-totals" type="button" aria-pressed="false" title="Add Group By and aggregate functions to the query grid">∑ Totals</button></div>
+                <div class="query-grid-heading"><h3>Query grid</h3><span id="query-design-field-count">0 fields</span><span class="query-grid-reorder-hint">Drag rows to reorder</span><button class="secondary-button" id="query-design-add-calculated" type="button">ƒx Calculated field</button><button class="secondary-button query-totals-toggle" id="query-design-totals" type="button" aria-pressed="false" title="Add Group By and aggregate functions to the query grid">∑ Totals</button></div>
                 <div class="query-grid-scroll" id="query-design-grid-drop">
                   <table class="query-design-grid" aria-label="Query design grid">
                     <thead><tr><th>Field</th><th>Table</th><th id="query-design-total-heading" hidden>Total</th><th>Sort</th><th>Show</th><th>Criteria</th><th></th></tr></thead>
@@ -226,6 +227,17 @@ ORDER BY student_number;</textarea>
             <div class="report-workspace">
               <form class="report-builder" id="report-builder-form">
                 <div class="report-builder-heading"><div class="eyebrow">REPORT DESIGN</div><h2>Create a report</h2><p>Choose related table fields or use the latest SQL Editor result, then arrange groups and summaries.</p></div>
+                <div class="saved-report-manager">
+                  <div class="saved-report-controls">
+                    <label class="sr-only" for="saved-report-select">Saved reports</label>
+                    <select class="text-input" id="saved-report-select" aria-label="Saved reports"><option value="">No saved reports yet</option></select>
+                    <button class="secondary-button" id="load-saved-report" type="button" disabled>Load</button>
+                    <button class="secondary-button" id="save-saved-report" type="button">Save report</button>
+                    <button class="secondary-button saved-query-delete" id="delete-saved-report" type="button" disabled>Delete</button>
+                  </div>
+                  <div class="saved-query-warning">Saved with this database in a hidden app-managed table.</div>
+                  <div class="saved-query-feedback" id="saved-report-feedback" role="status" aria-live="polite"></div>
+                </div>
                 <label class="field-label" for="report-source-mode">Report source</label>
                 <select class="text-input" id="report-source-mode"><option value="related">Related tables</option><option value="query">Latest SQL result</option></select>
                 <div class="report-related-controls" id="report-related-controls">
@@ -244,6 +256,7 @@ ORDER BY student_number;</textarea>
                 <div class="report-summary-controls"><div><label class="field-label" for="report-summary-function">Group summary</label><select class="text-input" id="report-summary-function"><option value="NONE">Record count only</option><option value="SUM">Sum</option><option value="AVG">Average</option></select></div><div><label class="field-label" for="report-summary-field">Numeric field</label><select class="text-input" id="report-summary-field" disabled></select></div></div>
                 <div class="report-feedback" id="report-feedback" role="status" aria-live="polite"></div>
                 <div class="report-builder-actions"><button class="primary-button" id="generate-report" type="submit">Generate preview</button><button class="secondary-button" id="print-report" type="button" disabled>Print</button></div>
+                <div class="report-export-actions" aria-label="Export report"><button class="secondary-button" id="export-report-excel" type="button" disabled>Export Excel</button><button class="secondary-button" id="export-report-word" type="button" disabled>Export Word</button></div>
               </form>
               <div class="report-preview-area"><div class="report-preview-placeholder" id="report-preview-placeholder">Your report preview will appear here.</div><article class="report-page" id="report-preview" hidden></article></div>
             </div>
@@ -300,6 +313,42 @@ ORDER BY student_number;</textarea>
         <div class="dialog-actions">
           <button class="secondary-button" type="button" data-close-dialog="saved-query-name-dialog">Cancel</button>
           <button class="primary-button" type="submit">Save query</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="app-dialog" id="saved-report-name-dialog" aria-labelledby="saved-report-name-title">
+      <form id="saved-report-name-form" class="dialog-form">
+        <div class="dialog-heading">
+          <div><div class="eyebrow">SAVE REPORT</div><h2 id="saved-report-name-title">Name this saved report</h2></div>
+          <button class="dialog-close" type="button" data-close-dialog="saved-report-name-dialog" aria-label="Close">×</button>
+        </div>
+        <p class="dialog-description">The report setup will be saved with this database.</p>
+        <label class="field-label" for="saved-report-name-input">Report name</label>
+        <input class="text-input" id="saved-report-name-input" name="reportName" type="text" maxlength="100" autocomplete="off" required>
+        <div class="dialog-actions">
+          <button class="secondary-button" type="button" data-close-dialog="saved-report-name-dialog">Cancel</button>
+          <button class="primary-button" type="submit">Save report</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="app-dialog" id="query-calculated-field-dialog" aria-labelledby="query-calculated-field-title">
+      <form id="query-calculated-field-form" class="dialog-form">
+        <div class="dialog-heading">
+          <div><div class="eyebrow">QUERY DESIGN</div><h2 id="query-calculated-field-title">Add a calculated field</h2></div>
+          <button class="dialog-close" type="button" data-close-dialog="query-calculated-field-dialog" aria-label="Close">×</button>
+        </div>
+        <p class="dialog-description">This field appears in the query result only. It does not add a column to your tables.</p>
+        <label class="field-label" for="query-calculated-field-name">Result name</label>
+        <input class="text-input" id="query-calculated-field-name" name="fieldName" type="text" maxlength="100" autocomplete="off" placeholder="e.g. line_total" required>
+        <label class="field-label" for="query-calculated-field-expression">Expression</label>
+        <textarea class="text-input query-expression-input" id="query-calculated-field-expression" name="expression" rows="4" maxlength="1000" placeholder="e.g. quantity * unit_price" required></textarea>
+        <p class="query-expression-help">Use fields from the tables on the design surface, arithmetic operators, and SQLite functions. Turn on Totals and choose Sum to summarize this expression.</p>
+        <div class="dialog-feedback" id="query-calculated-field-feedback" role="status" aria-live="polite"></div>
+        <div class="dialog-actions">
+          <button class="secondary-button" type="button" data-close-dialog="query-calculated-field-dialog">Cancel</button>
+          <button class="primary-button" type="submit">Add field</button>
         </div>
       </form>
     </dialog>
