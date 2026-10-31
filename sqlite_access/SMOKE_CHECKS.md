@@ -37,6 +37,7 @@ Run these checks in Edge or another Chromium browser after a focused change. Use
 - [ ] Add nested group levels and a sort-only level. Reorder levels and confirm the preview groups and sorts in that priority order. Confirm the eleventh level is blocked.
 - [ ] Group a date by month and a text field by its first two characters. Group a numeric field by a range. Confirm the preview labels and totals match each interval.
 - [ ] Configure group headers/footers, record counts, a numeric summary, a grand total, and percent-of-total. Hide detail rows and confirm the report becomes a summary.
+- [x] In a grouped report, place the group field and another bound field in Group Header, check **Hide group value**, and preview. Confirm the generated heading is hidden, both placed fields remain, and their output contains values without field-name prefixes.
 - [ ] Save a report design, change it, replace it, load it, and confirm fields, section placement, levels, and totals return. Confirm delete asks first and removes only the selected saved design.
 - [ ] Repeat the design and save/load checks with the latest SQL Editor result as source. Load a saved query-based design with a different current SQL draft, run its saved SQL, and confirm the design returns.
 - [ ] Preview and print a design with page header/footer sections and group print settings. Check desktop and narrow tablet layouts and note any print pagination differences.

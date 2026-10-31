@@ -513,7 +513,7 @@
       const row = document.createElement('tr'); row.className = `report-group-heading level-${Math.min(3, reportDesignLevels.filter((item) => item.type === 'group').indexOf(level) + 1)} ${level.keepTogether === 'first' ? 'keep-first' : ''}`;
       const cell = document.createElement('th'); cell.colSpan = Math.max(1, detailCount); cell.textContent = `${field?.name || 'Group'}: ${partition.value.label}`; row.append(cell); body.append(row);
     }
-    const controls = makeOutputControlLine(partition.rows[0], fields, `${level.id}:header`, level.hideGroupLabel ? level.fieldToken : null);
+    const controls = makeOutputControlLine(partition.rows[0], fields, `${level.id}:header`);
     if (controls) {
       if (level.keepTogether === 'first') controls.classList.add('group-header-controls-keep-first');
       body.append(controls);
@@ -567,14 +567,14 @@
     }
   }
 
-  function makeOutputControlLine(row, fields, key, hiddenFieldToken = null) {
-    const controlItems = reportDesignControls.filter((item) => item.sectionKey === key && !(hiddenFieldToken && item.kind !== 'label' && item.token === hiddenFieldToken));
+  function makeOutputControlLine(row, fields, key) {
+    const controlItems = reportDesignControls.filter((item) => item.sectionKey === key);
     if (!controlItems.length) return null;
     const tr = document.createElement('tr'); tr.className = 'report-design-section-controls'; const td = document.createElement('td'); td.colSpan = Math.max(1, document.querySelector('#report-design-show-details').checked ? reportDesignControls.filter((item) => item.sectionKey === 'detail').length : 0);
     const line = document.createElement('div'); line.className = 'report-design-output-controls';
     controlItems.forEach((control) => {
       const field = fields.find((item) => item.token === control.token); const span = document.createElement('span');
-      span.textContent = control.kind === 'label' ? control.text : `${field?.name || 'Field'}: ${displayValue(row?.[control.token])}`;
+      span.textContent = control.kind === 'label' ? control.text : displayValue(row?.[control.token]);
       line.append(span);
     });
     td.append(line); tr.append(td); return tr;
