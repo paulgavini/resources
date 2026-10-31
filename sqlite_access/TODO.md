@@ -15,17 +15,23 @@ Keep DataNook a small, local, browser based SQLite workspace. Ship one focused i
 - [x] **Filter Datasheet by field values.** Add searchable per-field value checklists that combine across columns, show an active funnel icon on filtered fields, and only affect displayed rows. Keep the existing Clear action for all view controls.
 - [ ] **Let Query Design change join type.** Selecting a relationship connector should offer `INNER`, `LEFT`, and `RIGHT`, with a short explanation of which rows remain. Keep `FULL` and `CROSS` available in SQL Editor. Update generated SQL and the join diagram together.
 - [ ] **Add a safe way to delete a record.** Start with deleting one selected row, a clear confirmation, and an undo action before leaving the table. Keep autosave and foreign-key behavior visible.
+- [x] **Add Access-inspired Report Design View.** Added a section canvas with movable field controls, ordered group/sort levels, grouping intervals, group summaries, summary-only output, print options, and its own save/load/replace/delete catalog. See [REPORT_DESIGN_FEATURES.md](REPORT_DESIGN_FEATURES.md) for the researched feature list and implementation status.
+- [x] **Add independent group band visibility and a group-value hide option.** Group settings control whether header/footer bands are designed and included in output. In the Group Header, check **Hide group value** to hide the generated heading and any bound control for that same grouping field, while keeping unrelated controls and static labels visible. Bound fields in group bands retain their names unless they match the hidden grouping field.
+- [x] **Add text labels to report sections.** Labels can be placed in report, page, group, and detail bands, and are retained when a design is saved.
+- [x] **Move Word and Excel exports into Report Design.** `.docx` and `.xlsx` exports use the generated design preview and include visible group/page sections and labels.
+- [x] **Remove the old Reports workflow.** Removed the Reports tab, panel, handlers, and creation of its separate saved-report catalog. Older databases keep any legacy report rows already stored.
+- [x] **Visually verify the requested Report Design updates in Edge.** Confirmed the checked **Hide group value** option removes the generated heading and matching bound group field from the preview while preserving unrelated group controls and static labels. The separate whole-header output toggle still removes the entire band. Earlier checks confirmed named fields, labels in all seven section types, five correct rows from a students-only source, save/load/delete, and Word/Excel download success messages.
+- [ ] **Check Report Design responsive sizing and browser print preview in Edge.** These still need a focused visual pass at a narrow viewport and in Edge's print preview.
 
 ## Later
 
 - [ ] **Add a Visuals tab with interactive charts and slicers.** Use a table or SQL query as the source. Start with KPI cards, bar charts, detail tables, and slicers that filter the visuals; add line charts when the source has useful date data. Keep calculations and filters in the browser without changing user tables.
 - [ ] **Create a simple form from one table.** Show one record at a time with Previous, Next, New, and Save actions. Use the table’s existing field names and types; defer layout design and multi-table subforms.
-- [x] **Save report setup.** Save, load, replace, and delete report definitions in the hidden app-managed SQLite table. Query-based reports preserve the SQL and rebuild after the user runs it.
 
 ## Leave out for now
 
 - Multi-user editing, accounts, server storage, and cross-device synchronization.
-- Macros or scripting, Access file compatibility, external database connections, and an open-ended visual report designer.
+- Macros or scripting, Access file compatibility, external database connections, and a fully freeform report canvas/property sheet with arbitrary control placement and styling.
 - Automatic CSV type guessing. SQLite uses type affinity rather than strict column types, so keep imported values as text unless a later, explicit conversion tool can preview and confirm changes.
 
 ## Research notes

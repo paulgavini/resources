@@ -4,7 +4,7 @@ Run these checks in Edge or another Chromium browser after a focused change. Use
 
 ## Startup and data entry
 
-- [ ] Open the workspace. The school demo shows `students`, `courses`, and `enrollments`.
+- [ ] Open the workspace. The school demo shows `students`, `teachers`, `subjects`, and `enrollments`; each table has an `_id` primary key, with no `year_levels`, separate student number, teacher/subject code, saved query, saved report, or foreign-key constraint.
 - [ ] Create a small table in Table Designer with an integer primary key and a text field.
 - [ ] In Datasheet, choose the red × beside the selected table and confirm. Check that the table disappears and another table (or the empty state) is shown. Confirm cancellation keeps the table. Try deleting a referenced parent table and confirm the app asks you to remove incoming relationships first.
 - [ ] Enter a value in Datasheet, paste a two-row tab-separated range, and reload. Confirm the rows remain.
@@ -30,6 +30,16 @@ Run these checks in Edge or another Chromium browser after a focused change. Use
 - [ ] In Reports, create a preview from related fields and from a SQL result.
 - [x] Open a table design from a Datasheet field heading, change the field name without saving, and choose Cancel. Confirm Datasheet returns and the original field name and records remain.
 - [ ] Export each report preview to Excel and Word. Confirm the `.xlsx` and `.docx` files open and include the title, columns, group headings, summaries, and record count. Change a report option and confirm exports disable until a new preview is generated.
+
+## Report Design View
+
+- [ ] Open Report Design. Add fields to Report Header and Detail, move a control between sections, reorder controls, and remove one. Confirm the section canvas reflects each change.
+- [ ] Add nested group levels and a sort-only level. Reorder levels and confirm the preview groups and sorts in that priority order. Confirm the eleventh level is blocked.
+- [ ] Group a date by month and a text field by its first two characters. Group a numeric field by a range. Confirm the preview labels and totals match each interval.
+- [ ] Configure group headers/footers, record counts, a numeric summary, a grand total, and percent-of-total. Hide detail rows and confirm the report becomes a summary.
+- [ ] Save a report design, change it, replace it, load it, and confirm fields, section placement, levels, and totals return. Confirm delete asks first and removes only the selected saved design.
+- [ ] Repeat the design and save/load checks with the latest SQL Editor result as source. Load a saved query-based design with a different current SQL draft, run its saved SQL, and confirm the design returns.
+- [ ] Preview and print a design with page header/footer sections and group print settings. Check desktop and narrow tablet layouts and note any print pagination differences.
 
 ## Results from the 2026-10-21 file-workflow check
 

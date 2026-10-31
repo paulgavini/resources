@@ -4,6 +4,7 @@ const DATABASE_KEY = 'school-demo-default-v1';
 const SQLJS_VERSION = '1.14.2';
 const SAVED_QUERIES_TABLE = '__APP_SAVED_QUERIES_DO_NOT_EDIT';
 const SAVED_REPORTS_TABLE = '__APP_SAVED_REPORTS_DO_NOT_EDIT';
+const SAVED_REPORT_DESIGNS_TABLE = '__APP_SAVED_REPORT_DESIGNS_DO_NOT_EDIT';
 const QUERY_DRAFT_KEY = 'sql_editor_draft';
 const DATABASE_FILENAME_KEY = 'database_filename';
 const RELATIONSHIP_LAYOUT_KEY = 'relationship_layout';
@@ -34,14 +35,16 @@ let queryDesignTables = [];
 let queryDesignFields = [];
 let queryDesignPositions = {};
 let queryDesignTotalsMode = false;
-let reportSourceMode = 'related';
-let reportJoins = [];
-let reportSelectedFields = new Set();
-let reportInitializedFields = new Set();
-let reportGroupFields = new Set();
 let lastQueryResultSet = null;
 let lastQuerySqlText = '';
-let pendingSavedReportDefinition = null;
+let reportDesignSourceMode = 'related';
+let reportDesignLevels = [];
+let reportDesignControls = [];
+let reportDesignSections = { 'report-header': true, 'page-header': false, 'report-footer': true, 'page-footer': false };
+let reportDesignPendingDefinition = null;
+let reportDesignPreviewReady = false;
+let reportDesignViewMode = 'design';
+let reportDesignNextId = 1;
 
 const SQL_KEYWORDS = `ABORT ACTION ADD AFTER ALL ALTER ANALYZE AND AS ASC ATTACH AUTOINCREMENT BEFORE BEGIN BETWEEN BY CASCADE CASE CAST CHECK COLLATE COLUMN COMMIT CONFLICT CONSTRAINT CREATE CROSS CURRENT_DATE CURRENT_TIME CURRENT_TIMESTAMP DATABASE DEFAULT DEFERRABLE DEFERRED DELETE DESC DETACH DISTINCT DROP EACH ELSE END ESCAPE EXCEPT EXCLUSIVE EXISTS EXPLAIN FAIL FILTER FIRST FOLLOWING FOR FOREIGN FROM FULL GLOB GROUP GROUPS HAVING IF IGNORE IMMEDIATE IN INDEX INDEXED INITIALLY INNER INSERT INSTEAD INTERSECT INTO IS ISNULL JOIN KEY LAST LEFT LIKE LIMIT MATCH MATERIALIZED NATURAL NO NOT NOTHING NOTNULL NULL NULLS OF OFFSET ON OR ORDER OTHERS OUTER OVER PARTITION PLAN PRAGMA PRECEDING PRIMARY QUERY RAISE RANGE RECURSIVE REFERENCES REGEXP REINDEX RELEASE RENAME REPLACE RESTRICT RIGHT ROLLBACK ROW ROWS SAVEPOINT SELECT SET TABLE TEMP TEMPORARY THEN TIES TO TRANSACTION TRIGGER UNBOUNDED UNION UNIQUE UPDATE USING VACUUM VALUES VIEW VIRTUAL WHEN WHERE WINDOW WITH WITHOUT`.split(' ');
 const SQL_FUNCTIONS = `ABS AVG CHANGES CHAR COALESCE COUNT DATE DATETIME DENSE_RANK FIRST_VALUE GROUP_CONCAT IFNULL INSTR JULIANDAY LAG LAST_VALUE LEAD LENGTH LIKE LOWER LTRIM MAX MIN NULLIF NTILE PRINTF QUOTE RANK REPLACE ROUND ROW_NUMBER RTRIM SIGN STRFTIME SUBSTR SUM TIME TOTAL TRIM TYPEOF UNICODE UNHEX UPPER ZEROBLOB`.split(' ');
@@ -106,7 +109,7 @@ function writeStoredValue(storage, key, value) {
 function removeLegacyInternalTables(database) {
   const internalTables = database.exec(`SELECT name FROM sqlite_master WHERE type = 'table';`)[0]?.values.map(([name]) => name) || [];
   for (const tableName of internalTables) {
-    if (tableName.toLowerCase().startsWith('__app_') && ![SAVED_QUERIES_TABLE, SAVED_REPORTS_TABLE].includes(tableName.toUpperCase())) {
+    if (tableName.toLowerCase().startsWith('__app_') && ![SAVED_QUERIES_TABLE, SAVED_REPORTS_TABLE, SAVED_REPORT_DESIGNS_TABLE].includes(tableName.toUpperCase())) {
       database.run(`DROP TABLE ${quoteIdentifier(tableName)};`);
     }
   }
@@ -130,19 +133,19 @@ function ensureSavedQueriesTable(database) {
   );`);
 }
 
-function ensureSavedReportsTable(database) {
-  const existingName = database.exec(`SELECT name FROM sqlite_master WHERE type = 'table' AND upper(name) = '${SAVED_REPORTS_TABLE}' LIMIT 1;`)[0]?.values[0]?.[0];
+function ensureSavedReportDesignsTable(database) {
+  const existingName = database.exec(`SELECT name FROM sqlite_master WHERE type = 'table' AND upper(name) = '${SAVED_REPORT_DESIGNS_TABLE}' LIMIT 1;`)[0]?.values[0]?.[0];
   if (existingName) {
     const existingColumns = database.exec(`PRAGMA table_info(${quoteIdentifier(existingName)});`)[0]?.values.map((column) => column[1]) || [];
-    if (!['report_id', 'report_name', 'report_json', 'created_at', 'updated_at'].every((column) => existingColumns.includes(column))) {
-      throw new Error(`This database already contains “${existingName}” with a different structure. Rename that table before using saved reports.`);
+    if (!['design_id', 'design_name', 'design_json', 'created_at', 'updated_at'].every((column) => existingColumns.includes(column))) {
+      throw new Error(`This database already contains “${existingName}” with a different structure. Rename that table before using saved report designs.`);
     }
     return;
   }
-  database.run(`CREATE TABLE IF NOT EXISTS ${quoteIdentifier(SAVED_REPORTS_TABLE)} (
-    report_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    report_name TEXT NOT NULL UNIQUE,
-    report_json TEXT NOT NULL,
+  database.run(`CREATE TABLE IF NOT EXISTS ${quoteIdentifier(SAVED_REPORT_DESIGNS_TABLE)} (
+    design_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    design_name TEXT NOT NULL UNIQUE,
+    design_json TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );`);
@@ -156,47 +159,194 @@ async function loadDefaultDatabase(SQL) {
   } catch (error) {
     console.warn('Could not fetch school-demo.sqlite; using the built-in school sample for this local-file launch.', error);
     const database = new SQL.Database();
-    database.run(`
-      CREATE TABLE students (
-        student_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_number TEXT NOT NULL UNIQUE,
-        first_name TEXT NOT NULL,
-        last_name TEXT NOT NULL,
-        year_level INTEGER NOT NULL,
-        email TEXT UNIQUE
-      );
-      CREATE TABLE courses (
-        course_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        course_code TEXT NOT NULL UNIQUE,
-        course_name TEXT NOT NULL,
-        teacher_name TEXT NOT NULL,
-        credits INTEGER NOT NULL DEFAULT 1
-      );
-      CREATE TABLE enrollments (
-        enrollment_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id INTEGER NOT NULL,
-        course_id INTEGER NOT NULL,
-        enrolled_on TEXT NOT NULL DEFAULT CURRENT_DATE,
-        grade TEXT,
-        FOREIGN KEY (student_id) REFERENCES students(student_id) ON UPDATE CASCADE ON DELETE RESTRICT,
-        FOREIGN KEY (course_id) REFERENCES courses(course_id) ON UPDATE CASCADE ON DELETE RESTRICT
-      );
-      INSERT INTO students (student_number, first_name, last_name, year_level, email) VALUES
-        ('S2026001', 'Amara', 'Singh', 9, 'amara.singh@greenfield.edu'),
-        ('S2026002', 'Luca', 'Martin', 10, 'luca.martin@greenfield.edu'),
-        ('S2026003', 'Mia', 'Chen', 8, 'mia.chen@greenfield.edu'),
-        ('S2026004', 'Noah', 'Williams', 11, 'noah.williams@greenfield.edu'),
-        ('S2026005', 'Isla', 'Brown', 9, 'isla.brown@greenfield.edu');
-      INSERT INTO courses (course_code, course_name, teacher_name, credits) VALUES
-        ('ENG-09', 'English Literature', 'Ms Patel', 2),
-        ('MAT-10', 'Mathematics', 'Mr Thompson', 2),
-        ('SCI-08', 'Earth and Environmental Science', 'Dr Nguyen', 2),
-        ('ART-11', 'Visual Arts', 'Ms Cooper', 1);
-      INSERT INTO enrollments (student_id, course_id, enrolled_on, grade) VALUES
-        (1, 1, '2026-02-02', 'A'), (1, 2, '2026-02-02', 'B+'),
-        (2, 1, '2026-02-02', 'A-'), (2, 2, '2026-02-02', 'B'),
-        (3, 3, '2026-02-03', 'A'), (4, 4, '2026-02-03', NULL),
-        (5, 1, '2026-02-03', 'B+'), (5, 4, '2026-02-03', 'A');
+    database.run(`BEGIN TRANSACTION;
+CREATE TABLE __APP_SAVED_QUERIES_DO_NOT_EDIT (
+  query_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  query_name TEXT NOT NULL UNIQUE,
+  sql_text TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE __APP_SAVED_REPORT_DESIGNS_DO_NOT_EDIT (
+  design_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  design_name TEXT NOT NULL UNIQUE,
+  design_json TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE enrollments (
+  enrollment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL,
+  subject_id INTEGER NOT NULL,
+  enrolled_on TEXT NOT NULL DEFAULT CURRENT_DATE,
+  grade TEXT,
+  UNIQUE (student_id, subject_id)
+);
+INSERT INTO "enrollments" VALUES(1,1,1,'2026-02-02','A');
+INSERT INTO "enrollments" VALUES(2,1,2,'2026-02-02','B+');
+INSERT INTO "enrollments" VALUES(3,2,1,'2026-02-02','A-');
+INSERT INTO "enrollments" VALUES(4,2,2,'2026-02-02','B');
+INSERT INTO "enrollments" VALUES(5,3,3,'2026-02-03','A');
+INSERT INTO "enrollments" VALUES(6,4,4,'2026-02-03',NULL);
+INSERT INTO "enrollments" VALUES(7,5,1,'2026-02-03','B+');
+INSERT INTO "enrollments" VALUES(8,5,4,'2026-02-03','A');
+INSERT INTO "enrollments" VALUES(9,1,3,'2026-02-08','C');
+INSERT INTO "enrollments" VALUES(10,2,3,'2026-02-11','B+');
+INSERT INTO "enrollments" VALUES(11,2,4,'2026-02-12','B');
+INSERT INTO "enrollments" VALUES(12,3,4,'2026-02-15','C');
+INSERT INTO "enrollments" VALUES(13,3,5,'2026-02-16','A');
+INSERT INTO "enrollments" VALUES(14,4,5,'2026-02-19','B');
+INSERT INTO "enrollments" VALUES(15,4,6,'2026-02-20','B-');
+INSERT INTO "enrollments" VALUES(16,5,5,'2026-02-22','C');
+INSERT INTO "enrollments" VALUES(17,5,6,'2026-02-23','A');
+INSERT INTO "enrollments" VALUES(18,5,7,'2026-02-24','A-');
+INSERT INTO "enrollments" VALUES(19,6,6,'2026-02-26','B');
+INSERT INTO "enrollments" VALUES(20,6,7,'2026-02-27','B-');
+INSERT INTO "enrollments" VALUES(21,6,8,'2026-02-28','C+');
+INSERT INTO "enrollments" VALUES(22,7,7,'2026-02-03','A');
+INSERT INTO "enrollments" VALUES(23,7,8,'2026-02-04','A-');
+INSERT INTO "enrollments" VALUES(24,7,1,'2026-02-24','A-');
+INSERT INTO "enrollments" VALUES(25,8,8,'2026-02-07','B-');
+INSERT INTO "enrollments" VALUES(26,8,1,'2026-02-27','B-');
+INSERT INTO "enrollments" VALUES(27,8,2,'2026-02-28','C+');
+INSERT INTO "enrollments" VALUES(28,9,1,'2026-02-03','A');
+INSERT INTO "enrollments" VALUES(29,9,2,'2026-02-04','A-');
+INSERT INTO "enrollments" VALUES(30,9,3,'2026-02-05','B+');
+INSERT INTO "enrollments" VALUES(31,10,2,'2026-02-07','B-');
+INSERT INTO "enrollments" VALUES(32,10,3,'2026-02-08','C+');
+INSERT INTO "enrollments" VALUES(33,10,4,'2026-02-09','C');
+INSERT INTO "enrollments" VALUES(34,11,3,'2026-02-11','A-');
+INSERT INTO "enrollments" VALUES(35,11,4,'2026-02-12','B+');
+INSERT INTO "enrollments" VALUES(36,11,5,'2026-02-13','B');
+INSERT INTO "enrollments" VALUES(37,12,4,'2026-02-15','C+');
+INSERT INTO "enrollments" VALUES(38,12,5,'2026-02-16','C');
+INSERT INTO "enrollments" VALUES(39,12,6,'2026-02-17','A');
+INSERT INTO "enrollments" VALUES(40,13,5,'2026-02-19','B+');
+INSERT INTO "enrollments" VALUES(41,13,6,'2026-02-20','B');
+INSERT INTO "enrollments" VALUES(42,13,7,'2026-02-21','B-');
+INSERT INTO "enrollments" VALUES(43,14,6,'2026-02-23','C');
+INSERT INTO "enrollments" VALUES(44,14,7,'2026-02-24','A');
+INSERT INTO "enrollments" VALUES(45,14,8,'2026-02-25','A-');
+INSERT INTO "enrollments" VALUES(46,15,7,'2026-02-27','B');
+INSERT INTO "enrollments" VALUES(47,15,8,'2026-02-28','B-');
+INSERT INTO "enrollments" VALUES(48,15,1,'2026-02-21','B-');
+INSERT INTO "enrollments" VALUES(49,16,8,'2026-02-04','A');
+INSERT INTO "enrollments" VALUES(50,16,1,'2026-02-24','A');
+INSERT INTO "enrollments" VALUES(51,16,2,'2026-02-25','A-');
+INSERT INTO "enrollments" VALUES(52,17,1,'2026-02-27','B');
+INSERT INTO "enrollments" VALUES(53,17,2,'2026-02-28','B-');
+INSERT INTO "enrollments" VALUES(54,17,3,'2026-02-02','C+');
+INSERT INTO "enrollments" VALUES(55,18,2,'2026-02-04','A');
+INSERT INTO "enrollments" VALUES(56,18,3,'2026-02-05','A-');
+INSERT INTO "enrollments" VALUES(57,18,4,'2026-02-06','B+');
+INSERT INTO "enrollments" VALUES(58,19,3,'2026-02-08','B-');
+INSERT INTO "enrollments" VALUES(59,19,4,'2026-02-09','C+');
+INSERT INTO "enrollments" VALUES(60,19,5,'2026-02-10','C');
+INSERT INTO "enrollments" VALUES(61,20,4,'2026-02-12','A-');
+INSERT INTO "enrollments" VALUES(62,20,5,'2026-02-13','B+');
+INSERT INTO "enrollments" VALUES(63,20,6,'2026-02-14','B');
+INSERT INTO "enrollments" VALUES(64,21,5,'2026-02-16','C+');
+INSERT INTO "enrollments" VALUES(65,21,6,'2026-02-17','C');
+INSERT INTO "enrollments" VALUES(66,21,7,'2026-02-18','A');
+INSERT INTO "enrollments" VALUES(67,22,6,'2026-02-20','B+');
+INSERT INTO "enrollments" VALUES(68,22,7,'2026-02-21','B');
+INSERT INTO "enrollments" VALUES(69,22,8,'2026-02-22','B-');
+INSERT INTO "enrollments" VALUES(70,23,7,'2026-02-24','C');
+INSERT INTO "enrollments" VALUES(71,23,8,'2026-02-25','A');
+INSERT INTO "enrollments" VALUES(72,23,1,'2026-02-18','A');
+INSERT INTO "enrollments" VALUES(73,24,8,'2026-02-28','B');
+INSERT INTO "enrollments" VALUES(74,24,1,'2026-02-21','B');
+INSERT INTO "enrollments" VALUES(75,24,2,'2026-02-22','B-');
+INSERT INTO "enrollments" VALUES(76,25,1,'2026-02-24','C');
+INSERT INTO "enrollments" VALUES(77,25,2,'2026-02-25','A');
+INSERT INTO "enrollments" VALUES(78,25,3,'2026-02-26','A-');
+INSERT INTO "enrollments" VALUES(79,26,2,'2026-02-28','B');
+INSERT INTO "enrollments" VALUES(80,26,3,'2026-02-02','B-');
+INSERT INTO "enrollments" VALUES(81,26,4,'2026-02-03','C+');
+INSERT INTO "enrollments" VALUES(82,27,3,'2026-02-05','A');
+INSERT INTO "enrollments" VALUES(83,27,4,'2026-02-06','A-');
+INSERT INTO "enrollments" VALUES(84,27,5,'2026-02-07','B+');
+INSERT INTO "enrollments" VALUES(85,28,4,'2026-02-09','B-');
+INSERT INTO "enrollments" VALUES(86,28,5,'2026-02-10','C+');
+INSERT INTO "enrollments" VALUES(87,28,6,'2026-02-11','C');
+INSERT INTO "enrollments" VALUES(88,29,5,'2026-02-13','A-');
+INSERT INTO "enrollments" VALUES(89,29,6,'2026-02-14','B+');
+INSERT INTO "enrollments" VALUES(90,29,7,'2026-02-15','B');
+INSERT INTO "enrollments" VALUES(91,30,6,'2026-02-17','C+');
+INSERT INTO "enrollments" VALUES(92,30,7,'2026-02-18','C');
+INSERT INTO "enrollments" VALUES(93,30,8,'2026-02-19','A');
+CREATE TABLE students (
+  student_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  email TEXT UNIQUE
+);
+INSERT INTO "students" VALUES(1,'Amara','Singh','amara.singh@greenfield.edu');
+INSERT INTO "students" VALUES(2,'Luca','Martin','luca.martin@greenfield.edu');
+INSERT INTO "students" VALUES(3,'Mia','Chen','mia.chen@greenfield.edu');
+INSERT INTO "students" VALUES(4,'Noah','Williams','noah.williams@greenfield.edu');
+INSERT INTO "students" VALUES(5,'Isla','Brown','isla.brown@greenfield.edu');
+INSERT INTO "students" VALUES(6,'Zara','James','zara.james@greenfield.edu');
+INSERT INTO "students" VALUES(7,'Ethan','Walker','ethan.walker@greenfield.edu');
+INSERT INTO "students" VALUES(8,'Priya','Nair','priya.nair@greenfield.edu');
+INSERT INTO "students" VALUES(9,'Oliver','Thompson','oliver.thompson@greenfield.edu');
+INSERT INTO "students" VALUES(10,'Ruby','Clarke','ruby.clarke@greenfield.edu');
+INSERT INTO "students" VALUES(11,'Noah','Bennett','noah.bennett@greenfield.edu');
+INSERT INTO "students" VALUES(12,'Hannah','Reed','hannah.reed@greenfield.edu');
+INSERT INTO "students" VALUES(13,'Leo','Parker','leo.parker@greenfield.edu');
+INSERT INTO "students" VALUES(14,'Sienna','Ward','sienna.ward@greenfield.edu');
+INSERT INTO "students" VALUES(15,'Arjun','Singh','arjun.singh@greenfield.edu');
+INSERT INTO "students" VALUES(16,'Evie','Martin','evie.martin@greenfield.edu');
+INSERT INTO "students" VALUES(17,'Mateo','Garcia','mateo.garcia@greenfield.edu');
+INSERT INTO "students" VALUES(18,'Chloe','Adams','chloe.adams@greenfield.edu');
+INSERT INTO "students" VALUES(19,'Isaac','Brooks','isaac.brooks@greenfield.edu');
+INSERT INTO "students" VALUES(20,'Layla','Hussein','layla.hussein@greenfield.edu');
+INSERT INTO "students" VALUES(21,'Finn','Campbell','finn.campbell@greenfield.edu');
+INSERT INTO "students" VALUES(22,'Amira','Khan','amira.khan@greenfield.edu');
+INSERT INTO "students" VALUES(23,'Jack','Cooper','jack.cooper@greenfield.edu');
+INSERT INTO "students" VALUES(24,'Grace','Turner','grace.turner@greenfield.edu');
+INSERT INTO "students" VALUES(25,'Eli','Robinson','eli.robinson@greenfield.edu');
+INSERT INTO "students" VALUES(26,'Maya','Wilson','maya.wilson@greenfield.edu');
+INSERT INTO "students" VALUES(27,'Thomas','Nguyen','thomas.nguyen@greenfield.edu');
+INSERT INTO "students" VALUES(28,'Aaliyah','White','aaliyah.white@greenfield.edu');
+INSERT INTO "students" VALUES(29,'Samuel','Green','samuel.green@greenfield.edu');
+INSERT INTO "students" VALUES(30,'Sofia','Edwards','sofia.edwards@greenfield.edu');
+CREATE TABLE subjects (
+  subject_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  subject_name TEXT NOT NULL UNIQUE,
+  teacher_id INTEGER NOT NULL,
+  credits INTEGER NOT NULL DEFAULT 1
+);
+INSERT INTO "subjects" VALUES(1,'English Literature',1,2);
+INSERT INTO "subjects" VALUES(2,'Mathematics',2,2);
+INSERT INTO "subjects" VALUES(3,'Earth and Environmental Science',3,2);
+INSERT INTO "subjects" VALUES(4,'Visual Arts',4,1);
+INSERT INTO "subjects" VALUES(5,'History',5,1);
+INSERT INTO "subjects" VALUES(6,'Health and Physical Education',6,1);
+INSERT INTO "subjects" VALUES(7,'Computing and Digital Technologies',7,2);
+INSERT INTO "subjects" VALUES(8,'Music',8,1);
+CREATE TABLE teachers (
+  teacher_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  teacher_name TEXT NOT NULL UNIQUE,
+  email TEXT NOT NULL UNIQUE,
+  department TEXT NOT NULL
+);
+INSERT INTO "teachers" VALUES(1,'Ms Patel','ms.patel@greenfield.edu','Languages');
+INSERT INTO "teachers" VALUES(2,'Mr Thompson','mr.thompson@greenfield.edu','Mathematics');
+INSERT INTO "teachers" VALUES(3,'Dr Nguyen','dr.nguyen@greenfield.edu','Science');
+INSERT INTO "teachers" VALUES(4,'Ms Cooper','ms.cooper@greenfield.edu','The Arts');
+INSERT INTO "teachers" VALUES(5,'Mr Wilson','mr.wilson@greenfield.edu','Humanities');
+INSERT INTO "teachers" VALUES(6,'Ms King','ms.king@greenfield.edu','Health and Physical Education');
+INSERT INTO "teachers" VALUES(7,'Mr Ahmed','mr.ahmed@greenfield.edu','Technology');
+INSERT INTO "teachers" VALUES(8,'Ms Taylor','ms.taylor@greenfield.edu','The Arts');
+INSERT INTO "teachers" VALUES(9,'Ms Brooks','ms.brooks@greenfield.edu','Year Level Coordination');
+INSERT INTO "teachers" VALUES(10,'Mr Lee','mr.lee@greenfield.edu','Year Level Coordination');
+DELETE FROM "sqlite_sequence";
+INSERT INTO "sqlite_sequence" VALUES('students',30);
+INSERT INTO "sqlite_sequence" VALUES('teachers',10);
+INSERT INTO "sqlite_sequence" VALUES('subjects',8);
+INSERT INTO "sqlite_sequence" VALUES('enrollments',93);
+COMMIT;
     `);
     return database;
   }
@@ -271,7 +421,7 @@ async function openDatabaseFile(storage, file, handle = null) {
   removeLegacyInternalTables(candidate);
   candidate.run('PRAGMA foreign_keys = ON;');
   ensureSavedQueriesTable(candidate);
-  ensureSavedReportsTable(candidate);
+  ensureSavedReportDesignsTable(candidate);
   const currentDraft = elements.sqlInput.value;
   await writeStoredValue(storage, QUERY_DRAFT_KEY, currentDraft);
 
@@ -291,10 +441,10 @@ async function openDatabaseFile(storage, file, handle = null) {
   const previousDatabase = db;
   db = candidate;
   lastQuerySqlText = '';
-  pendingSavedReportDefinition = null;
+  lastQueryResultSet = null;
+  reportDesignPendingDefinition = null;
+  window.resetReportDesignForDatabase?.();
   queryDesignTables = []; queryDesignFields = []; queryDesignPositions = {}; queryDesignTotalsMode = false;
-  resetReportConfiguration();
-  resetReportPreview();
   relationshipPositions = {};
   await writeStoredValue(storage, RELATIONSHIP_LAYOUT_KEY, relationshipPositions);
   previousDatabase?.close();
@@ -307,8 +457,7 @@ async function openDatabaseFile(storage, file, handle = null) {
   renderSchema();
   renderDataGrid();
   refreshSavedQueries('');
-  refreshSavedReports('');
-  if (!document.querySelector('#reports-panel').hidden) refreshReportSources();
+  window.refreshReportDesignSources?.();
   if (!document.querySelector('#relationships-panel').hidden) renderRelationships();
   await saveDatabase(storage);
 }
@@ -360,7 +509,7 @@ async function createNewDatabase(storage) {
     candidate = new SQLModule.Database();
     candidate.run('PRAGMA foreign_keys = ON;');
     ensureSavedQueriesTable(candidate);
-    ensureSavedReportsTable(candidate);
+    ensureSavedReportDesignsTable(candidate);
     downloadDatabaseCopy(candidate.export(), fileName);
   }
   await flushQueryDraft(storage);
@@ -370,7 +519,7 @@ async function createNewDatabase(storage) {
     candidate = new SQLModule.Database();
     candidate.run('PRAGMA foreign_keys = ON;');
     ensureSavedQueriesTable(candidate);
-    ensureSavedReportsTable(candidate);
+    ensureSavedReportDesignsTable(candidate);
     try {
       await writeDatabaseFile(handle, candidate.export());
     } catch (error) {
@@ -383,10 +532,10 @@ async function createNewDatabase(storage) {
   const previousDatabase = db;
   db = candidate;
   lastQuerySqlText = '';
-  pendingSavedReportDefinition = null;
+  lastQueryResultSet = null;
+  reportDesignPendingDefinition = null;
+  window.resetReportDesignForDatabase?.();
   queryDesignTables = []; queryDesignFields = []; queryDesignPositions = {}; queryDesignTotalsMode = false;
-  resetReportConfiguration();
-  resetReportPreview();
   relationshipPositions = {};
   await writeStoredValue(storage, RELATIONSHIP_LAYOUT_KEY, relationshipPositions);
   currentFileHandle = handle;
@@ -401,7 +550,7 @@ async function createNewDatabase(storage) {
   renderSchema();
   renderDataGrid();
   refreshSavedQueries('');
-  refreshSavedReports('');
+  window.refreshReportDesignSources?.();
   elements.results.innerHTML = '<div class="welcome-state"><span class="welcome-icon" aria-hidden="true">⌁</span><strong>Run a query to see results</strong><span>Try editing the sample query above.</span></div>';
   elements.resultCount.textContent = 'Ready';
   elements.resultTime.textContent = '';
@@ -631,30 +780,15 @@ async function deleteSavedQuery(storage) {
   feedback.textContent = `Deleted “${name}”.`;
 }
 
-function refreshSavedReports(selectedName = document.querySelector('#saved-report-select')?.value || '') {
-  const select = document.querySelector('#saved-report-select');
-  if (!select || !db) return;
-  const rows = db.exec(`SELECT report_name FROM ${quoteIdentifier(SAVED_REPORTS_TABLE)} ORDER BY report_name COLLATE NOCASE;`)[0]?.values || [];
-  select.replaceChildren();
-  const placeholder = document.createElement('option');
-  placeholder.value = '';
-  placeholder.textContent = rows.length ? 'Choose a saved report…' : 'No saved reports yet';
-  select.append(placeholder);
-  for (const [name] of rows) {
-    const option = document.createElement('option');
-    option.value = name;
-    option.textContent = name;
-    select.append(option);
-  }
-  if (rows.some(([name]) => name === selectedName)) select.value = selectedName;
-  document.querySelector('#load-saved-report').disabled = !select.value;
-  document.querySelector('#delete-saved-report').disabled = !select.value;
-}
-
 function askForSavedReportName(currentName = '') {
   const dialog = document.querySelector('#saved-report-name-dialog');
   const form = document.querySelector('#saved-report-name-form');
   const input = document.querySelector('#saved-report-name-input');
+  document.querySelector('#saved-report-name-eyebrow').textContent = 'SAVE REPORT DESIGN';
+  document.querySelector('#saved-report-name-title').textContent = 'Name this report design';
+  document.querySelector('#saved-report-name-description').textContent = 'The report design will be saved with this database.';
+  document.querySelector('#saved-report-name-label').textContent = 'Report design name';
+  document.querySelector('#saved-report-name-submit').textContent = 'Save design';
   input.value = currentName;
   input.setCustomValidity('');
   return new Promise((resolve) => {
@@ -672,7 +806,7 @@ function askForSavedReportName(currentName = '') {
       event.preventDefault();
       const name = input.value.trim();
       if (!name) {
-        input.setCustomValidity('Enter a name for this report.');
+        input.setCustomValidity('Enter a name for this report design.');
         input.reportValidity();
         return;
       }
@@ -687,159 +821,6 @@ function askForSavedReportName(currentName = '') {
     input.focus();
     input.select();
   });
-}
-
-function reportFieldReference(field) {
-  return field.table === '$query'
-    ? { index: field.index, name: field.name }
-    : { table: field.table, name: field.name };
-}
-
-function currentReportDefinition() {
-  const fields = getAvailableReportFields();
-  const selected = fields.filter((field) => reportSelectedFields.has(field.token));
-  if (!selected.length) throw new Error('Select at least one report field before saving.');
-  if (reportSourceMode === 'query' && (!lastQueryResultSet || !lastQuerySqlText)) {
-    throw new Error('Run a SQL query before saving a report based on query results.');
-  }
-  const sortField = fields.find((field) => field.token === document.querySelector('#report-sort-field').value);
-  const summaryField = fields.find((field) => field.token === document.querySelector('#report-summary-field').value);
-  return {
-    version: 1,
-    sourceMode: reportSourceMode,
-    title: document.querySelector('#report-title').value,
-    table: reportSourceMode === 'related' ? document.querySelector('#report-table').value : null,
-    selectedFields: selected.map(reportFieldReference),
-    groupFields: fields.filter((field) => reportGroupFields.has(field.token)).map(reportFieldReference),
-    sortField: sortField ? reportFieldReference(sortField) : null,
-    sortDirection: document.querySelector('#report-sort-direction').value,
-    summaryFunction: document.querySelector('#report-summary-function').value,
-    summaryField: summaryField ? reportFieldReference(summaryField) : null,
-    querySql: reportSourceMode === 'query' ? lastQuerySqlText : '',
-  };
-}
-
-async function saveSavedReport(storage) {
-  const feedback = document.querySelector('#saved-report-feedback');
-  const definition = currentReportDefinition();
-  const currentName = document.querySelector('#saved-report-select').value;
-  const name = await askForSavedReportName(currentName);
-  if (name === null) return;
-  const lookup = db.prepare(`SELECT 1 FROM ${quoteIdentifier(SAVED_REPORTS_TABLE)} WHERE report_name = ?;`);
-  let exists;
-  try {
-    lookup.bind([name]);
-    exists = lookup.step();
-  } finally {
-    lookup.free();
-  }
-  if (exists && !await askForAppConfirmation('Replace saved report?', `A saved report named “${name}” already exists. Replace it?`, 'Replace')) return;
-  const statement = db.prepare(exists
-    ? `UPDATE ${quoteIdentifier(SAVED_REPORTS_TABLE)} SET report_json = ?, updated_at = CURRENT_TIMESTAMP WHERE report_name = ?;`
-    : `INSERT INTO ${quoteIdentifier(SAVED_REPORTS_TABLE)} (report_name, report_json) VALUES (?, ?);`);
-  try {
-    statement.run(exists ? [JSON.stringify(definition), name] : [name, JSON.stringify(definition)]);
-  } finally {
-    statement.free();
-  }
-  await saveDatabase(storage);
-  refreshSavedReports(name);
-  feedback.classList.remove('is-error');
-  feedback.textContent = `Saved “${name}” with this database.`;
-}
-
-function applySavedReportOptions(definition, fields) {
-  const findField = (reference) => fields.find((field) => reference &&
-    (reference.table ? field.table === reference.table && field.name === reference.name
-      : field.table === '$query' && field.index === reference.index && field.name === reference.name))
-    || fields.find((field) => reference && field.name === reference.name);
-  reportSelectedFields = new Set((definition.selectedFields || []).map((reference) => findField(reference)?.token).filter(Boolean));
-  reportGroupFields = new Set((definition.groupFields || []).map((reference) => findField(reference)?.token).filter(Boolean));
-  reportInitializedFields = new Set(fields.map((field) => field.token));
-  document.querySelector('#report-title').value = definition.title || 'Database report';
-  document.querySelector('#report-title').dataset.userEdited = 'true';
-  document.querySelector('#report-sort-direction').value = definition.sortDirection === 'DESC' ? 'DESC' : 'ASC';
-  document.querySelector('#report-summary-function').value = ['NONE', 'SUM', 'AVG'].includes(definition.summaryFunction) ? definition.summaryFunction : 'NONE';
-  refreshReportFields();
-  const sortField = findField(definition.sortField);
-  const summaryField = findField(definition.summaryField);
-  document.querySelector('#report-sort-field').value = sortField?.token || '';
-  document.querySelector('#report-summary-field').value = summaryField?.token || '';
-  syncReportSummaryControls();
-}
-
-function loadSavedReport(storage) {
-  const name = document.querySelector('#saved-report-select').value;
-  if (!name) return;
-  const statement = db.prepare(`SELECT report_json FROM ${quoteIdentifier(SAVED_REPORTS_TABLE)} WHERE report_name = ?;`);
-  let raw = null;
-  try {
-    statement.bind([name]);
-    if (statement.step()) raw = statement.getAsObject().report_json;
-  } finally {
-    statement.free();
-  }
-  try {
-    const definition = JSON.parse(raw);
-    if (definition?.version !== 1 || !['related', 'query'].includes(definition.sourceMode)) throw new Error('This saved report has an unsupported format.');
-    const feedback = document.querySelector('#saved-report-feedback');
-    feedback.classList.remove('is-error');
-    if (definition.sourceMode === 'related') {
-      if (!listTables().includes(definition.table)) throw new Error(`The starting table “${definition.table}” is not in this database.`);
-      reportSourceMode = 'related';
-      document.querySelector('#report-table').value = definition.table;
-      reportJoins = [];
-      setReportSourceMode('related');
-      applySavedReportOptions(definition, getAvailableReportFields());
-      resetReportPreview();
-      activateTab('reports');
-      generateReport();
-      feedback.textContent = `Loaded “${name}”.`;
-      return;
-    }
-    if (lastQueryResultSet && lastQuerySqlText.trim() === String(definition.querySql || '').trim()) {
-      reportSourceMode = 'query';
-      setReportSourceMode('query');
-      applySavedReportOptions(definition, getAvailableReportFields());
-      resetReportPreview();
-      activateTab('reports');
-      generateReport();
-      feedback.textContent = `Loaded “${name}”.`;
-      return;
-    }
-    pendingSavedReportDefinition = definition;
-    reportSourceMode = 'query';
-    lastQueryResultSet = null;
-    lastQuerySqlText = '';
-    elements.sqlInput.value = definition.querySql || '';
-    updateJoinDiagram();
-    scheduleQueryDraftSave(storage);
-    renderResults([]);
-    setReportSourceMode('query');
-    activateTab('editor');
-    feedback.textContent = `Loaded “${name}”. Run its SQL to rebuild the report preview.`;
-  } catch (error) {
-    const feedback = document.querySelector('#saved-report-feedback');
-    feedback.textContent = error.message || 'The saved report could not be loaded.';
-    feedback.classList.add('is-error');
-  }
-}
-
-async function deleteSavedReport(storage) {
-  const select = document.querySelector('#saved-report-select');
-  const name = select.value;
-  if (!name || !await askForAppConfirmation('Delete saved report?', `Delete the saved report “${name}”?`, 'Delete')) return;
-  const statement = db.prepare(`DELETE FROM ${quoteIdentifier(SAVED_REPORTS_TABLE)} WHERE report_name = ?;`);
-  try {
-    statement.run([name]);
-  } finally {
-    statement.free();
-  }
-  await saveDatabase(storage);
-  refreshSavedReports();
-  const feedback = document.querySelector('#saved-report-feedback');
-  feedback.classList.remove('is-error');
-  feedback.textContent = `Deleted “${name}”.`;
 }
 
 function renderSchema() {
@@ -1041,7 +1022,7 @@ function refreshCsvPreview() {
 }
 
 function listTables() {
-  return db.exec(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND upper(name) NOT IN ('${SAVED_QUERIES_TABLE}', '${SAVED_REPORTS_TABLE}') ORDER BY name;`)
+  return db.exec(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND upper(name) NOT IN ('${SAVED_QUERIES_TABLE}', '${SAVED_REPORTS_TABLE}', '${SAVED_REPORT_DESIGNS_TABLE}') ORDER BY name;`)
     [0]?.values.map(([name]) => name) || [];
 }
 
@@ -1065,11 +1046,14 @@ function getDesignerSchema(tableName) {
     : null;
   const indexes = db.exec(`PRAGMA index_list(${quoteIdentifier(tableName)});`)[0]?.values || [];
   const uniqueColumns = new Set();
+  const compositeUniqueConstraints = [];
   let unsupportedUniqueIndex = false;
   for (const index of indexes) {
     if (!index[2] || index[3] === 'pk') continue;
-    const indexColumns = db.exec(`PRAGMA index_info(${quoteIdentifier(index[1])});`)[0]?.values || [];
-    if (!index[4] && indexColumns.length === 1 && indexColumns[0][2] !== null) uniqueColumns.add(indexColumns[0][2]);
+    const indexColumns = (db.exec(`PRAGMA index_info(${quoteIdentifier(index[1])});`)[0]?.values || []).sort((left, right) => left[0] - right[0]);
+    const names = indexColumns.map((column) => column[2]);
+    if (!index[4] && names.length === 1 && names[0] !== null) uniqueColumns.add(names[0]);
+    else if (!index[4] && index[3] === 'u' && names.length > 1 && names.every((name) => name !== null)) compositeUniqueConstraints.push(names);
     else unsupportedUniqueIndex = true;
   }
   return {
@@ -1084,6 +1068,7 @@ function getDesignerSchema(tableName) {
     })),
     ddl,
     unsupportedUniqueIndex,
+    compositeUniqueConstraints,
     unsupportedPrimaryKey: columns.filter((column) => column.primaryKey > 0).length > 1,
   };
 }
@@ -1630,6 +1615,7 @@ async function persistGridRows(rowIndexes, storage, focusTarget = null) {
       }
     }
     await saveDatabase(storage);
+    window.invalidateReportDesignPreview?.();
     elements.dataFeedback.textContent = 'Changes saved';
     elements.dataFeedback.classList.remove('is-error');
     const hasActiveView = Boolean(datasheetSearchTerm() || document.querySelector('#datasheet-sort-field').value);
@@ -1806,7 +1792,7 @@ function renderQueryDesigner() {
   document.querySelector('#query-design-empty').hidden = queryDesignTables.length > 0;
   let maxX = 0; let maxY = 0;
   queryDesignTables.forEach((table, index) => {
-    const position = queryDesignPositions[table] || { x: 20 + (index % 3) * 245, y: 20 + Math.floor(index / 3) * 225 }; queryDesignPositions[table] = position;
+    const position = queryDesignPositions[table] || { x: 20 + (index % 4) * 300, y: 20 + Math.floor(index / 4) * 225 }; queryDesignPositions[table] = position;
     const card = document.createElement('section'); card.className = 'query-table-card'; card.dataset.queryTableCard = table; card.style.left = `${position.x}px`; card.style.top = `${position.y}px`;
     const heading = document.createElement('div'); heading.className = 'query-table-card-heading'; heading.dataset.moveQueryTable = table; heading.textContent = `▦  ${table}`; heading.title = 'Drag to move table';
     const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'query-table-remove'; remove.textContent = '×'; remove.title = `Remove ${table} from query`; remove.setAttribute('aria-label', `Remove ${table} from query`); remove.addEventListener('pointerdown', (event) => event.stopPropagation()); remove.addEventListener('click', () => { queryDesignTables = queryDesignTables.filter((item) => item !== table); queryDesignFields = queryDesignFields.filter((item) => item.table !== table); renderQueryDesigner(); }); heading.append(remove); card.append(heading);
@@ -1841,7 +1827,10 @@ function renderQueryDesignLines() {
     const endX = (towardRight ? childBox.left : childBox.right) - stageBox.left + stage.scrollLeft;
     const endY = childBox.top + childBox.height / 2 - stageBox.top + stage.scrollTop;
     const bend = Math.max(38, Math.abs(endX - startX) * 0.4);
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); path.setAttribute('d', `M ${startX} ${startY} C ${startX + (towardRight ? bend : -bend)} ${startY}, ${endX - (towardRight ? bend : -bend)} ${endY}, ${endX} ${endY}`); path.setAttribute('class', 'query-relationship-line'); svg.append(path);
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); path.setAttribute('d', `M ${startX} ${startY} C ${startX + (towardRight ? bend : -bend)} ${startY}, ${endX - (towardRight ? bend : -bend)} ${endY}, ${endX} ${endY}`); path.setAttribute('class', 'query-relationship-line');
+    const one = document.createElementNS('http://www.w3.org/2000/svg', 'text'); one.setAttribute('class', 'query-relationship-cardinality'); one.setAttribute('x', String(startX + (towardRight ? 5 : -15))); one.setAttribute('y', String(startY + 4)); one.textContent = '1';
+    const many = document.createElementNS('http://www.w3.org/2000/svg', 'text'); many.setAttribute('class', 'query-relationship-cardinality'); many.setAttribute('x', String(endX + (towardRight ? -15 : 5))); many.setAttribute('y', String(endY + 4)); many.textContent = '∞';
+    svg.append(path, one, many);
   }
 }
 
@@ -2121,7 +2110,7 @@ function renderRelationshipLines(relationships) {
     const y1 = start.top + start.height / 2 - bounds.top + stage.scrollTop;
     const x2 = (flowsRight ? end.left : end.right) - bounds.left + stage.scrollLeft;
     const y2 = end.top + end.height / 2 - bounds.top + stage.scrollTop;
-    const bend = Math.max(42, Math.abs(x2 - x1) * .45);
+    const bend = Math.max(38, Math.abs(x2 - x1) * .4);
     const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     group.classList.add('relationship-connector');
     group.setAttribute('role', 'button');
@@ -2130,11 +2119,11 @@ function renderRelationshipLines(relationships) {
     if (selectedRelationship === relationship.key) group.classList.add('is-selected');
     group.dataset.relationshipKey = relationship.key;
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', `M ${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}`);
+    path.setAttribute('d', `M ${x1} ${y1} C ${x1 + (flowsRight ? bend : -bend)} ${y1}, ${x2 - (flowsRight ? bend : -bend)} ${y2}, ${x2} ${y2}`);
     const one = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    one.setAttribute('x', String(x1 + 9)); one.setAttribute('y', String(y1 - 7)); one.textContent = '1';
+    one.setAttribute('x', String(x1 + (flowsRight ? 5 : -15))); one.setAttribute('y', String(y1 + 4)); one.textContent = '1';
     const many = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    many.setAttribute('x', String(x2 - 14)); many.setAttribute('y', String(y2 - 7)); many.textContent = '∞';
+    many.setAttribute('x', String(x2 + (flowsRight ? -15 : 5))); many.setAttribute('y', String(y2 + 4)); many.textContent = '∞';
     group.append(path, one, many);
     const selectRelationship = () => {
       selectedRelationship = relationship.key;
@@ -2222,243 +2211,45 @@ function reportFieldToken(table, field) {
   return JSON.stringify([table, field]);
 }
 
-function activeReportTables() {
-  if (reportSourceMode !== 'related') return [];
-  const root = document.querySelector('#report-table').value;
-  if (!root) return [];
-  const tables = [root];
-  const included = new Set(tables);
-  const relationships = getRelationships();
-  for (let index = 0; index < tables.length; index += 1) {
-    const table = tables[index];
-    for (const relationship of relationships) {
-      const related = relationship.childTable === table
-        ? relationship.targetTable
-        : relationship.targetTable === table ? relationship.childTable : null;
-      if (related && !included.has(related)) {
-        included.add(related);
-        tables.push(related);
-      }
-    }
-  }
-  return tables;
+function compareReportValues(left, right) {
+  if (left === right) return 0;
+  if (left === null || left === undefined || left === '') return -1;
+  if (right === null || right === undefined || right === '') return 1;
+  if (typeof left === 'number' && typeof right === 'number') return left < right ? -1 : left > right ? 1 : 0;
+  return String(left).localeCompare(String(right), undefined, { numeric: true, sensitivity: 'base' });
 }
 
-function findReportRelationshipPath(targetTable) {
-  const root = document.querySelector('#report-table').value;
-  if (!root || root === targetTable) return [];
+function buildReportJoins(fields, rootTable) {
   const relationships = getRelationships();
-  const queue = [{ table: root, path: [] }];
-  const visited = new Set([root]);
-  while (queue.length) {
-    const current = queue.shift();
-    for (const relationship of relationships) {
-      let nextTable = null;
-      if (relationship.childTable === current.table) nextTable = relationship.targetTable;
-      else if (relationship.targetTable === current.table) nextTable = relationship.childTable;
-      if (!nextTable || visited.has(nextTable)) continue;
-      const path = [...current.path, { key: relationship.key, fromTable: current.table, toTable: nextTable, relationship }];
-      if (nextTable === targetTable) return path;
-      visited.add(nextTable);
-      queue.push({ table: nextTable, path });
+  const paths = new Map([[rootTable, null]]);
+  const queue = [rootTable];
+  for (let index = 0; index < queue.length; index += 1) {
+    const current = queue[index];
+    for (const relation of relationships) {
+      const next = relation.childTable === current ? relation.targetTable
+        : relation.targetTable === current ? relation.childTable : null;
+      if (!next || paths.has(next)) continue;
+      paths.set(next, { previous: current, relation });
+      queue.push(next);
     }
   }
-  return null;
-}
-
-function buildReportJoins(fields) {
-  const root = document.querySelector('#report-table').value;
-  const included = new Set(root ? [root] : []);
   const joins = [];
-  for (const table of [...new Set(fields.map((field) => field.table).filter((table) => table && table !== '$query'))]) {
-    const path = findReportRelationshipPath(table);
-    if (!path) throw new Error(`No saved relationship path connects ${table} to ${root}.`);
-    for (const join of path) {
-      if (included.has(join.toTable)) continue;
-      joins.push(join);
-      included.add(join.toTable);
+  const addedTables = new Set([rootTable]);
+  for (const table of [...new Set(fields.map((field) => field.table))]) {
+    if (addedTables.has(table)) continue;
+    const path = [];
+    let current = table;
+    while (current !== rootTable) {
+      const step = paths.get(current);
+      if (!step) throw new Error(`No saved relationship path connects ${rootTable} to ${table}.`);
+      path.push({ key: step.relation.key, toTable: current });
+      current = step.previous;
     }
+    path.reverse().forEach((join) => {
+      if (!addedTables.has(join.toTable)) { joins.push(join); addedTables.add(join.toTable); }
+    });
   }
   return joins;
-}
-
-function getAvailableReportFields() {
-  if (reportSourceMode === 'query') {
-    const result = lastQueryResultSet;
-    if (!result) return [];
-    return result.columns.map((name, index) => {
-      const values = result.values.map((row) => row[index]).filter((value) => value !== null && value !== '');
-      const numeric = values.length > 0 && values.every((value) => Number.isFinite(Number(value)));
-      return { token: reportFieldToken('$query', String(index)), table: '$query', name, label: name, index, numeric };
-    });
-  }
-  return activeReportTables().flatMap((table) => getTableSchema(table).map((field) => ({
-    token: reportFieldToken(table, field.name), table, name: field.name,
-    label: `${table} · ${field.name}`, type: field.type,
-    numeric: /INT|REAL|FLOA|DOUB|NUM/i.test(field.type),
-  })));
-}
-
-function reportChoice(label, checked, dataName, token) {
-  const option = document.createElement('label');
-  option.className = 'report-field-option';
-  const checkbox = document.createElement('input');
-  checkbox.type = 'checkbox';
-  checkbox.checked = checked;
-  checkbox.dataset[dataName] = token;
-  const name = document.createElement('span');
-  name.textContent = label;
-  option.append(checkbox, name);
-  return option;
-}
-
-function appendReportFieldGroups(host, fields, selection, dataName) {
-  const root = document.querySelector('#report-table').value;
-  const grouped = new Map();
-  fields.forEach((field) => {
-    if (!grouped.has(field.table)) grouped.set(field.table, []);
-    grouped.get(field.table).push(field);
-  });
-  for (const [table, tableFields] of grouped) {
-    const section = document.createElement('details');
-    section.className = 'report-table-group';
-    section.open = true;
-    const heading = document.createElement('summary');
-    heading.className = 'report-table-group-heading';
-    const name = document.createElement('span');
-    name.textContent = table === '$query' ? 'SQL result' : table;
-    const meta = document.createElement('span');
-    meta.className = 'report-table-group-meta';
-    if (table === '$query') meta.textContent = 'QUERY';
-    else if (table === root) meta.textContent = 'STARTING TABLE';
-    else {
-      const path = findReportRelationshipPath(table) || [];
-      meta.textContent = `VIA ${[...path.map((join) => join.fromTable), table].join(' → ')}`;
-    }
-    heading.append(name, meta);
-    section.append(heading);
-    const options = document.createElement('div');
-    options.className = 'report-table-fields';
-    tableFields.forEach((field) => {
-      options.append(reportChoice(field.name, selection.has(field.token), dataName, field.token));
-    });
-    section.append(options);
-    host.append(section);
-  }
-}
-
-function refreshReportFields() {
-  const fields = getAvailableReportFields();
-  const fieldsHost = document.querySelector('#report-fields');
-  const groupsHost = document.querySelector('#report-group-fields');
-  const sortSelect = document.querySelector('#report-sort-field');
-  const summaryFieldSelect = document.querySelector('#report-summary-field');
-  const previousSort = sortSelect.value;
-  const previousSummaryField = summaryFieldSelect.value;
-  fieldsHost.replaceChildren();
-  groupsHost.replaceChildren();
-  sortSelect.replaceChildren();
-  summaryFieldSelect.replaceChildren();
-  const noSort = document.createElement('option');
-  noSort.value = '';
-  noSort.textContent = 'No sorting';
-  sortSelect.append(noSort);
-  for (const field of fields) {
-    if (!reportInitializedFields.has(field.token)) {
-      reportInitializedFields.add(field.token);
-      if (reportSourceMode === 'query' || field.table === document.querySelector('#report-table').value) {
-        reportSelectedFields.add(field.token);
-      }
-    }
-    const sortOption = document.createElement('option');
-    sortOption.value = field.token;
-    sortOption.textContent = field.label;
-    sortSelect.append(sortOption);
-  }
-  appendReportFieldGroups(fieldsHost, fields, reportSelectedFields, 'reportField');
-  appendReportFieldGroups(groupsHost, fields, reportGroupFields, 'reportGroup');
-  if ([...sortSelect.options].some((option) => option.value === previousSort)) sortSelect.value = previousSort;
-  const numericFields = fields.filter((field) => field.numeric);
-  const noSummaryField = document.createElement('option');
-  noSummaryField.value = '';
-  noSummaryField.textContent = 'Choose field';
-  summaryFieldSelect.append(noSummaryField);
-  numericFields.forEach((field) => {
-    const option = document.createElement('option');
-    option.value = field.token;
-    option.textContent = field.label;
-    summaryFieldSelect.append(option);
-  });
-  if (numericFields.some((field) => field.token === previousSummaryField)) summaryFieldSelect.value = previousSummaryField;
-  summaryFieldSelect.disabled = !numericFields.length || document.querySelector('#report-summary-function').value === 'NONE';
-}
-
-function setReportSourceMode(mode) {
-  reportSourceMode = mode === 'query' ? 'query' : 'related';
-  document.querySelector('#report-source-mode').value = reportSourceMode;
-  document.querySelector('#report-related-controls').hidden = reportSourceMode !== 'related';
-  const queryNote = document.querySelector('#report-query-source');
-  queryNote.hidden = reportSourceMode !== 'query';
-  if (reportSourceMode === 'query' && lastQueryResultSet) {
-    queryNote.textContent = `Using the latest SQL Editor result · ${lastQueryResultSet.values.length} rows · ${lastQueryResultSet.columns.length} fields.`;
-  } else if (reportSourceMode === 'query') {
-    queryNote.textContent = 'No SQL results are available. Run a SELECT query in SQL Editor, then choose Create report from results in the Results panel.';
-  }
-  refreshReportFields();
-  syncReportSummaryControls();
-}
-
-function syncReportSummaryControls() {
-  const hasGroups = reportGroupFields.size > 0;
-  const summaryFunction = document.querySelector('#report-summary-function');
-  const summaryField = document.querySelector('#report-summary-field');
-  summaryFunction.disabled = !hasGroups;
-  summaryField.disabled = !hasGroups || summaryFunction.value === 'NONE' || summaryField.options.length <= 1;
-}
-
-function refreshReportSources() {
-  const select = document.querySelector('#report-table');
-  const previous = select.value;
-  const tables = listTables();
-  select.replaceChildren();
-  for (const table of tables) {
-    const option = document.createElement('option');
-    option.value = table;
-    option.textContent = table;
-    select.append(option);
-  }
-  select.disabled = !tables.length;
-  if (tables.includes(previous)) select.value = previous;
-  else if (tables.length) select.value = tables[0];
-  refreshReportFields();
-  syncReportSummaryControls();
-}
-
-function setReportFeedback(message, isError = false) {
-  const feedback = document.querySelector('#report-feedback');
-  feedback.textContent = message;
-  feedback.classList.toggle('is-error', isError);
-}
-
-function invalidateReportPreview() {
-  const printButton = document.querySelector('#print-report');
-  const exportButtons = ['#export-report-excel', '#export-report-word'].map((selector) => document.querySelector(selector));
-  if (!printButton.disabled) {
-    printButton.disabled = true;
-    exportButtons.forEach((button) => { button.disabled = true; });
-    setReportFeedback('Changes made · generate a new preview before printing or exporting.');
-  }
-}
-
-function resetReportPreview() {
-  const preview = document.querySelector('#report-preview');
-  preview.replaceChildren();
-  preview.hidden = true;
-  document.querySelector('#report-preview-placeholder').hidden = false;
-  document.querySelector('#print-report').disabled = true;
-  document.querySelector('#export-report-excel').disabled = true;
-  document.querySelector('#export-report-word').disabled = true;
-  setReportFeedback('');
 }
 
 function reportXmlText(value) {
@@ -2468,7 +2259,7 @@ function reportXmlText(value) {
 }
 
 function reportFileBaseName() {
-  const title = document.querySelector('#report-preview h1')?.textContent || 'DataNook report';
+  const title = document.querySelector('#report-design-preview h1')?.textContent || 'DataNook report';
   return title.trim().replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_').replace(/\s+/g, ' ').slice(0, 90) || 'DataNook report';
 }
 
@@ -2484,17 +2275,21 @@ function downloadReportFile(blob, extension) {
 }
 
 function getReportExportContent() {
-  const preview = document.querySelector('#report-preview');
-  if (preview.hidden || !preview.querySelector('.report-data-table')) throw new Error('Generate a current report preview before exporting.');
+  const preview = document.querySelector('#report-design-preview');
+  if (!reportDesignPreviewReady || !preview.querySelector('.report-data-table')) throw new Error('Generate a current report preview before exporting.');
   const table = preview.querySelector('.report-data-table');
+  const exportCellText = (cell) => (cell.innerText || cell.textContent || '').replace(/\s+/g, ' ').trim();
+  const footer = preview.querySelector('.report-page-footer');
   return {
     title: preview.querySelector('h1')?.textContent.trim() || 'Database report',
-    metadata: [...preview.querySelectorAll('.report-page-meta span')].map((item) => item.textContent.trim()),
-    footer: [...preview.querySelectorAll('.report-page-footer span')].map((item) => item.textContent.trim()),
+    metadata: [...preview.querySelectorAll('.report-page-meta span, .report-page-header .report-design-output-controls span')].map((item) => item.textContent.trim()),
+    pageHeader: [...table.querySelectorAll('thead .report-design-output-controls span')].map((item) => item.textContent.trim()),
+    pageFooter: [...table.querySelectorAll('tfoot .report-design-output-controls span')].map((item) => item.textContent.trim()),
+    footer: footer ? [...footer.children].map((item) => item.textContent.trim()).filter(Boolean) : [],
     headings: [...table.querySelectorAll('thead th')].map((cell) => cell.textContent.trim()),
     bodyRows: [...table.querySelectorAll('tbody tr')].map((row) => ({
       className: row.className,
-      cells: [...row.cells].map((cell) => ({ text: cell.textContent.trim(), span: Number(cell.colSpan) || 1, type: cell.dataset.exportType || '', value: cell.dataset.exportValue || '' })),
+      cells: [...row.cells].map((cell) => ({ text: exportCellText(cell), span: Number(cell.colSpan) || 1, type: cell.dataset.exportType || '', value: cell.dataset.exportValue || '' })),
     })),
   };
 }
@@ -2522,19 +2317,24 @@ function createExcelWorksheet(report) {
   };
   addRow([report.title], 1);
   report.metadata.forEach((line) => addRow([line], 2));
+  report.pageHeader.forEach((line) => addRow([line], 2));
   addRow([]);
-  addRow(report.headings, 3);
+  const headingRow = rows.length + 1;
+  if (report.headings.length) addRow(report.headings, 3);
   for (const row of report.bodyRows) {
     const isGroup = row.className.includes('report-group-heading');
     const isFooter = row.className.includes('report-group-footer');
     addRow(row.cells.map((cell) => cell), isGroup ? 4 : isFooter ? 5 : 0);
   }
+  report.pageFooter.forEach((line) => addRow([line], 2));
   if (report.footer.length) {
     addRow([]);
     addRow(report.footer, 2);
   }
   const lastCell = `${excelColumnName(count)}${rows.length}`;
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="5" topLeftCell="A6" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="18"/><cols>${Array.from({ length: count }, (_, index) => `<col min="${index + 1}" max="${index + 1}" width="22" customWidth="1"/>`).join('')}</cols><sheetData>${rows.join('')}</sheetData><autoFilter ref="A5:${lastCell}"/><pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.2" footer="0.2"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
+  const autoFilter = report.headings.length ? `<autoFilter ref="A${headingRow}:${lastCell}"/>` : '';
+  const pane = report.headings.length ? `<pane ySplit="${headingRow}" topLeftCell="A${headingRow + 1}" activePane="bottomLeft" state="frozen"/>` : '';
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0">${pane}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="18"/><cols>${Array.from({ length: count }, (_, index) => `<col min="${index + 1}" max="${index + 1}" width="22" customWidth="1"/>`).join('')}</cols><sheetData>${rows.join('')}</sheetData>${autoFilter}<pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.2" footer="0.2"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
 }
 
 function createExcelStyles() {
@@ -2554,9 +2354,9 @@ async function exportReportToExcel() {
     zip.folder('xl').folder('worksheets').file('sheet1.xml', createExcelWorksheet(report));
     const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     downloadReportFile(blob, 'xlsx');
-    setReportFeedback('Excel file downloaded.');
+    reportDesignFeedback('Excel file downloaded.');
   } catch (error) {
-    setReportFeedback(error.message || 'The Excel file could not be created.', true);
+    reportDesignFeedback(error.message || 'The Excel file could not be created.', true);
   }
 }
 
@@ -2572,19 +2372,27 @@ function wordParagraph(text, options = {}) {
 
 function createWordTable(report) {
   const columnCount = Math.max(1, report.headings.length);
-  const grid = Array.from({ length: columnCount }, () => '<w:gridCol w:w="2200"/>').join('');
-  const rowXml = (cells, style = '') => `<w:tr>${cells.map((cell) => {
+  const tableWidth = 10466;
+  const baseColumnWidth = Math.floor(tableWidth / columnCount);
+  const columnWidths = Array.from({ length: columnCount }, (_, index) => baseColumnWidth + (index < tableWidth % columnCount ? 1 : 0));
+  const grid = columnWidths.map((width) => `<w:gridCol w:w="${width}"/>`).join('');
+  const rowXml = (cells, style = '') => {
+    let columnIndex = 0;
+    return `<w:tr>${cells.map((cell) => {
     const span = Math.max(1, Math.min(columnCount, cell.span || 1));
+    const cellWidth = columnWidths.slice(columnIndex, columnIndex + span).reduce((total, width) => total + width, 0);
+    columnIndex += span;
     const shading = style === 'heading' ? '<w:shd w:fill="EDF5EF"/>' : style === 'group' ? '<w:shd w:fill="E8F1EB"/>' : '';
     const bold = style === 'heading' || style === 'group' || style === 'footer';
-    return `<w:tc><w:tcPr><w:tcW w:w="${2200 * span}" w:type="dxa"/>${span > 1 ? `<w:gridSpan w:val="${span}"/>` : ''}${shading}<w:vAlign w:val="center"/></w:tcPr>${wordParagraph(cell.text, { bold, size: style === 'footer' ? 18 : 20, color: style === 'footer' ? '6E8074' : '39483F' })}</w:tc>`;
-  }).join('')}</w:tr>`;
-  const rows = [rowXml(report.headings.map((text) => ({ text, span: 1 })), 'heading')];
+    return `<w:tc><w:tcPr><w:tcW w:w="${cellWidth}" w:type="dxa"/>${span > 1 ? `<w:gridSpan w:val="${span}"/>` : ''}${shading}<w:vAlign w:val="center"/></w:tcPr>${wordParagraph(cell.text, { bold, size: style === 'footer' ? 18 : 20, color: style === 'footer' ? '6E8074' : '39483F' })}</w:tc>`;
+    }).join('')}</w:tr>`;
+  };
+  const rows = report.headings.length ? [rowXml(report.headings.map((text) => ({ text, span: 1 })), 'heading')] : [];
   for (const row of report.bodyRows) {
     const type = row.className.includes('report-group-heading') ? 'group' : row.className.includes('report-group-footer') ? 'footer' : '';
     rows.push(rowXml(row.cells, type));
   }
-  return `<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders><w:top w:val="single" w:sz="4" w:color="D8E3DB"/><w:left w:val="single" w:sz="4" w:color="D8E3DB"/><w:bottom w:val="single" w:sz="4" w:color="D8E3DB"/><w:right w:val="single" w:sz="4" w:color="D8E3DB"/><w:insideH w:val="single" w:sz="3" w:color="E9EEEA"/><w:insideV w:val="single" w:sz="3" w:color="E9EEEA"/></w:tblBorders></w:tblPr><w:tblGrid>${grid}</w:tblGrid>${rows.join('')}</w:tbl>`;
+  return `<w:tbl><w:tblPr><w:tblW w:w="${tableWidth}" w:type="dxa"/><w:tblBorders><w:top w:val="single" w:sz="4" w:color="D8E3DB"/><w:left w:val="single" w:sz="4" w:color="D8E3DB"/><w:bottom w:val="single" w:sz="4" w:color="D8E3DB"/><w:right w:val="single" w:sz="4" w:color="D8E3DB"/><w:insideH w:val="single" w:sz="3" w:color="E9EEEA"/><w:insideV w:val="single" w:sz="3" w:color="E9EEEA"/></w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="75" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="75" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${grid}</w:tblGrid>${rows.join('')}</w:tbl>`;
 }
 
 async function exportReportToWord() {
@@ -2594,241 +2402,22 @@ async function exportReportToWord() {
     const zip = new JSZip();
     zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
     zip.folder('_rels').file('.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
-    const body = [wordParagraph(report.title, { bold: true, size: 36, color: '35483C' }), ...report.metadata.map((line) => wordParagraph(line, { size: 18, color: '849188' })), createWordTable(report)];
+    const body = [wordParagraph(report.title, { bold: true, size: 36, color: '35483C' }), ...report.metadata.map((line) => wordParagraph(line, { size: 18, color: '849188' })), ...report.pageHeader.map((line) => wordParagraph(line, { size: 18, color: '849188' })), createWordTable(report), ...report.pageFooter.map((line) => wordParagraph(line, { size: 18, color: '849188' }))];
     if (report.footer.length) body.push(wordParagraph(report.footer.join(' · '), { size: 18, color: '89958D' }));
-    const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body.join('')}<w:sectPr><w:pgSz w:w="15840" w:h="12240" w:orient="landscape"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="360" w:footer="360" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+    const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body.join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="360" w:footer="360" w:gutter="0"/></w:sectPr></w:body></w:document>`;
     zip.folder('word').file('document.xml', documentXml);
     const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
     downloadReportFile(blob, 'docx');
-    setReportFeedback('Word file downloaded.');
+    reportDesignFeedback('Word file downloaded.');
   } catch (error) {
-    setReportFeedback(error.message || 'The Word file could not be created.', true);
+    reportDesignFeedback(error.message || 'The Word file could not be created.', true);
   }
 }
 
-function resetReportConfiguration() {
-  reportSourceMode = 'related';
-  reportJoins = [];
-  reportSelectedFields = new Set();
-  reportInitializedFields = new Set();
-  reportGroupFields = new Set();
-  lastQueryResultSet = null;
-  lastQuerySqlText = '';
-  pendingSavedReportDefinition = null;
-  document.querySelector('#report-source-mode').value = 'related';
-  document.querySelector('#report-related-controls').hidden = false;
-  document.querySelector('#report-query-source').hidden = true;
-  const createFromResults = document.querySelector('#create-report-from-results');
-  if (createFromResults) createFromResults.hidden = true;
-}
-
-function compareReportValues(left, right) {
-  if (left === right) return 0;
-  if (left === null || left === undefined) return 1;
-  if (right === null || right === undefined) return -1;
-  if (left !== '' && right !== '' && Number.isFinite(Number(left)) && Number.isFinite(Number(right))) return Number(left) - Number(right);
-  return String(left).localeCompare(String(right), undefined, { numeric: true, sensitivity: 'base' });
-}
-
-function buildRelatedReportQuery(visibleFields, groupFields, sortField, direction, summaryField) {
-  const queryFields = [...visibleFields];
-  for (const field of groupFields) if (!queryFields.some((item) => item.token === field.token)) queryFields.push(field);
-  if (summaryField && !queryFields.some((item) => item.token === summaryField.token)) queryFields.push(summaryField);
-  const sort = getAvailableReportFields().find((field) => field.token === sortField);
-  reportJoins = buildReportJoins([...queryFields, ...(sort ? [sort] : [])]);
-  const selections = queryFields.map((field) => `${quoteIdentifier(field.table)}.${quoteIdentifier(field.name)} AS ${quoteIdentifier(field.token)}`);
-  const root = document.querySelector('#report-table').value;
-  let sql = `SELECT ${selections.join(', ')} FROM ${quoteIdentifier(root)}`;
-  for (const join of reportJoins) {
-    const relation = getRelationships().find((item) => item.key === join.key);
-    if (!relation) throw new Error(`The saved relationship to ${join.toTable} no longer exists.`);
-    const conditions = relation.from.map((childField, index) =>
-      `${quoteIdentifier(relation.childTable)}.${quoteIdentifier(childField)} = ${quoteIdentifier(relation.targetTable)}.${quoteIdentifier(relation.to[index])}`);
-    sql += ` LEFT JOIN ${quoteIdentifier(join.toTable)} ON ${conditions.join(' AND ')}`;
-  }
-  const ordering = [...groupFields];
-  if (sort && !ordering.some((field) => field.token === sort.token)) ordering.push(sort);
-  if (ordering.length) {
-    sql += ` ORDER BY ${ordering.map((field) => `${quoteIdentifier(field.table)}.${quoteIdentifier(field.name)} ${direction}`).join(', ')}`;
-  }
-  return { sql: `${sql};`, queryFields };
-}
-
-function appendReportDetails(body, rows, visibleFields) {
-  for (const row of rows) {
-    const rowElement = document.createElement('tr');
-    visibleFields.forEach((field) => {
-      const cell = document.createElement('td');
-      const value = row[field.outputIndex];
-      if (typeof value === 'number' && Number.isFinite(value)) {
-        cell.dataset.exportType = 'number';
-        cell.dataset.exportValue = String(value);
-      }
-      cell.textContent = value === null || value === undefined ? '' : value instanceof Uint8Array ? `[BLOB · ${value.byteLength} bytes]` : String(value);
-      rowElement.append(cell);
-    });
-    body.append(rowElement);
-  }
-}
-
-function appendGroupedReportRows(body, rows, visibleFields, groups, summaryFunction, summaryField, level = 0) {
-  if (!groups.length) {
-    appendReportDetails(body, rows, visibleFields);
-    return;
-  }
-  const [group, ...nestedGroups] = groups;
-  const partitions = [];
-  for (const row of rows) {
-    const value = row[group.outputIndex];
-    const token = value === null ? 'null:' : `${typeof value}:${String(value)}`;
-    let partition = partitions[partitions.length - 1];
-    if (!partition || partition.token !== token) {
-      partition = { token, value, rows: [] };
-      partitions.push(partition);
-    }
-    partition.rows.push(row);
-  }
-  for (const partition of partitions) {
-    const heading = document.createElement('tr');
-    heading.className = `report-group-heading level-${Math.min(level + 1, 3)}`;
-    const headingCell = document.createElement('th');
-    headingCell.colSpan = Math.max(1, visibleFields.length);
-    headingCell.textContent = `${group.label}: ${partition.value === null ? '(blank)' : String(partition.value)}`;
-    heading.append(headingCell);
-    body.append(heading);
-    appendGroupedReportRows(body, partition.rows, visibleFields, nestedGroups, summaryFunction, summaryField, level + 1);
-    const footer = document.createElement('tr');
-    footer.className = 'report-group-footer';
-    const footerCell = document.createElement('td');
-    footerCell.colSpan = Math.max(1, visibleFields.length);
-    let summary = `${partition.rows.length} record${partition.rows.length === 1 ? '' : 's'}`;
-    if (summaryFunction !== 'NONE' && summaryField) {
-      const numeric = partition.rows.map((row) => row[summaryField.outputIndex]).filter((value) => value !== null && value !== '').map(Number).filter(Number.isFinite);
-      if (numeric.length) {
-        const value = summaryFunction === 'AVG'
-          ? numeric.reduce((sum, item) => sum + item, 0) / numeric.length
-          : numeric.reduce((sum, item) => sum + item, 0);
-        summary += ` · ${summaryFunction === 'AVG' ? 'Average' : 'Sum'} ${summaryField.label}: ${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
-      }
-    }
-    footerCell.textContent = summary;
-    footer.append(footerCell);
-    body.append(footer);
-  }
-}
-
-function generateReport(event) {
-  event?.preventDefault();
-  const preview = document.querySelector('#report-preview');
-  const placeholder = document.querySelector('#report-preview-placeholder');
-  const printButton = document.querySelector('#print-report');
-  try {
-    const available = getAvailableReportFields();
-    const visibleFields = available.filter((field) => reportSelectedFields.has(field.token));
-    if (!visibleFields.length) throw new Error('Select at least one field to include.');
-    const groupTokens = [...reportGroupFields];
-    const groups = groupTokens.map((token) => available.find((field) => field.token === token)).filter(Boolean);
-    const summaryFunction = document.querySelector('#report-summary-function').value;
-    const summaryToken = document.querySelector('#report-summary-field').value;
-    const chosenSummaryField = available.find((field) => field.token === summaryToken);
-    const direction = document.querySelector('#report-sort-direction').value === 'DESC' ? 'DESC' : 'ASC';
-    let rows;
-    let sourceLabel;
-    let queryFields = available;
-    if (reportSourceMode === 'query') {
-      if (!lastQueryResultSet) throw new Error('Run a SELECT query in SQL Editor and use Create report from results first.');
-      const sortToken = document.querySelector('#report-sort-field').value;
-      const sortField = available.find((field) => field.token === sortToken);
-      const orderFields = [...groups];
-      if (sortField && !orderFields.some((field) => field.token === sortField.token)) orderFields.push(sortField);
-      const originalRows = lastQueryResultSet.values.slice();
-      if (orderFields.length) {
-        originalRows.sort((left, right) => {
-          for (const field of orderFields) {
-            const result = compareReportValues(left[field.index], right[field.index]);
-            if (result) return direction === 'DESC' ? -result : result;
-          }
-          return 0;
-        });
-      }
-      const selected = visibleFields.map((field) => ({ ...field, outputIndex: field.index }));
-      const groupFields = groups.map((field) => ({ ...field, outputIndex: field.index }));
-      rows = originalRows.map((row) => {
-        const output = new Array(Math.max(...[...selected, ...groupFields].map((field) => field.outputIndex), -1) + 1);
-        row.forEach((value, index) => { output[index] = value; });
-        return output;
-      });
-      visibleFields.splice(0, visibleFields.length, ...selected);
-      groups.splice(0, groups.length, ...groupFields);
-      if (chosenSummaryField) chosenSummaryField.outputIndex = chosenSummaryField.index;
-      sourceLabel = 'Latest SQL Editor result';
-    } else {
-      const rootTable = document.querySelector('#report-table').value;
-      if (!rootTable || !listTables().includes(rootTable)) throw new Error('Create or import a table before building a report.');
-      const sortToken = document.querySelector('#report-sort-field').value;
-      const built = buildRelatedReportQuery(visibleFields, groups, sortToken, direction, summaryFunction === 'NONE' ? null : chosenSummaryField);
-      const result = db.exec(built.sql)[0];
-      if (!result) throw new Error('The report query did not return data.');
-      queryFields = built.queryFields;
-      const outputIndex = new Map(queryFields.map((field, index) => [field.token, index]));
-      queryFields.forEach((field, index) => { field.outputIndex = index; });
-      visibleFields.forEach((field) => { field.outputIndex = outputIndex.get(field.token); });
-      groups.forEach((field) => { field.outputIndex = outputIndex.get(field.token); });
-      rows = result.values;
-      sourceLabel = [rootTable, ...reportJoins.map((join) => join.toTable)].join(' · ');
-    }
-    const summaryField = queryFields.find((field) => field.token === summaryToken);
-    if (summaryField && reportSourceMode === 'query') summaryField.outputIndex = summaryField.index;
-    preview.replaceChildren();
-    const header = document.createElement('header');
-    header.className = 'report-page-header';
-    const eyebrow = document.createElement('div');
-    eyebrow.className = 'eyebrow';
-    eyebrow.textContent = 'DATABASE REPORT';
-    const title = document.createElement('h1');
-    title.textContent = document.querySelector('#report-title').value.trim() || 'Database report';
-    const meta = document.createElement('div');
-    meta.className = 'report-page-meta';
-    const source = document.createElement('span');
-    source.textContent = `Source: ${sourceLabel}`;
-    const date = document.createElement('span');
-    date.textContent = new Date().toLocaleString();
-    meta.append(source, date);
-    header.append(eyebrow, title, meta);
-    const reportTable = document.createElement('table');
-    reportTable.className = 'report-data-table';
-    const head = document.createElement('thead');
-    const headingRow = document.createElement('tr');
-    visibleFields.forEach((field) => {
-      const cell = document.createElement('th');
-      cell.textContent = field.label;
-      headingRow.append(cell);
-    });
-    head.append(headingRow);
-    const body = document.createElement('tbody');
-    if (groups.length) appendGroupedReportRows(body, rows, visibleFields, groups, summaryFunction, summaryField);
-    else appendReportDetails(body, rows, visibleFields);
-    reportTable.append(head, body);
-    const footer = document.createElement('footer');
-    footer.className = 'report-page-footer';
-    const count = document.createElement('span');
-    count.textContent = `${rows.length} record${rows.length === 1 ? '' : 's'}`;
-    const reportName = document.createElement('span');
-    reportName.textContent = title.textContent;
-    footer.append(count, reportName);
-    preview.append(header, reportTable, footer);
-    preview.hidden = false;
-    placeholder.hidden = true;
-    printButton.disabled = false;
-    document.querySelector('#export-report-excel').disabled = false;
-    document.querySelector('#export-report-word').disabled = false;
-    setReportFeedback(`Preview ready · ${rows.length} record${rows.length === 1 ? '' : 's'}${groups.length ? ` · ${groups.length} grouping level${groups.length === 1 ? '' : 's'}` : ''}.`);
-  } catch (error) {
-    printButton.disabled = true;
-    document.querySelector('#export-report-excel').disabled = true;
-    document.querySelector('#export-report-word').disabled = true;
-    setReportFeedback(error.message || 'The report could not be generated.', true);
-  }
+function reportDesignFeedback(message, isError = false) {
+  const feedback = document.querySelector('#report-design-feedback');
+  feedback.textContent = message;
+  feedback.classList.toggle('is-error', isError);
 }
 
 function fieldAffinity(type) {
@@ -2908,7 +2497,7 @@ function activateTab(tabName) {
   if (tabName === 'data' && db) renderDataGrid();
   if (tabName === 'relationships' && db) renderRelationships();
   if (tabName === 'query-design' && db) renderQueryDesigner();
-  if (tabName === 'reports' && db) refreshReportSources();
+  if (tabName === 'report-design' && db) window.refreshReportDesignSources?.();
 }
 
 function addDesignerField(initial = {}) {
@@ -3032,14 +2621,11 @@ async function deleteSelectedTable(storage) {
     delete queryDesignPositions[tableName];
     delete relationshipPositions[tableName];
     selectedRelationship = null;
-    resetReportConfiguration();
-    resetReportPreview();
     renderSchema();
     renderDataGrid();
     renderQueryDesigner();
-    refreshReportSources();
-    const reportTitle = document.querySelector('#report-title');
-    if (reportTitle.dataset.userEdited !== 'true' && activeTable) reportTitle.value = `${activeTable} report`;
+    window.refreshReportDesignSources?.();
+    window.invalidateReportDesignPreview?.();
     renderRelationships();
     await persistRelationshipPositions(storage);
     await saveDatabase(storage);
@@ -3135,13 +2721,19 @@ async function saveTableDesign(storage, tableName, fields, foreignKeyDefinitions
   const retained = fields.filter((field) => oldNames.has(field.name.toLocaleLowerCase()));
   const hasIntegerPrimaryKey = sourceSchema.columns.some((field) => field.primaryKey && String(field.type).toUpperCase() === 'INTEGER');
   const newNames = new Set(fields.map((field) => field.name.toLocaleLowerCase()));
+  const compositeUniqueDefinitions = (sourceSchema.compositeUniqueConstraints || []).map((columns) => {
+    if (!columns.every((name) => newNames.has(name.toLocaleLowerCase()))) {
+      throw new Error('Keep every field used by an existing composite UNIQUE constraint when changing this table.');
+    }
+    return `UNIQUE (${columns.map(quoteIdentifier).join(', ')})`;
+  });
   const rowidAlias = hasIntegerPrimaryKey ? null : ['rowid', '_rowid_', 'oid']
     .find((name) => !oldNames.has(name) && !newNames.has(name));
   const count = db.exec(`SELECT COUNT(*) FROM ${quoteIdentifier(tableName)};`)[0].values[0][0];
   if (count && !retained.length) throw new Error('Keep at least one existing field so records can be retained.');
   let temporaryName = '__app_design_table__';
   while (listTables().some((name) => name.toLocaleLowerCase() === temporaryName.toLocaleLowerCase())) temporaryName += '_';
-  const definitions = [...makeFieldDefinitions(fields), ...foreignKeyDefinitions];
+  const definitions = [...makeFieldDefinitions(fields), ...compositeUniqueDefinitions, ...foreignKeyDefinitions];
   const foreignKeysEnabled = db.exec('PRAGMA foreign_keys;')[0]?.values[0]?.[0] === 1;
   if (foreignKeysEnabled) db.run('PRAGMA foreign_keys = OFF;');
   db.run('SAVEPOINT table_design;');
@@ -3169,6 +2761,7 @@ async function saveTableDesign(storage, tableName, fields, foreignKeyDefinitions
     if (foreignKeysEnabled) db.run('PRAGMA foreign_keys = ON;');
   }
   await saveDatabase(storage);
+  window.invalidateReportDesignPreview?.();
 }
 
 async function createTable(storage, event) {
@@ -3311,7 +2904,7 @@ async function importCsv(storage) {
 
 function renderResults(resultSets) {
   elements.results.replaceChildren();
-  const reportButton = document.querySelector('#create-report-from-results');
+  const reportButton = document.querySelector('#use-results-in-report-design');
   if (reportButton) reportButton.hidden = !lastQueryResultSet;
   const totalRows = resultSets.reduce((sum, result) => sum + result.values.length, 0);
   const totalColumns = resultSets.reduce((sum, result) => sum + result.columns.length, 0);
@@ -3564,47 +3157,20 @@ async function runQuery(storage) {
     const resultSets = db.exec(sql);
     lastQueryResultSet = resultSets.filter((result) => result.columns.length > 0).at(-1) || null;
     lastQuerySqlText = sql;
-    const pendingDefinition = pendingSavedReportDefinition;
-    const canRestorePending = reportSourceMode === 'query' && pendingDefinition && sql.trim() === String(pendingDefinition.querySql || '').trim() && lastQueryResultSet;
-    if (pendingDefinition && !canRestorePending) pendingSavedReportDefinition = null;
     renderResults(resultSets);
     renderSchema();
     if (document.querySelector('.workspace').dataset.activeTab === 'data') renderDataGrid();
     if (document.querySelector('.workspace').dataset.activeTab === 'relationships') renderRelationships();
-    refreshReportSources();
-    let loadedReportReady = false;
-    if (reportSourceMode === 'query') {
-      if (canRestorePending) {
-        setReportSourceMode('query');
-        applySavedReportOptions(pendingDefinition, getAvailableReportFields());
-        pendingSavedReportDefinition = null;
-        loadedReportReady = true;
-      } else {
-        reportSelectedFields = new Set();
-        reportInitializedFields = new Set();
-        reportGroupFields = new Set();
-        setReportSourceMode('query');
-      }
-    }
-    invalidateReportPreview();
+    window.reportDesignQueryChanged?.();
     await saveDatabase(storage);
-    if (loadedReportReady) {
-      activateTab('reports');
-      generateReport();
-      document.querySelector('#saved-report-feedback').textContent = 'Saved report preview rebuilt from its SQL query.';
-    }
+    window.restorePendingReportDesign?.();
     elements.resultTime.textContent = `${Math.round(performance.now() - startedAt)} ms`;
   } catch (error) {
     lastQueryResultSet = null;
     lastQuerySqlText = '';
-    pendingSavedReportDefinition = null;
+    reportDesignPendingDefinition = null;
     renderResults([]);
-    refreshReportSources();
-    if (reportSourceMode === 'query') {
-      setReportSourceMode('query');
-      resetReportPreview();
-    }
-    invalidateReportPreview();
+    window.reportDesignQueryChanged?.();
     elements.resultCount.textContent = 'Error';
     const message = document.createElement('div');
     message.className = 'message-state error';
@@ -3624,7 +3190,7 @@ function sqlWritesToAppManagedTable(sql) {
   const source = sql.replace(/'(?:''|[^'])*'/g, ' ')
     .replace(/--[^\r\n]*/g, ' ')
     .replace(/\/\*[\s\S]*?\*\//g, ' ');
-  return [SAVED_QUERIES_TABLE, SAVED_REPORTS_TABLE].some((tableName) => {
+  return [SAVED_QUERIES_TABLE, SAVED_REPORTS_TABLE, SAVED_REPORT_DESIGNS_TABLE].some((tableName) => {
     const tick = String.fromCharCode(96);
     const name = '(?:"' + tableName + '"|' + tick + tableName + tick + '|\\[' + tableName + '\\]|' + tableName + ')';
     const target = '(?:main\\s*\\.\\s*)?' + name + '(?![\\w])';
@@ -3651,9 +3217,8 @@ async function start() {
   removeLegacyInternalTables(db);
   db.run('PRAGMA foreign_keys = ON;');
   ensureSavedQueriesTable(db);
-  ensureSavedReportsTable(db);
+  ensureSavedReportDesignsTable(db);
   refreshSavedQueries();
-  refreshSavedReports();
   const savedRelationshipPositions = await readStoredValue(storage, RELATIONSHIP_LAYOUT_KEY);
   relationshipPositions = savedRelationshipPositions && typeof savedRelationshipPositions === 'object' ? savedRelationshipPositions : {};
   currentFileName = await readStoredValue(storage, DATABASE_FILENAME_KEY) || 'school-demo.sqlite';
@@ -3663,10 +3228,7 @@ async function start() {
   updateJoinDiagram();
   elements.engineVersion.textContent = `v${SQLJS_VERSION}`;
   renderSchema();
-  refreshReportSources();
-  const reportTitle = document.querySelector('#report-title');
-  reportTitle.dataset.userEdited = 'false';
-  if (document.querySelector('#report-table').value) reportTitle.value = `${document.querySelector('#report-table').value} report`;
+  window.refreshReportDesignSources?.();
   const availableTables = listTables();
   activeTable = availableTables.includes('students') ? 'students' : availableTables[0] || null;
   renderDataGrid();
@@ -3990,106 +3552,15 @@ async function start() {
     }
   });
   document.querySelector('#remove-relationship').addEventListener('click', () => removeSelectedRelationship(storage));
-  document.querySelector('#report-table').addEventListener('change', () => {
-    reportJoins = [];
-    reportSelectedFields = new Set();
-    reportInitializedFields = new Set();
-    reportGroupFields = new Set();
-    refreshReportFields();
-    syncReportSummaryControls();
-    const title = document.querySelector('#report-title');
-    if (title.dataset.userEdited !== 'true') title.value = `${document.querySelector('#report-table').value} report`;
-    invalidateReportPreview();
-  });
-  document.querySelector('#report-title').addEventListener('input', (event) => {
-    event.target.dataset.userEdited = 'true';
-    invalidateReportPreview();
-  });
-  document.querySelector('#saved-report-select').addEventListener('change', (event) => {
-    const hasSelection = Boolean(event.target.value);
-    document.querySelector('#load-saved-report').disabled = !hasSelection;
-    document.querySelector('#delete-saved-report').disabled = !hasSelection;
-    const feedback = document.querySelector('#saved-report-feedback');
-    feedback.textContent = '';
-    feedback.classList.remove('is-error');
-  });
-  document.querySelector('#load-saved-report').addEventListener('click', () => loadSavedReport(storage));
-  document.querySelector('#save-saved-report').addEventListener('click', () => {
-    saveSavedReport(storage).catch((error) => {
-      const feedback = document.querySelector('#saved-report-feedback');
-      feedback.textContent = error.message || 'The report could not be saved.';
-      feedback.classList.add('is-error');
-    });
-  });
-  document.querySelector('#delete-saved-report').addEventListener('click', () => {
-    deleteSavedReport(storage).catch((error) => {
-      const feedback = document.querySelector('#saved-report-feedback');
-      feedback.textContent = error.message || 'The report could not be deleted.';
-      feedback.classList.add('is-error');
-    });
-  });
-  document.querySelector('#report-builder-form').addEventListener('submit', generateReport);
-  document.querySelector('#report-builder-form').addEventListener('change', (event) => {
-    if (event.target.matches('[data-report-field]')) {
-      const token = event.target.dataset.reportField;
-      if (event.target.checked) reportSelectedFields.add(token);
-      else reportSelectedFields.delete(token);
-      invalidateReportPreview();
-    }
-    if (event.target.matches('[data-report-group]')) {
-      const token = event.target.dataset.reportGroup;
-      if (event.target.checked) reportGroupFields.add(token);
-      else reportGroupFields.delete(token);
-      syncReportSummaryControls();
-      invalidateReportPreview();
-    }
-    if (event.target.matches('#report-sort-field, #report-sort-direction, #report-summary-function, #report-summary-field')) {
-      if (event.target.matches('#report-summary-function')) {
-        document.querySelector('#report-summary-field').disabled = event.target.value === 'NONE' || !document.querySelector('#report-summary-field').options.length;
-      }
-      invalidateReportPreview();
-    }
-  });
-  document.querySelector('#report-source-mode').addEventListener('change', (event) => {
-    pendingSavedReportDefinition = null;
-    setReportSourceMode(event.target.value);
-    const title = document.querySelector('#report-title');
-    if (title.dataset.userEdited !== 'true') {
-      title.value = reportSourceMode === 'query'
-        ? 'SQL Query Report'
-        : `${document.querySelector('#report-table').value || 'Database'} report`;
-    }
-    invalidateReportPreview();
-  });
-  document.querySelector('#report-select-all').addEventListener('click', () => {
-    document.querySelectorAll('#report-fields [data-report-field]').forEach((input) => {
-      input.checked = true;
-      reportSelectedFields.add(input.dataset.reportField);
-    });
-    invalidateReportPreview();
-  });
-  document.querySelector('#report-select-none').addEventListener('click', () => {
-    document.querySelectorAll('#report-fields [data-report-field]').forEach((input) => {
-      input.checked = false;
-      reportSelectedFields.delete(input.dataset.reportField);
-    });
-    invalidateReportPreview();
-  });
-  document.querySelector('#print-report').addEventListener('click', () => window.print());
-  document.querySelector('#export-report-excel').addEventListener('click', exportReportToExcel);
-  document.querySelector('#export-report-word').addEventListener('click', exportReportToWord);
-  document.querySelector('#create-report-from-results').addEventListener('click', () => {
+  document.querySelector('#use-results-in-report-design').addEventListener('click', () => {
     if (!lastQueryResultSet) return;
-    reportSourceMode = 'query';
-    reportSelectedFields = new Set();
-    reportInitializedFields = new Set();
-    reportGroupFields = new Set();
-    setReportSourceMode('query');
-    const title = document.querySelector('#report-title');
-    if (title.dataset.userEdited !== 'true') title.value = 'SQL Query Report';
-    resetReportPreview();
-    activateTab('reports');
+    const sourceMode = document.querySelector('#report-design-source-mode');
+    sourceMode.value = 'query';
+    sourceMode.dispatchEvent(new Event('change', { bubbles: true }));
+    activateTab('report-design');
   });
+  document.querySelector('#report-design-export-excel').addEventListener('click', exportReportToExcel);
+  document.querySelector('#report-design-export-word').addEventListener('click', exportReportToWord);
   window.addEventListener('resize', () => {
     if (document.querySelector('#relationships-panel').hidden) return;
     renderRelationships();
@@ -4128,15 +3599,14 @@ async function start() {
   });
   document.querySelector('#clear-results').addEventListener('click', () => {
     lastQueryResultSet = null;
-    document.querySelector('#create-report-from-results').hidden = true;
+    lastQuerySqlText = '';
+    window.reportDesignQueryChanged?.();
+    document.querySelector('#use-results-in-report-design').hidden = true;
     elements.results.innerHTML = '<div class="welcome-state"><span class="welcome-icon" aria-hidden="true">⌁</span><strong>Run a query to see results</strong><span>Try editing the sample query above.</span></div>';
     elements.resultCount.textContent = 'Ready';
     elements.resultTime.textContent = '';
-    if (reportSourceMode === 'query') {
-      setReportSourceMode('query');
-      resetReportPreview();
-    }
   });
+  await window.initializeReportDesign(storage);
 }
 
 start().catch((error) => {

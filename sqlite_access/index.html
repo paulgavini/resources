@@ -6,10 +6,11 @@
     <meta name="theme-color" content="#f4f6f5">
     <title>DataNook</title>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=workspace-density5-20261031">
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.14.2/sql-wasm.js"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script defer src="app.js"></script>
+    <script defer src="app.js?v=query-cardinality-layout2-20261031"></script>
+    <script defer src="report-design.js"></script>
   </head>
   <body>
     <div class="app-shell">
@@ -26,6 +27,8 @@
             <a href="https://paulgavini.github.io/resources/" target="_blank" rel="noopener noreferrer">Website</a>
             <span aria-hidden="true">·</span>
             <a href="help.html">Help</a>
+            <span aria-hidden="true">·</span>
+            <a href="reference/index.html">Feature reference</a>
           </nav>
         </div>
         <div class="topbar-right">
@@ -84,7 +87,7 @@
             <button class="workspace-tab" id="tab-relationships" type="button" role="tab" aria-selected="false" aria-controls="relationships-panel" data-tab="relationships"><span aria-hidden="true">⌗</span> Relationships</button>
             <button class="workspace-tab" id="tab-query-design" type="button" role="tab" aria-selected="false" aria-controls="query-design-panel" data-tab="query-design"><span aria-hidden="true">▱</span> Query Design</button>
             <button class="workspace-tab" id="tab-editor" type="button" role="tab" aria-selected="false" aria-controls="editor-panel" data-tab="editor"><span aria-hidden="true">⌘</span> SQL Editor</button>
-            <button class="workspace-tab" id="tab-reports" type="button" role="tab" aria-selected="false" aria-controls="reports-panel" data-tab="reports"><span aria-hidden="true">▤</span> Reports</button>
+            <button class="workspace-tab" id="tab-report-design" type="button" role="tab" aria-selected="false" aria-controls="report-design-panel" data-tab="report-design"><span aria-hidden="true">R</span> Report Design</button>
           </div>
 
           <section class="tab-panel data-panel" id="data-panel" role="tabpanel" aria-labelledby="tab-data">
@@ -149,7 +152,7 @@ ORDER BY student_number;</textarea>
           <section class="results-card" aria-labelledby="results-heading">
             <div class="results-header">
               <div class="results-title"><h2 id="results-heading">Results</h2><span class="result-count" id="result-count">Ready</span></div>
-              <div class="results-tools"><span id="result-time"></span><button class="secondary-button results-report-button" id="create-report-from-results" type="button" hidden>Create report from results</button><button class="icon-button" id="clear-results" type="button" title="Clear results" aria-label="Clear results">×</button></div>
+              <div class="results-tools"><span id="result-time"></span><button class="secondary-button results-report-button" id="use-results-in-report-design" type="button" hidden>Use results in Report Design</button><button class="icon-button" id="clear-results" type="button" title="Clear results" aria-label="Clear results">×</button></div>
             </div>
             <div class="results-content" id="results-content" aria-live="polite">
               <div class="welcome-state">
@@ -223,42 +226,71 @@ ORDER BY student_number;</textarea>
             </div>
           </section>
 
-          <section class="tab-panel reports-panel" id="reports-panel" role="tabpanel" aria-labelledby="tab-reports" hidden>
-            <div class="report-workspace">
-              <form class="report-builder" id="report-builder-form">
-                <div class="report-builder-heading"><div class="eyebrow">REPORT DESIGN</div><h2>Create a report</h2><p>Choose related table fields or use the latest SQL Editor result, then arrange groups and summaries.</p></div>
+          <section class="tab-panel report-design-panel" id="report-design-panel" role="tabpanel" aria-labelledby="tab-report-design" hidden>
+            <div class="report-workspace report-design-workspace">
+              <form class="report-builder report-design-controls" id="report-design-form">
+                <div class="report-builder-heading"><div class="eyebrow">REPORT DESIGN VIEW</div><h2>Design a report</h2><p>Arrange fields in report sections, then set group and sort levels, totals, and print behavior.</p></div>
                 <div class="saved-report-manager">
+                  <button class="secondary-button report-design-new" id="report-design-new" type="button">New report</button>
                   <div class="saved-report-controls">
-                    <label class="sr-only" for="saved-report-select">Saved reports</label>
-                    <select class="text-input" id="saved-report-select" aria-label="Saved reports"><option value="">No saved reports yet</option></select>
-                    <button class="secondary-button" id="load-saved-report" type="button" disabled>Load</button>
-                    <button class="secondary-button" id="save-saved-report" type="button">Save report</button>
-                    <button class="secondary-button saved-query-delete" id="delete-saved-report" type="button" disabled>Delete</button>
+                    <label class="sr-only" for="report-design-saved-select">Saved report designs</label>
+                    <select class="text-input" id="report-design-saved-select" aria-label="Saved report designs"><option value="">No saved designs yet</option></select>
+                    <button class="secondary-button" id="report-design-load" type="button" disabled>Load</button>
+                    <button class="secondary-button" id="report-design-save" type="button">Save design</button>
+                    <button class="secondary-button saved-query-delete" id="report-design-delete" type="button" disabled>Delete</button>
                   </div>
-                  <div class="saved-query-warning">Saved with this database in a hidden app-managed table.</div>
-                  <div class="saved-query-feedback" id="saved-report-feedback" role="status" aria-live="polite"></div>
+                  <div class="saved-query-warning">Saved with this database in the app-managed report catalog.</div>
+                  <div class="saved-query-feedback" id="report-design-saved-feedback" role="status" aria-live="polite"></div>
                 </div>
-                <label class="field-label" for="report-source-mode">Report source</label>
-                <select class="text-input" id="report-source-mode"><option value="related">Related tables</option><option value="query">Latest SQL result</option></select>
-                <div class="report-related-controls" id="report-related-controls">
-                  <label class="field-label" for="report-table">Starting table</label>
-                  <select class="text-input" id="report-table"></select>
-                  <div class="report-related-hint">Fields are grouped by table. Selecting a related field automatically follows its saved relationship.</div>
+                <label class="field-label" for="report-design-source-mode">Report source</label>
+                <select class="text-input" id="report-design-source-mode"><option value="related">Related tables</option><option value="query">Latest SQL result</option></select>
+                <div class="report-design-related-controls" id="report-design-related-controls">
+                  <label class="field-label" for="report-design-table">Starting table</label>
+                  <select class="text-input" id="report-design-table"></select>
+                  <div class="report-related-hint">Related fields follow saved relationships from the starting table.</div>
                 </div>
-                <div class="report-query-source" id="report-query-source" hidden>No SQL results are available. Run a SELECT query in SQL Editor, then choose <strong>Create report from results</strong> in the Results panel.</div>
-                <label class="field-label report-title-label" for="report-title">Report title</label>
-                <input class="text-input" id="report-title" type="text" value="Table report" maxlength="100" placeholder="Enter a report title">
-                <div class="report-fields-heading"><h3>Fields</h3><div><button class="text-button" id="report-select-all" type="button">Select all</button><button class="text-button" id="report-select-none" type="button">Clear</button></div></div>
-                <div class="report-field-list" id="report-fields" aria-label="Report fields"></div>
-                <div class="report-fields-heading"><h3>Group by</h3><span class="report-small-hint">Optional · nested in selection order</span></div>
-                <div class="report-field-list report-group-list" id="report-group-fields" aria-label="Report grouping fields"></div>
-                <div class="report-sort-row"><div><label class="field-label" for="report-sort-field">Sort by</label><select class="text-input" id="report-sort-field"></select></div><div><label class="field-label" for="report-sort-direction">Order</label><select class="text-input" id="report-sort-direction"><option value="ASC">Ascending</option><option value="DESC">Descending</option></select></div></div>
-                <div class="report-summary-controls"><div><label class="field-label" for="report-summary-function">Group summary</label><select class="text-input" id="report-summary-function"><option value="NONE">Record count only</option><option value="SUM">Sum</option><option value="AVG">Average</option></select></div><div><label class="field-label" for="report-summary-field">Numeric field</label><select class="text-input" id="report-summary-field" disabled></select></div></div>
-                <div class="report-feedback" id="report-feedback" role="status" aria-live="polite"></div>
-                <div class="report-builder-actions"><button class="primary-button" id="generate-report" type="submit">Generate preview</button><button class="secondary-button" id="print-report" type="button" disabled>Print</button></div>
-                <div class="report-export-actions" aria-label="Export report"><button class="secondary-button" id="export-report-excel" type="button" disabled>Export Excel</button><button class="secondary-button" id="export-report-word" type="button" disabled>Export Word</button></div>
+                <div class="report-query-source" id="report-design-query-source" hidden>No SQL results are available. Run a SELECT query in SQL Editor, then return to Report Design.</div>
+                <label class="field-label report-title-label" for="report-design-title">Report title</label>
+                <input class="text-input" id="report-design-title" type="text" value="Grouped report" maxlength="100" placeholder="Enter a report title">
+                <div class="report-fields-heading"><h3>Fields</h3><div><button class="text-button" id="report-design-select-all" type="button">Add all to Detail</button><button class="text-button" id="report-design-select-none" type="button">Clear Detail</button></div></div>
+                <label class="field-label" for="report-design-field-section">Add fields to</label>
+                <select class="text-input" id="report-design-field-section" aria-label="Section for fields"></select>
+                <div class="report-field-list" id="report-design-fields" aria-label="Report fields"></div>
+                <div class="report-design-label-tools">
+                  <div class="report-fields-heading"><h3>Text label</h3><span class="report-small-hint">Add a static label to any section</span></div>
+                  <input class="text-input" id="report-design-label-text" type="text" maxlength="120" placeholder="Enter label text">
+                  <label class="field-label" for="report-design-label-section">Place in section</label>
+                  <select class="text-input" id="report-design-label-section" aria-label="Section for text label"></select>
+                  <button class="secondary-button" id="report-design-add-label" type="button">Add text label</button>
+                </div>
+                <div class="report-fields-heading report-design-level-heading"><h3>Group &amp; sort levels</h3><span class="report-small-hint">Up to 10 · outermost first</span></div>
+                <div class="report-design-level-actions"><button class="secondary-button" id="report-design-add-group" type="button">Add group</button><button class="secondary-button" id="report-design-add-sort" type="button">Add sort</button></div>
+                <div class="report-design-levels" id="report-design-levels" aria-label="Ordered group and sort levels"></div>
+                <div class="report-design-section-options">
+                  <div class="report-fields-heading"><h3>Report sections</h3></div>
+                  <label class="checkbox-row"><input type="checkbox" data-report-section="report-header" checked> Report Header</label>
+                  <label class="checkbox-row"><input type="checkbox" data-report-section="page-header"> Page Header</label>
+                  <label class="checkbox-row"><input type="checkbox" data-report-section="report-footer" checked> Report Footer</label>
+                  <label class="checkbox-row"><input type="checkbox" data-report-section="page-footer"> Page Footer</label>
+                </div>
+                <div class="report-design-output-options">
+                  <label class="checkbox-row"><input id="report-design-show-details" type="checkbox" checked> Show detail records</label>
+                  <label class="checkbox-row"><input id="report-design-grand-total" type="checkbox"> Show grand total</label>
+                  <div class="report-design-grand-total-options" id="report-design-grand-total-options" hidden>
+                    <select class="text-input" id="report-design-grand-function" aria-label="Grand total calculation"><option value="SUM">Sum</option><option value="AVG">Average</option><option value="MIN">Minimum</option><option value="MAX">Maximum</option><option value="COUNT_VALUES">Count values</option></select>
+                    <select class="text-input" id="report-design-grand-field" aria-label="Grand total field"></select>
+                  </div>
+                </div>
+                <div class="report-feedback" id="report-design-feedback" role="status" aria-live="polite"></div>
+                <div class="report-builder-actions"><button class="primary-button" id="report-design-generate" type="submit">Generate preview</button><button class="secondary-button" id="report-design-print" type="button" disabled>Print</button></div>
+                <div class="report-export-actions" aria-label="Export report"><button class="secondary-button" id="report-design-export-excel" type="button" disabled>Export Excel</button><button class="secondary-button" id="report-design-export-word" type="button" disabled>Export Word</button></div>
               </form>
-              <div class="report-preview-area"><div class="report-preview-placeholder" id="report-preview-placeholder">Your report preview will appear here.</div><article class="report-page" id="report-preview" hidden></article></div>
+              <div class="report-preview-area report-design-preview-area">
+                <div class="report-design-surface-toolbar"><div><div class="eyebrow">DESIGN SURFACE</div><strong>Report sections</strong></div><div><button class="secondary-button is-active" id="report-design-view-canvas" type="button" aria-pressed="true">Design</button><button class="secondary-button" id="report-design-view-preview" type="button" aria-pressed="false">Preview</button></div></div>
+                <div class="report-design-canvas" id="report-design-canvas" aria-label="Report Design View sections"></div>
+                <div class="report-preview-placeholder" id="report-design-placeholder" hidden>Arrange fields and grouping levels, then choose Preview.</div>
+                <article class="report-page" id="report-design-preview" hidden></article>
+              </div>
             </div>
           </section>
 
@@ -320,15 +352,15 @@ ORDER BY student_number;</textarea>
     <dialog class="app-dialog" id="saved-report-name-dialog" aria-labelledby="saved-report-name-title">
       <form id="saved-report-name-form" class="dialog-form">
         <div class="dialog-heading">
-          <div><div class="eyebrow">SAVE REPORT</div><h2 id="saved-report-name-title">Name this saved report</h2></div>
+          <div><div class="eyebrow" id="saved-report-name-eyebrow">SAVE REPORT</div><h2 id="saved-report-name-title">Name this saved report</h2></div>
           <button class="dialog-close" type="button" data-close-dialog="saved-report-name-dialog" aria-label="Close">×</button>
         </div>
-        <p class="dialog-description">The report setup will be saved with this database.</p>
-        <label class="field-label" for="saved-report-name-input">Report name</label>
+        <p class="dialog-description" id="saved-report-name-description">The report setup will be saved with this database.</p>
+        <label class="field-label" for="saved-report-name-input" id="saved-report-name-label">Report name</label>
         <input class="text-input" id="saved-report-name-input" name="reportName" type="text" maxlength="100" autocomplete="off" required>
         <div class="dialog-actions">
           <button class="secondary-button" type="button" data-close-dialog="saved-report-name-dialog">Cancel</button>
-          <button class="primary-button" type="submit">Save report</button>
+          <button class="primary-button" id="saved-report-name-submit" type="submit">Save report</button>
         </div>
       </form>
     </dialog>

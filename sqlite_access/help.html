@@ -41,7 +41,7 @@
           <div>
             <div class="eyebrow">PRACTICE DATABASE</div>
             <h2 id="demo-heading">Try the school demo</h2>
-            <p>Download the example database to experiment with students, courses, and enrollments. It includes two relationships linking enrollments to students and courses.</p>
+            <p>Download the example database to explore 30 students, 10 teachers, eight subjects, and 93 enrollments. Each table uses an <code>_id</code> primary key; there are no separate student numbers, teacher codes, or subject codes, and no enforced foreign-key constraints. The database has no year-level table, saved queries, or saved reports, leaving those exercises for you to create.</p>
             <a class="primary-button" href="school-demo.sqlite" download="school-demo.sqlite">Download school demo database</a>
             <p class="help-demo-note">In DataNook, choose <strong>Open database</strong> and select the downloaded <code>school-demo.sqlite</code> file.</p>
           </div>
@@ -58,15 +58,15 @@
           </section>
           <section class="help-card">
             <h2>Explore relationships and queries</h2>
-            <p>Relationships shows linked fields between tables. Query Design lets you add related tables, choose fields, sort and filter results, calculate values with a named expression, and calculate totals such as counts and averages. Calculated fields appear in query results without being added to a table. Add a field more than once to use each instance separately, such as grouping by a label and summing a numeric value. Drag rows in the query grid to change the output column order, or focus a row and use Alt+Up/Down. SQL Editor runs SQLite statements and offers table and field suggestions.</p>
+            <p>Relationships shows linked fields between tables. In its field list, the gold key marks a primary key and the diamond marks a unique field; a dot marks an ordinary field. Query Design lets you add related tables, choose fields, sort and filter results, calculate values with a named expression, and calculate totals such as counts and averages. Calculated fields appear in query results without being added to a table. Add a field more than once to use each instance separately, such as grouping by a label and summing a numeric value. Drag rows in the query grid to change the output column order, or focus a row and use Alt+Up/Down. SQL Editor runs SQLite statements and offers table and field suggestions.</p>
           </section>
           <section class="help-card">
             <h2>Save and move databases</h2>
             <p>The workspace runs in your browser. It saves changes in the current browser profile. Use <strong>Save as</strong> to keep a portable SQLite file, or <strong>Open database</strong> to work with an existing <code>.sqlite</code>, <code>.sqlite3</code>, or <code>.db</code> file.</p>
           </section>
           <section class="help-card">
-            <h2>Create reports</h2>
-            <p>Reports can use related table fields or the latest SQL Editor results. Select fields, choose grouping and sorting options, and generate a preview. Use <strong>Save report</strong>, <strong>Load</strong>, and <strong>Delete</strong> to manage report setups saved inside the database file. Query based reports save their SQL and ask you to run it again when loaded. Use <strong>Print</strong> to print or save a PDF, or export the preview as an Excel <code>.xlsx</code> workbook or Word <code>.docx</code> document.</p>
+            <h2>Design report sections</h2>
+            <p>Open <strong>Report Design</strong> to place fields and text labels in Report Header, Page Header, Group Header, Detail, Group Footer, Report Footer, or Page Footer sections. Add up to ten ordered group or sort levels, group by a date interval, text prefix, or numeric range, and add group or report totals. In a Group Header, check <strong>Hide group value</strong> to hide the generated group heading and any bound control for that same grouping field; other fields and text labels in the section remain visible. Group settings separately control whether header and footer bands appear in the design and in the finished report. Turn off detail records for a summary view. Save, load, replace, or delete named designs with the database. For a query-based design, loading opens its SQL in SQL Editor; run the query to restore the design. Preview before printing or exporting to Excel (<code>.xlsx</code>) or Word (<code>.docx</code>); the Results panel can send the latest SQL result to Report Design.</p>
           </section>
           <section class="help-card">
             <h2>Browser requirements</h2>
