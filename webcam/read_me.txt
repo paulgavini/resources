@@ -11,6 +11,8 @@ Getting Started
 What You Can Do (Top Bar)
 - Rotate 90°: Each click turns the video by 90° (0° → 90° → 180° → 270° → 0°). Use this to correct orientation.
 
+- Camera: If more than one camera is available, choose the webcam you want from the Camera menu. The menu appears after camera access is allowed.
+
 - Autofocus (if shown): Turns auto focusing on or off. If you do not see this option, your camera does not support it in the browser.
 
 - Lock Focus (if shown): Freezes the focus where it is so it does not keep hunting.

@@ -3,118 +3,274 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Webcam Stream</title>
+    <title>Webcam Viewer</title>
     <style>
-      :root { color-scheme: light dark; }
-      html, body { height: 100%; }
+      :root {
+        color-scheme: light;
+        --paper: #f6f8f4;
+        --white: #fff;
+        --ink: #20352b;
+        --muted: #718078;
+        --line: #e3e9e2;
+        --green: #236e48;
+        --green-dark: #164e35;
+        --green-soft: #e9f3eb;
+        --sage: #8fb889;
+        --danger: #a4543e;
+        --danger-soft: #fbefeb;
+      }
+      * { box-sizing: border-box; }
+      html, body { width: 100%; min-height: 100%; }
       body {
         margin: 0;
-        background: #000;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: "DM Sans", "Segoe UI", sans-serif;
         min-height: 100vh;
+        min-height: 100dvh;
         display: flex;
         flex-direction: column;
       }
-      /* Layout area for the video, constrained to viewport height */
-      #stage {
-        flex: 1 1 auto;
-        min-height: 0; /* allow flex child to shrink */
-        background: #000;
+      #appHeader {
         display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px 24px;
+        padding: 14px 20px;
+        background: var(--white);
+        border-bottom: 1px solid var(--line);
       }
-      #videoWrap {
-        width: 100%;
-        height: 100%;
-        overflow: hidden; /* clip zoomed video */
+      .brand {
         display: flex;
         align-items: center;
-        justify-content: center;
-        background: #000;
+        gap: 11px;
       }
-      /* Make the video fit within the stage while preserving aspect ratio */
+      .brand-mark {
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+        flex: 0 0 auto;
+        color: var(--white);
+        background: var(--green);
+        border-radius: 11px;
+      }
+      .brand-mark svg { width: 21px; height: 21px; }
+      .brand-copy { display: grid; gap: 1px; }
+      .eyebrow {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0;
+        font-family: "Manrope", "Segoe UI", sans-serif;
+        font-size: 1.15rem;
+        line-height: 1.25;
+        font-weight: 700;
+      }
+      #branding {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 5px;
+        margin: 2px 0 0;
+        color: var(--muted);
+        font-size: 0.82rem;
+        line-height: 1.4;
+        font-weight: 400;
+      }
+      #branding a { color: var(--green); text-decoration: none; }
+      #branding a:hover { color: var(--green-dark); text-decoration: underline; }
+      #workspace {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+      }
+      #controls {
+        display: flex;
+        flex: 1 1 760px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px 12px;
+        min-width: 0;
+        margin: 0 0 0 auto;
+        padding: 8px 10px;
+        background: var(--white);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        font-size: 0.82rem;
+      }
+      .action-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+      button {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--white);
+        color: var(--ink);
+        padding: 7px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.82rem;
+        font-weight: 400;
+      }
+      button:hover { background: var(--green-soft); border-color: #c9dbcc; }
+      button:active { background: #dcebdd; }
+      #fullscreenBtn {
+        color: var(--white);
+        background: var(--green);
+        border-color: var(--green);
+      }
+      #fullscreenBtn:hover { background: var(--green-dark); border-color: var(--green-dark); }
+      button:disabled, select:disabled { opacity: 0.55; cursor: not-allowed; }
+      .inline { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: inherit; font-weight: 400; }
+      #focusControls, #zoomControls, #cameraControls { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; }
+      [hidden] { display: none !important; }
+      input[type="range"] { width: clamp(110px, 17vw, 190px); accent-color: var(--green); }
+      select {
+        border: 1px solid var(--line);
+        background: var(--white);
+        color: var(--ink);
+        padding: 7px 30px 7px 10px;
+        border-radius: 8px;
+        font: inherit;
+        font-size: 0.82rem;
+        font-weight: 400;
+        max-width: 260px;
+        min-width: 150px;
+      }
+      #status {
+        margin: 10px 20px 0;
+        padding: 9px 12px;
+        color: var(--danger);
+        background: var(--danger-soft);
+        border: 1px solid #f0d5cc;
+        border-radius: 8px;
+        font-size: 0.88rem;
+      }
+      #status:empty { display: none; }
+      #stage {
+        display: flex;
+        flex: 1 1 auto;
+        min-height: 180px;
+        margin: 14px 20px 20px;
+        padding: 8px;
+        background: var(--white);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        box-shadow: 0 3px 14px rgb(32 53 43 / 5%);
+      }
+      #stage:fullscreen {
+        margin: 0;
+        padding: 12px;
+        background: var(--paper);
+        border: 0;
+        border-radius: 0;
+      }
+      #videoWrap {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background: #14231a;
+        border-radius: 8px;
+        touch-action: none;
+      }
+      #videoWrap.pannable { cursor: grab; }
+      #videoWrap.dragging { cursor: grabbing; }
       video#camera {
         display: block;
         width: 100%;
         height: 100%;
         object-fit: contain;
-        background: #000;
+        background: #14231a;
         transform-origin: center center;
       }
-      #controls {
-        display: flex;
-        gap: 12px;
-        padding: 12px;
-        justify-content: center;
-        align-items: center;
-        background: #111;
-        border-bottom: 1px solid #222;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        }
-      #branding { margin-left: auto; text-align: right; color: #ddd; font-size: 0.9rem; line-height: 1.2; }
-      #branding a { color: #8ab4ff; text-decoration: none; }
-      #branding a:hover { text-decoration: underline; }
-      button {
-        appearance: none;
-        border: 1px solid #2a2a2a;
-        background: #1a1a1a;
-        color: #fff;
-        padding: 8px 12px;
-        border-radius: 6px;
-        cursor: pointer;
-        font: inherit;
+      :focus-visible { outline: 3px solid var(--sage); outline-offset: 2px; }
+      @media (max-width: 680px) {
+        #appHeader { padding: 12px 14px; }
+        #controls { flex-basis: 100%; margin: 0; gap: 9px 12px; }
+        #status { margin-right: 12px; margin-left: 12px; }
+        #stage { margin: 12px; }
       }
-      button:hover { background: #242424; }
-      button:active { background: #2c2c2c; }
-      .inline { display: inline-flex; align-items: center; gap: 6px; }
-      #focusControls, #zoomControls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-      input[type="range"] { width: 220px; }
-      #status {
-        color: #fff;
-        padding: 12px;
-        font-size: 0.95rem;
+      @media (max-width: 420px) {
+        #controls { align-items: flex-start; }
+        #cameraSelect { min-width: 0; max-width: 62vw; }
+        input[type="range"] { width: 112px; }
+        #stage { min-height: 150px; padding: 6px; }
       }
-      /* Added by Codex: panning cursors and branding */
-      #videoWrap { touch-action: none; }
-      #videoWrap.pannable { cursor: grab; }
-      #videoWrap.dragging { cursor: grabbing; }
-      #branding { margin-left: auto; text-align: right; color: #ddd; font-size: 0.9rem; line-height: 1.2; }
-      #branding a { color: #8ab4ff; text-decoration: none; }
-      #branding a:hover { text-decoration: underline; }
+      @media (prefers-reduced-motion: no-preference) {
+        button, select { transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease; }
+      }
     </style>
     <script defer src="script.js"></script>
   </head>
   <body>
-    <div id="controls">
-      <button id="rotateBtn" type="button">Rotate 90°</button>
-      <button id="fullscreenBtn" type="button" aria-pressed="false">Full Screen</button>
-      <div id="focusControls" hidden>
-        <label class="inline"><input id="autofocusToggle" type="checkbox" /> Autofocus</label>
-        <button id="lockFocusBtn" type="button">Lock Focus</button>
-        <label id="focusDistanceGroup" class="inline" hidden>
-          Focus
-          <input id="focusSlider" type="range" min="0" max="1" step="0.01" value="0" />
-          <span id="focusValue" aria-hidden="true"></span>
-        </label>
+    <header id="appHeader">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4.5 7.5h3l1.25-2h6.5l1.25 2h3A1.5 1.5 0 0 1 21 9v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17V9a1.5 1.5 0 0 1 1.5-1.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+            <circle cx="12" cy="13" r="3.25" stroke="currentColor" stroke-width="1.7" />
+          </svg>
+        </span>
+        <div class="brand-copy">
+          <p class="eyebrow">Camera preview</p>
+          <h1>Webcam Viewer</h1>
+          <p id="branding">
+            <span>By Paul Gavini ·</span>
+            <a href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener noreferrer">YouTube</a>
+            <span>·</span>
+            <a href="https://paulgavini.github.io/resources/" target="_blank" rel="noopener noreferrer">Website</a>
+            <span>·</span>
+            <a href="read_me.txt" target="_blank" rel="noopener noreferrer">Help</a>
+          </p>
+        </div>
       </div>
-      <div id="zoomControls" hidden>
-        <label class="inline" for="zoomSlider">Zoom</label>
-        <input id="zoomSlider" type="range" min="1" max="4" step="0.1" value="1" />
-        <span id="zoomValue" aria-hidden="true"></span>
-        <button id="zoomResetBtn" type="button">Reset Zoom</button>
-      </div>
-      <div id="branding">
-        <div>By Paul Gavini using CODEX</div>
-        <div><a href="https://www.youtube.com/@paulgavini" target="_blank" rel="noopener">youtube.com/@paulgavini</a></div>
-      </div>
-    </div>
-    <div id="status" role="status" aria-live="polite"></div>
-    <div id="stage">
-      <div id="videoWrap">
-        <video id="camera" autoplay muted playsinline></video>
-      </div>
-    </div>
+      <section id="controls" aria-label="Camera controls">
+        <div class="action-group">
+          <button id="rotateBtn" type="button">Rotate 90°</button>
+          <button id="fullscreenBtn" type="button" aria-pressed="false">Full Screen</button>
+        </div>
+        <div id="cameraControls" hidden>
+          <label class="inline" for="cameraSelect">Camera</label>
+          <select id="cameraSelect" disabled aria-label="Select camera">
+            <option>Finding cameras…</option>
+          </select>
+        </div>
+        <div id="focusControls" hidden>
+          <label class="inline"><input id="autofocusToggle" type="checkbox" /> Autofocus</label>
+          <button id="lockFocusBtn" type="button">Lock Focus</button>
+          <label id="focusDistanceGroup" class="inline" hidden>
+            Focus
+            <input id="focusSlider" type="range" min="0" max="1" step="0.01" value="0" />
+            <span id="focusValue" aria-hidden="true"></span>
+          </label>
+        </div>
+        <div id="zoomControls" hidden>
+          <label class="inline" for="zoomSlider">Zoom</label>
+          <input id="zoomSlider" type="range" min="1" max="4" step="0.1" value="1" />
+          <span id="zoomValue" aria-hidden="true"></span>
+          <button id="zoomResetBtn" type="button">Reset Zoom</button>
+        </div>
+      </section>
+    </header>
+    <main id="workspace">
+      <div id="status" role="status" aria-live="polite"></div>
+      <section id="stage" aria-label="Live camera preview">
+        <div id="videoWrap">
+          <video id="camera" autoplay muted playsinline></video>
+        </div>
+      </section>
+    </main>
   </body>
   </html>
 

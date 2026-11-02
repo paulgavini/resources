@@ -6,6 +6,9 @@ let viewState = {
   effectiveZoom: 1,
 };
 
+let activeStream = null;
+let activeTrack = null;
+
 function applyViewTransform() {
   const videoEl = document.getElementById('camera');
   if (!videoEl) return;
@@ -16,40 +19,119 @@ function applyViewTransform() {
   videoEl.style.transform = parts.length ? parts.join(' ') : 'none';
 }
 
-async function startWebcam() {
+async function startWebcam(deviceId = null) {
   const videoEl = document.getElementById('camera');
   const statusEl = document.getElementById('status');
 
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     statusEl.textContent = 'Camera access is not supported in this browser.';
-    return;
+    return false;
   }
 
   try {
+    const videoConstraints = {
+      width: { ideal: 1920 },
+      pan: true,
+      tilt: true,
+      zoom: true,
+    };
+    if (deviceId) {
+      videoConstraints.deviceId = { exact: deviceId };
+    } else {
+      videoConstraints.facingMode = 'user';
+    }
+
     const constraints = {
-      video: {
-        width: { ideal: 1920 },
-        facingMode: 'user',
-        pan: true,
-        tilt: true,
-        zoom: true,
-      },
+      video: videoConstraints,
       audio: false,
     };
 
     const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    const previousStream = activeStream;
     videoEl.srcObject = stream;
+    activeStream = stream;
+    const [track] = stream.getVideoTracks();
+    activeTrack = track || null;
     statusEl.textContent = '';
 
-    const [track] = stream.getVideoTracks();
     if (track) {
       setupFocusControls(track);
       setupZoomControls(track);
     }
+    if (previousStream && previousStream !== stream) {
+      previousStream.getTracks().forEach((previousTrack) => previousTrack.stop());
+    }
+
+    await refreshCameraOptions(getActiveDeviceId());
+    return true;
   } catch (err) {
     console.error(err);
     statusEl.textContent = `Unable to access the camera: ${err.name || 'Error'}`;
+    return false;
   }
+}
+
+function getActiveDeviceId() {
+  try {
+    return activeTrack && activeTrack.getSettings
+      ? (activeTrack.getSettings().deviceId || '')
+      : '';
+  } catch (_) {
+    return '';
+  }
+}
+
+async function refreshCameraOptions(selectedDeviceId = '') {
+  const controls = document.getElementById('cameraControls');
+  const select = document.getElementById('cameraSelect');
+  if (!controls || !select || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cameras = devices.filter((device) => device.kind === 'videoinput' && device.deviceId);
+    const previouslySelected = selectedDeviceId || select.value;
+    const labelCounts = new Map();
+
+    select.replaceChildren();
+    cameras.forEach((device, index) => {
+      const option = document.createElement('option');
+      const label = device.label || `Camera ${index + 1}`;
+      const count = (labelCounts.get(label) || 0) + 1;
+      labelCounts.set(label, count);
+      option.value = device.deviceId;
+      option.textContent = count > 1 ? `${label} (${count})` : label;
+      select.appendChild(option);
+    });
+
+    controls.hidden = cameras.length < 2;
+    select.disabled = cameras.length < 2;
+    if (cameras.length) {
+      select.value = cameras.some((camera) => camera.deviceId === previouslySelected)
+        ? previouslySelected
+        : cameras[0].deviceId;
+    }
+  } catch (err) {
+    console.error('Unable to list cameras', err);
+    controls.hidden = true;
+  }
+}
+
+function setupCameraSelector() {
+  const select = document.getElementById('cameraSelect');
+  if (!select) return;
+
+  select.addEventListener('change', async () => {
+    const requestedDeviceId = select.value;
+    const currentDeviceId = getActiveDeviceId();
+    if (!requestedDeviceId || requestedDeviceId === currentDeviceId) return;
+
+    select.disabled = true;
+    const switched = await startWebcam(requestedDeviceId);
+    if (!switched) {
+      select.value = currentDeviceId;
+      select.disabled = false;
+    }
+  });
 }
 
 function setupRotateControl() {
@@ -64,6 +146,7 @@ function setupRotateControl() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+  setupCameraSelector();
   startWebcam();
   setupRotateControl();
   setupPanInteractions();
@@ -74,10 +157,20 @@ function setupFocusControls(track) {
   const statusEl = document.getElementById('status');
   const focusWrap = document.getElementById('focusControls');
   const afToggle = document.getElementById('autofocusToggle');
+  const afLabel = afToggle.closest('label');
   const lockBtn = document.getElementById('lockFocusBtn');
   const group = document.getElementById('focusDistanceGroup');
   const slider = document.getElementById('focusSlider');
   const valueEl = document.getElementById('focusValue');
+
+  focusWrap.hidden = true;
+  afToggle.onchange = null;
+  lockBtn.onclick = null;
+  slider.oninput = null;
+  afToggle.disabled = false;
+  afLabel.hidden = false;
+  lockBtn.hidden = false;
+  group.hidden = true;
 
   if (!track || !track.getCapabilities) return;
 
@@ -119,9 +212,12 @@ function setupFocusControls(track) {
     const currentMode = settings.focusMode || null;
     const isAF = currentMode === 'continuous' || currentMode === 'auto';
     afToggle.checked = isAF;
+    afToggle.disabled = !autoMode || !supportsManualMode;
   } else {
     afToggle.disabled = true;
+    afLabel.hidden = true;
   }
+  lockBtn.hidden = !supportsManualMode;
 
   async function applyFocus({ mode, distance } = {}) {
     const advanced = [];
@@ -137,17 +233,17 @@ function setupFocusControls(track) {
     }
   }
 
-  afToggle.addEventListener('change', async () => {
+  afToggle.onchange = async () => {
     if (!supportsFocusMode) return;
     if (afToggle.checked && autoMode) {
       await applyFocus({ mode: autoMode });
-    } else if (supportsManualMode) {
+    } else if (!afToggle.checked && supportsManualMode) {
       const dist = supportsDistance ? Number(slider.value) : undefined;
       await applyFocus({ mode: 'manual', distance: dist });
     }
-  });
+  };
 
-  lockBtn.addEventListener('click', async () => {
+  lockBtn.onclick = async () => {
     if (!supportsManualMode) return;
     let current = undefined;
     try {
@@ -160,16 +256,19 @@ function setupFocusControls(track) {
     }
     afToggle.checked = false;
     await applyFocus({ mode: 'manual', distance: current });
-  });
+  };
 
   if (supportsDistance) {
-    slider.addEventListener('input', async () => {
+    slider.oninput = async () => {
       valueEl.textContent = Number(slider.value).toFixed(2);
       if (supportsManualMode) {
         afToggle.checked = false;
-        await applyFocus({ mode: 'manual', distance: Number(slider.value) });
       }
-    });
+      await applyFocus({
+        mode: supportsManualMode ? 'manual' : undefined,
+        distance: Number(slider.value),
+      });
+    };
   }
 }
 
@@ -180,14 +279,20 @@ function setupZoomControls(track) {
   const valueEl = document.getElementById('zoomValue');
   const resetBtn = document.getElementById('zoomResetBtn');
 
-  if (!track || !track.getCapabilities) return;
+  wrap.hidden = true;
+  slider.oninput = null;
+  resetBtn.onclick = null;
+  if (!track) return;
 
-  let caps, settings;
-  try {
-    caps = track.getCapabilities();
-    settings = track.getSettings ? track.getSettings() : {};
-  } catch (_) {
-    return; // silently skip
+  let caps = {};
+  let settings = {};
+  if (track.getCapabilities) {
+    try {
+      caps = track.getCapabilities() || {};
+      settings = track.getSettings ? track.getSettings() : {};
+    } catch (_) {
+      // Use CSS zoom when this browser cannot report camera capabilities.
+    }
   }
 
   const hasZoom = caps.zoom && typeof caps.zoom.min === 'number' && typeof caps.zoom.max === 'number';
@@ -230,20 +335,26 @@ function setupZoomControls(track) {
     }
   }
 
-  slider.addEventListener('input', async () => {
+  viewState.cssZoom = 1;
+  viewState.panX = 0;
+  viewState.panY = 0;
+  clampPanToBounds();
+  applyViewTransform();
+
+  slider.oninput = async () => {
     const z = Number(slider.value);
     valueEl.textContent = z.toFixed(2);
     await applyZoom(z);
-  });
+  };
 
-  resetBtn.addEventListener('click', async () => {
+  resetBtn.onclick = async () => {
     const def = hasZoom ? Math.min(Math.max(1, min), max) : 1;
     slider.value = String(def);
     valueEl.textContent = def.toFixed(2);
     viewState.panX = 0;
     viewState.panY = 0;
     await applyZoom(def);
-  });
+  };
 }
 
 function clampPanToBounds() {
