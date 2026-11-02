@@ -149,9 +149,31 @@ window.addEventListener('DOMContentLoaded', () => {
   setupCameraSelector();
   startWebcam();
   setupRotateControl();
+  setupVideoEffectControls();
   setupPanInteractions();
   setupFullscreenControl();
 });
+
+function setupVideoEffectControls() {
+  const videoEl = document.getElementById('camera');
+  if (!videoEl) return;
+
+  const effects = [
+    { button: document.getElementById('negativeBtn'), className: 'negative' },
+    { button: document.getElementById('chalkboardBtn'), className: 'chalkboard' },
+  ].filter((effect) => effect.button);
+
+  effects.forEach((effect) => {
+    effect.button.addEventListener('click', () => {
+      const active = effect.button.getAttribute('aria-pressed') !== 'true';
+      effects.forEach((item) => {
+        const selected = item === effect && active;
+        item.button.setAttribute('aria-pressed', String(selected));
+        videoEl.classList.toggle(item.className, selected);
+      });
+    });
+  });
+}
 
 function setupFocusControls(track) {
   const statusEl = document.getElementById('status');

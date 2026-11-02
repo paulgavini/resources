@@ -24,6 +24,9 @@ What You Can Do (Top Bar)
   - On others, the page zooms the picture for you (digital zoom).
   - Reset Zoom puts the picture back to normal and recenters it.
 
+- Negative: Toggles inverted colors on the camera preview. Click it again to return to normal colors.
+- Chalkboard: Shows the preview in inverted black and white. Click it again to return to normal colors. Negative and Chalkboard cannot be active at the same time.
+
 - Drag to pan (when zoomed in): Click and drag (or touch and drag) the video to look around. You cannot drag past the edges.
  
 - Full Screen button: Click to make the video fill the whole screen. Click again (or press F11) to exit full screen.
